@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { register } from "../../../apiHelpers";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -6,6 +7,9 @@ import { Label } from "./ui/label";
 import { Checkbox } from "./ui/checkbox";
 
 export function SignUpForm({ onCreateHouseMateAccount }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [firstName, setFirstName] = useState("");
@@ -14,6 +18,33 @@ export function SignUpForm({ onCreateHouseMateAccount }) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    if (!agreeToTerms) {
+      setError("You must agree to the terms.");
+      return;
+    }
+    if (!firstName || !lastName || !email || !password || !confirmPassword) {
+      setError("Please fill all fields.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await register({ firstName, lastName, email, password });
+      setSuccess("Account created! You can now sign in.");
+      setFirstName(""); setLastName(""); setEmail(""); setPassword(""); setConfirmPassword("");
+    } catch (err) {
+      setError(err?.response?.data?.error || "Registration failed.");
+    }
+    setLoading(false);
+  };
 
   return (
     <div className="space-y-6">
@@ -124,11 +155,14 @@ export function SignUpForm({ onCreateHouseMateAccount }) {
         </Label>
       </div>
 
+      {error && <div className="text-red-500 mb-2">{error}</div>}
+      {success && <div className="text-green-500 mb-2">{success}</div>}
       <Button 
-        onClick={onCreateHouseMateAccount}
+        onClick={handleRegister}
+        disabled={loading}
         className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 h-12 rounded-lg"
       >
-        Create HouseMate Account
+        {loading ? "Registering..." : "Create HouseMate Account"}
       </Button>
 
     </div>
