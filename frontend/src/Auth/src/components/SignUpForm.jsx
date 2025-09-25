@@ -6,7 +6,9 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Checkbox } from "./ui/checkbox";
 
-export function SignUpForm({ onCreateHouseMateAccount, houseId }) {
+
+// Accept onSignUpSuccess prop
+export function SignUpForm({ onCreateHouseMateAccount, houseId, onSignUpSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -49,8 +51,9 @@ export function SignUpForm({ onCreateHouseMateAccount, houseId }) {
         house_id: houseId,
         // Add other fields here as needed (bio, phone, preferred_contact, avatar)
       });
-      setSuccess("Account created! You can now sign in.");
+      setSuccess("Account created! Redirecting to dashboard...");
       setFirstName(""); setLastName(""); setEmail(""); setPassword(""); setConfirmPassword("");
+      if (onSignUpSuccess) onSignUpSuccess();
     } catch (err) {
       setError(err?.response?.data?.error || "Registration failed.");
     }

@@ -4,10 +4,15 @@ import { SignInForm } from "./components/SignInForm.jsx";
 import { SignUpForm } from "./components/SignUpForm.jsx";
 import { CreateHouseForm } from "./components/CreateHouseForm.jsx";
 import { ForgotPasswordForm } from "./components/ForgotPasswordForm.jsx";
+import DashboardApp from '../../dashboard/src/App.jsx';
+import '../../dashboard/src/index.css';
+
+
 
 export default function App() {
   const [currentView, setCurrentView] = useState("signin");
   const [createdHouseId, setCreatedHouseId] = useState(null);
+  const [showDashboard, setShowDashboard] = useState(false);
 
   const handleTabSwitch = (view) => {
     setCurrentView(view);
@@ -30,6 +35,10 @@ export default function App() {
     setCurrentView("signin");
   };
 
+  const handleSignInSuccess = () => {
+  setShowDashboard(true);
+  };
+
   const renderContent = () => {
     switch (currentView) {
       case "signin":
@@ -37,12 +46,13 @@ export default function App() {
           <SignInForm
             onForgotPassword={handleForgotPassword}
             onCreateHouse={() => setCurrentView("create-house")}
+            onSignInSuccess={handleSignInSuccess}
           />
         );
       case "create-house":
         return <CreateHouseForm onCreateHouse={handleCreateHouse} />;
       case "signup":
-        return <SignUpForm houseId={createdHouseId} onCreateHouseMateAccount={handleCreateHouseMateAccount} />;
+        return <SignUpForm houseId={createdHouseId} onCreateHouseMateAccount={handleCreateHouseMateAccount} onSignUpSuccess={() => setShowDashboard(true)} />;
       case "forgot-password":
         return <ForgotPasswordForm onBack={handleBack} />;
       default:
@@ -64,6 +74,9 @@ export default function App() {
     }
   };
 
+  if (showDashboard) {
+    return <DashboardApp />;
+  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-purple-600 flex items-center justify-center p-4">
       <div className="w-full max-w-md">

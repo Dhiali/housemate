@@ -6,7 +6,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Checkbox } from "./ui/checkbox";
 
-export function SignInForm({ onForgotPassword, onCreateHouse }) {
+export function SignInForm({ onForgotPassword, onCreateHouse, onSignInSuccess }) {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,10 +26,17 @@ export function SignInForm({ onForgotPassword, onCreateHouse }) {
     setLoading(true);
     try {
       const res = await login({ email, password });
+      console.log("Login response:", res);
+      setError("");
       setSuccess("Login successful!");
-      // TODO: Save token, redirect, etc.
+      if (onSignInSuccess) {
+        setError("");
+        onSignInSuccess();
+      }
     } catch (err) {
+      console.log("Login error:", err);
       setError(err?.response?.data?.error || "Login failed.");
+      setSuccess("");
     }
     setLoading(false);
   };
@@ -92,8 +99,8 @@ export function SignInForm({ onForgotPassword, onCreateHouse }) {
         </button>
       </div>
 
-      {error && <div className="text-red-500 mb-2">{error}</div>}
-      {success && <div className="text-green-500 mb-2">{success}</div>}
+  {error && <div className="text-red-500 mb-2">{error}</div>}
+  {success && !error && <div className="text-green-500 mb-2">{success}</div>}
       <Button 
         onClick={handleLogin}
         disabled={loading}
