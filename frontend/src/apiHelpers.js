@@ -1,3 +1,4 @@
+export const login = (data) => API.post('/login', data);
 // Auth
 export const register = (user) => API.post('/register', user);
 import axios from "axios";

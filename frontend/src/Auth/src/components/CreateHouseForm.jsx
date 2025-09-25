@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { addHouse } from "../../../apiHelpers";
 import { Upload } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -11,10 +12,51 @@ export function CreateHouseForm({ onCreateHouse }) {
   const [houseRules, setHouseRules] = useState("");
   const [avatar, setAvatar] = useState(null);
 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
   const handleAvatarChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       setAvatar(e.target.files[0]);
     }
+  };
+
+  const handleCreateHouse = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    if (!houseName || !address) {
+      setError("House name and address are required.");
+      return;
+    }
+    setLoading(true);
+    try {
+      let avatarUrl = null;
+      if (avatar) {
+        // Simulate upload, replace with real upload logic if needed
+        avatarUrl = avatar.name;
+      }
+      const res = await addHouse({
+        name: houseName,
+        address,
+        house_rules: houseRules,
+        avatar: avatarUrl,
+        created_by: 1 // TODO: Replace with actual user id after registration
+      });
+      console.log('House creation response:', res.data);
+      setSuccess("House created!");
+      setHouseName(""); setAddress(""); setHouseRules(""); setAvatar(null);
+      // Pass house id to parent (try res.data.id, fallback to res.data.house?.id)
+      if (onCreateHouse) {
+        if (res.data && res.data.id) onCreateHouse(res.data.id);
+        else if (res.data && res.data.house && res.data.house.id) onCreateHouse(res.data.house.id);
+        else onCreateHouse(null);
+      }
+    } catch (err) {
+      setError(err?.response?.data?.error || "Failed to create house.");
+    }
+    setLoading(false);
   };
 
   return (
@@ -86,11 +128,14 @@ export function CreateHouseForm({ onCreateHouse }) {
         </div>
       </div>
 
+      {error && <div className="text-red-500 mb-2">{error}</div>}
+      {success && <div className="text-green-500 mb-2">{success}</div>}
       <Button 
-        onClick={onCreateHouse}
+        onClick={handleCreateHouse}
+        disabled={loading}
         className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 h-12 rounded-lg"
       >
-        Create House
+        {loading ? "Creating..." : "Create House"}
       </Button>
     </div>
   );

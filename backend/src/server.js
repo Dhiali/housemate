@@ -1,8 +1,54 @@
+import express from 'express';
+import db from './db.js';
+// ...existing code...
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+
+const app = express();
+app.use(express.json());
+app.use(cors({ origin: "http://localhost:5173" }));
+
+// Login endpoint
+app.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password required' });
+  }
+  try {
+    db.query('SELECT * FROM users WHERE email = ?', [email], async (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!results.length) return res.status(401).json({ error: 'Invalid credentials' });
+      const user = results[0];
+      const valid = await bcrypt.compare(password, user.password);
+      if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
+      // Generate JWT
+      const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, 'your_jwt_secret', { expiresIn: '7d' });
+      // Update last_login
+      db.query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
+      res.json({ token, user: { id: user.id, name: user.name, surname: user.surname, email: user.email, role: user.role, house_id: user.house_id } });
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+// ...existing code...
+
 // Register endpoint
 app.post('/register', async (req, res) => {
-  const { firstName, lastName, email, password, role, house_id } = req.body;
-  if (!email || !password || !firstName || !lastName) {
+  const {
+    name,
+    surname,
+    email,
+    password,
+    bio = null,
+    phone = null,
+    preferred_contact = 'email',
+    avatar = null,
+    house_id,
+    address = null,
+    house_rules = null
+  } = req.body;
+  if (!email || !password || !name || !surname || !house_id) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
   try {
@@ -18,13 +64,21 @@ app.post('/register', async (req, res) => {
     }
     // Hash password
     const hashed = await bcrypt.hash(password, 10);
+    // Check if this is the first user for the house
+    const [houseUsers] = await new Promise((resolve, reject) => {
+      db.query('SELECT COUNT(*) as count FROM users WHERE house_id = ?', [house_id], (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    });
+    const role = houseUsers.count === 0 ? 'admin' : 'standard';
     // Insert user
     db.query(
-      'INSERT INTO users (name, email, password, role, house_id) VALUES (?, ?, ?, ?, ?)',
-      [`${firstName} ${lastName}`, email, hashed, role || 'standard', house_id || null],
+      `INSERT INTO users (name, surname, email, password, bio, phone, preferred_contact, avatar, role, house_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
+      [name, surname, email, hashed, bio, phone, preferred_contact, avatar, role, house_id],
       (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: 'User registered!', id: results.insertId });
+        res.json({ message: 'User registered!', id: results.insertId, role });
       }
     );
   } catch (err) {
@@ -45,11 +99,18 @@ app.get('/houses/:id', (req, res) => {
   });
 });
 app.post('/houses', (req, res) => {
-  const { name, invite_code } = req.body;
-  db.query("INSERT INTO houses (name, invite_code) VALUES (?, ?)", [name, invite_code], (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: "House created!", id: results.insertId });
-  });
+  const { name, address = null, house_rules = null, avatar = null, created_by } = req.body;
+  if (!created_by) {
+    return res.status(400).json({ error: "Missing created_by (user id)" });
+  }
+  db.query(
+    "INSERT INTO houses (name, address, house_rules, avatar, created_by) VALUES (?, ?, ?, ?, ?)",
+    [name, address, house_rules, avatar, created_by],
+    (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: "House created!", id: results.insertId });
+    }
+  );
 });
 app.put('/houses/:id', (req, res) => {
   db.query("UPDATE houses SET ? WHERE id = ?", [req.body, req.params.id], (err, results) => {
@@ -149,13 +210,8 @@ app.post('/tasks', (req, res) => {
     }
   );
 });
-import express from 'express';
-import db from './db.js';
-const app = express();
+// ...existing code...
 
-app.use(express.json());
-
-// Example: Get all users
 app.get('/users', (req, res) => {
   db.query("SELECT * FROM users", (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -163,7 +219,6 @@ app.get('/users', (req, res) => {
   });
 });
 
-// Example: Add a new user
 app.post('/users', (req, res) => {
   const { name, email, password, role } = req.body;
   db.query(

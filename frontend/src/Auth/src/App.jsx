@@ -7,6 +7,7 @@ import { ForgotPasswordForm } from "./components/ForgotPasswordForm.jsx";
 
 export default function App() {
   const [currentView, setCurrentView] = useState("signin");
+  const [createdHouseId, setCreatedHouseId] = useState(null);
 
   const handleTabSwitch = (view) => {
     setCurrentView(view);
@@ -20,9 +21,9 @@ export default function App() {
     setCurrentView("create-house");
   };
 
-  const handleCreateHouse = () => {
-    // Handle house creation logic here
-    console.log("House created!");
+  const handleCreateHouse = (houseId) => {
+    setCreatedHouseId(houseId);
+    setCurrentView("signup");
   };
 
   const handleBack = () => {
@@ -38,12 +39,10 @@ export default function App() {
             onCreateHouse={() => setCurrentView("create-house")}
           />
         );
-      case "signup":
-        return (
-          <SignUpForm onCreateHouseMateAccount={handleCreateHouseMateAccount} />
-        );
       case "create-house":
         return <CreateHouseForm onCreateHouse={handleCreateHouse} />;
+      case "signup":
+        return <SignUpForm houseId={createdHouseId} onCreateHouseMateAccount={handleCreateHouseMateAccount} />;
       case "forgot-password":
         return <ForgotPasswordForm onBack={handleBack} />;
       default:
@@ -69,7 +68,7 @@ export default function App() {
     <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-purple-600 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <AuthCard description={getDescription()}>
-          {(currentView !== "forgot-password" && currentView !== "create-house") && (
+          {(currentView !== "forgot-password" && (currentView === "signin" || currentView === "create-house")) && (
             <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
               <button
                 onClick={() => handleTabSwitch("signin")}
@@ -78,8 +77,8 @@ export default function App() {
                 Sign In
               </button>
               <button
-                onClick={() => handleTabSwitch("signup")}
-                className={`flex-1 py-2 px-4 rounded-md text-center transition-all duration-200 ${currentView === "signup" ? "bg-white text-blue-600 font-semibold" : "text-gray-500"}`}
+                onClick={() => setCurrentView("create-house")}
+                className={`flex-1 py-2 px-4 rounded-md text-center transition-all duration-200 ${currentView === "create-house" ? "bg-white text-blue-600 font-semibold" : "text-gray-500"}`}
               >
                 Create House
               </button>

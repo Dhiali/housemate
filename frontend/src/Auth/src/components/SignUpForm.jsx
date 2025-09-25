@@ -6,7 +6,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Checkbox } from "./ui/checkbox";
 
-export function SignUpForm({ onCreateHouseMateAccount }) {
+export function SignUpForm({ onCreateHouseMateAccount, houseId }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -35,9 +35,20 @@ export function SignUpForm({ onCreateHouseMateAccount }) {
       setError("Passwords do not match.");
       return;
     }
+    if (!houseId) {
+      setError("House must be created first.");
+      return;
+    }
     setLoading(true);
     try {
-      const res = await register({ firstName, lastName, email, password });
+      const res = await register({
+        name: firstName,
+        surname: lastName,
+        email,
+        password,
+        house_id: houseId,
+        // Add other fields here as needed (bio, phone, preferred_contact, avatar)
+      });
       setSuccess("Account created! You can now sign in.");
       setFirstName(""); setLastName(""); setEmail(""); setPassword(""); setConfirmPassword("");
     } catch (err) {

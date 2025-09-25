@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { login } from "../../../apiHelpers";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -10,6 +11,28 @@ export function SignInForm({ onForgotPassword, onCreateHouse }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    if (!email || !password) {
+      setError("Please enter email and password.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await login({ email, password });
+      setSuccess("Login successful!");
+      // TODO: Save token, redirect, etc.
+    } catch (err) {
+      setError(err?.response?.data?.error || "Login failed.");
+    }
+    setLoading(false);
+  };
 
   return (
     <div className="space-y-6">
@@ -69,8 +92,14 @@ export function SignInForm({ onForgotPassword, onCreateHouse }) {
         </button>
       </div>
 
-      <Button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 h-12 rounded-lg">
-        Sign in to HouseMate
+      {error && <div className="text-red-500 mb-2">{error}</div>}
+      {success && <div className="text-green-500 mb-2">{success}</div>}
+      <Button 
+        onClick={handleLogin}
+        disabled={loading}
+        className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 h-12 rounded-lg"
+      >
+        {loading ? "Signing in..." : "Sign in to HouseMate"}
       </Button>
 
     </div>
