@@ -44,6 +44,8 @@ import {
   HelpCircle
 } from 'lucide-react';
 import { useState } from 'react';
+import { useEffect } from 'react';
+import { getTasks } from '../../apiHelpers';
 import { Button } from './components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog';
@@ -66,58 +68,31 @@ import { SettingsContent } from './components/SettingsContent';
 export default function App() {
   console.log("App component is rendering");
   const [currentPage, setCurrentPage] = useState('Dashboard');
-  const [tasks, setTasks] = useState([
-    {
-      icon: <Sparkles size={16} className="text-purple-600" />,
-      title: 'Clean Kitchen',
-      description: 'Deep clean kitchen counters, sink, and appliances',
-      assignedTo: 'Sarah M.',
-  status: 'Pending',
-  dueDate: 'Due Today',
-  priority: 'HIGH PRIORITY',
-      avatarInitials: 'SM'
-    },
-    {
-      icon: <Trash2 size={16} className="text-gray-600" />,
-      title: 'Take Out Trash',
-      description: 'Empty all trash bins and take to curb',
-      assignedTo: 'Mike R.',
-  status: 'Pending',
-  dueDate: 'Due Tomorrow',
-  priority: 'MEDIUM PRIORITY',
-      avatarInitials: 'MR'
-    },
-    {
-      icon: <Brush size={16} className="text-blue-600" />,
-      title: 'Vacuum Living Room',
-      description: 'Vacuum carpet and clean under furniture',
-      assignedTo: 'You',
-  status: 'In Progress',
-  dueDate: 'Due Dec 18',
-  priority: 'LOW PRIORITY',
-      avatarInitials: 'YO'
-    },
-    {
-      icon: <Wifi size={16} className="text-blue-600" />,
-      title: 'Pay Internet Bill',
-      description: 'Monthly internet service payment due',
-      assignedTo: 'Alex K.',
-  status: 'Overdue',
-      dueDate: 'Due Dec 20',
-  priority: 'HIGH PRIORITY',
-      avatarInitials: 'AK'
-    },
-    {
-      icon: <Sparkles size={16} className="text-purple-600" />,
-      title: 'Clean Bathroom',
-      description: 'Clean toilet, shower, and mirror',
-      assignedTo: 'Sarah M.',
-  status: 'Pending',
-  dueDate: 'Due Dec 22',
-  priority: 'MEDIUM PRIORITY',
-      avatarInitials: 'SM'
-    }
-  ]);
+  // Add state for upcoming tasks view dropdown
+  const [upcomingTasksView, setUpcomingTasksView] = useState('everyone');
+  const [tasks, setTasks] = useState([]);
+  const [loadingTasks, setLoadingTasks] = useState(true);
+
+  useEffect(() => {
+    setLoadingTasks(true);
+    getTasks()
+      .then(res => {
+        // Map backend data to frontend format if needed
+        const mapped = res.data.map(task => ({
+          ...task,
+          // Example mapping, adjust as needed:
+          icon: <CheckSquare size={16} className="text-gray-600" />,
+          avatarInitials: task.assigned_to ? task.assigned_to.split(' ').map(n => n[0]).join('') : 'UN',
+          dueDate: task.due_date ? `Due ${new Date(task.due_date).toLocaleDateString()}` : 'No due date',
+          assignedTo: task.assigned_to,
+          priority: task.priority || 'MEDIUM PRIORITY',
+          status: task.status || 'Pending',
+        }));
+        setTasks(mapped);
+      })
+      .catch(() => setTasks([]))
+      .finally(() => setLoadingTasks(false));
+  }, []);
   
   const [bills, setBills] = useState([
     {
@@ -1138,6 +1113,16 @@ export default function App() {
                 
                 <div className="flex-1 overflow-y-auto px-1">
                   <div className="grid grid-cols-2 gap-4 py-4">
+                  {/* Assigned By (non-editable) */}
+                  <div className="col-span-2">
+                    <Label htmlFor="task-assigned-by">Assigned By</Label>
+                    <Input
+                      id="task-assigned-by"
+                      value={taskFormData.createdBy}
+                      disabled
+                      className="bg-gray-100 text-gray-500 cursor-not-allowed"
+                    />
+                  </div>
                   <div className="col-span-2">
                     <Label htmlFor="task-category" className="mb-3 block">Task Category</Label>
                     <div className="grid grid-cols-2 gap-3">
@@ -1250,45 +1235,93 @@ export default function App() {
             {/* Bottom Section with Tasks and Right Sidebar */}
             <div className="flex flex-1">
               {/* Tasks Section */}
-              <div className="flex-1 px-8 pb-8">
-                <div className="bg-white rounded-lg border border-gray-200">
-                  <div className="p-6 border-b border-gray-200">
-                    <Tabs defaultValue="all" className="w-full">
-                      <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-lg font-semibold text-gray-900">Upcoming Tasks</h2>
-                        <TabsList className="grid w-48 grid-cols-3">
-                          <TabsTrigger value="all">All</TabsTrigger>
-                          <TabsTrigger value="today">Today</TabsTrigger>
-                          <TabsTrigger value="overdue">Overdue</TabsTrigger>
-                        </TabsList>
-                      </div>
-                      
-                      <TabsContent value="all" className="mt-6">
-                        <div className="space-y-4">
-                          {tasks.map((task, index) => (
-                            <TaskItem key={index} {...task} />
-                          ))}
+                <div className="flex-1 px-8 pb-8">
+                  <div className="bg-white rounded-lg border border-gray-200">
+                    <div className="p-6 border-b border-gray-200">
+                      <Tabs defaultValue="all" className="w-full">
+                        <div className="flex justify-between items-center mb-4">
+                          <h2 className="text-lg font-semibold text-gray-900">Upcoming Tasks</h2>
+                          <div className="flex items-center space-x-4">
+                            {/* Dropdown for 'everyone'/'me' */}
+                            <Select value={upcomingTasksView}
+                              onValueChange={value => setUpcomingTasksView(value)}
+                            >
+                              <SelectTrigger className="w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="everyone">Everyone</SelectItem>
+                                <SelectItem value="me">Me</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <TabsList className="grid w-48 grid-cols-3">
+                              <TabsTrigger value="all">All</TabsTrigger>
+                              <TabsTrigger value="today">Today</TabsTrigger>
+                              <TabsTrigger value="overdue">Overdue</TabsTrigger>
+                            </TabsList>
+                          </div>
                         </div>
-                      </TabsContent>
-                      
-                      <TabsContent value="today" className="mt-6">
-                        <div className="space-y-4">
-                          {tasks.filter(task => task.dueDate.includes('Today')).map((task, index) => (
-                            <TaskItem key={index} {...task} />
-                          ))}
-                        </div>
-                      </TabsContent>
-                      
-                      <TabsContent value="overdue" className="mt-6">
-                        <div className="space-y-4">
-                          {tasks.filter(task => task.status === 'Overdue').map((task, index) => (
-                            <TaskItem key={index} {...task} />
-                          ))}
-                        </div>
-                      </TabsContent>
-                    </Tabs>
+                        {/* Helper to get filtered tasks based on dropdown and tab */}
+                        {['all', 'today', 'overdue'].map(tab => (
+                          <TabsContent key={tab} value={tab} className="mt-6">
+                            <div className="space-y-4">
+                              {(() => {
+                                let filteredTasks = [];
+                                if (upcomingTasksView === 'me') {
+                                  filteredTasks = tasks.filter(task => task.assignedTo === 'You');
+                                } else {
+                                  filteredTasks = tasks;
+                                }
+                                if (tab === 'today') {
+                                  filteredTasks = filteredTasks.filter(task => task.dueDate.includes('Today'));
+                                } else if (tab === 'overdue') {
+                                  filteredTasks = filteredTasks.filter(task => task.status === 'Overdue');
+                                }
+                                return filteredTasks.length > 0
+                                  ? filteredTasks.map((task, index) => (
+                                      <TaskItem
+                                        key={index}
+                                        {...task}
+                                        onStatusChange={newStatus => {
+                                          setTasks(prevTasks => {
+                                            return prevTasks.map((t, i) => {
+                                              if (i === tasks.indexOf(task)) {
+                                                let updatedStatus = newStatus;
+                                                // If not completed and past due date, set overdue
+                                                if (newStatus !== 'Completed') {
+                                                  let dueDateObj = null;
+                                                  if (t.dueDate.includes('Today')) {
+                                                    dueDateObj = new Date();
+                                                  } else if (t.dueDate.includes('Tomorrow')) {
+                                                    dueDateObj = new Date();
+                                                    dueDateObj.setDate(dueDateObj.getDate() + 1);
+                                                  } else {
+                                                    const match = t.dueDate.match(/Due (\w+ \d+)/);
+                                                    if (match) {
+                                                      const currentYear = new Date().getFullYear();
+                                                      dueDateObj = new Date(`${match[1]} ${currentYear}`);
+                                                    }
+                                                  }
+                                                  if (dueDateObj && dueDateObj < new Date() && newStatus !== 'Completed') {
+                                                    updatedStatus = 'Overdue';
+                                                  }
+                                                }
+                                                return { ...t, status: updatedStatus };
+                                              }
+                                              return t;
+                                            });
+                                          });
+                                        }}
+                                      />
+                                    ))
+                                  : <div className="text-center text-gray-400 py-8">No tasks found.</div>;
+                              })()}
+                            </div>
+                          </TabsContent>
+                        ))}
+                      </Tabs>
+                    </div>
                   </div>
-                </div>
 
                 {/* Today's Schedule Overview */}
                 <div className="bg-white rounded-lg border border-gray-200 mt-6">
@@ -1324,7 +1357,6 @@ export default function App() {
                               item.type === 'task' ? 'bg-blue-500' :
                               item.type === 'bill' ? 'bg-green-500' : 'bg-purple-500'
                             }`}></div>
-                            
                             <div className="flex items-center space-x-3 flex-1">
                               {item.icon}
                               <div className="flex-1">
@@ -1332,7 +1364,6 @@ export default function App() {
                                 <div className="text-sm text-gray-500">{item.description}</div>
                               </div>
                             </div>
-                            
                             <div className="flex items-center space-x-3">
                               {item.time && (
                                 <div className="flex items-center space-x-1 text-sm text-gray-500">
@@ -1340,19 +1371,16 @@ export default function App() {
                                   <span>{item.time}</span>
                                 </div>
                               )}
-                              
                               {item.assignedTo && (
                                 <div className="text-sm text-gray-600">
                                   {item.assignedTo}
                                 </div>
                               )}
-                              
                               {item.amount && (
                                 <div className="text-sm font-medium text-green-600">
                                   ${item.amount.toFixed(2)}
                                 </div>
                               )}
-                              
                               {item.type === 'task' && item.priority && (
                                 <Badge variant={
                                   item.priority === 'HIGH PRIORITY' ? 'destructive' :
@@ -1362,7 +1390,49 @@ export default function App() {
                                   {item.priority.split(' ')[0]}
                                 </Badge>
                               )}
-                              
+                              {item.type === 'task' && (
+                                <div className="w-24">
+                                  <Select value={item.status}
+                                    onValueChange={newStatus => {
+                                      setTasks(prevTasks => prevTasks.map(t => {
+                                        if (t.title === item.title && t.assignedTo === item.assignedTo) {
+                                          let updatedStatus = newStatus;
+                                          // If not completed and past due date, set overdue
+                                          if (newStatus !== 'Completed') {
+                                            let dueDateObj = null;
+                                            if (t.dueDate.includes('Today')) {
+                                              dueDateObj = new Date();
+                                            } else if (t.dueDate.includes('Tomorrow')) {
+                                              dueDateObj = new Date();
+                                              dueDateObj.setDate(dueDateObj.getDate() + 1);
+                                            } else {
+                                              const match = t.dueDate.match(/Due (\w+ \d+)/);
+                                              if (match) {
+                                                const currentYear = new Date().getFullYear();
+                                                dueDateObj = new Date(`${match[1]} ${currentYear}`);
+                                              }
+                                            }
+                                            if (dueDateObj && dueDateObj < new Date() && newStatus !== 'Completed') {
+                                              updatedStatus = 'Overdue';
+                                            }
+                                          }
+                                          return { ...t, status: updatedStatus };
+                                        }
+                                        return t;
+                                      }));
+                                    }}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Pending">Open</SelectItem>
+                                      <SelectItem value="In Progress">In Progress</SelectItem>
+                                      <SelectItem value="Completed">Completed</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              )}
                               {item.type === 'bill' && item.status && (
                                 <Badge variant={
                                   item.status === 'Paid' ? 'default' :
@@ -1372,7 +1442,6 @@ export default function App() {
                                   {item.status}
                                 </Badge>
                               )}
-                              
                               {item.type === 'event' && item.attendees && (
                                 <div className="flex items-center space-x-1 text-sm text-gray-500">
                                   <Users size={14} />

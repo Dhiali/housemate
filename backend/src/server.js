@@ -1,6 +1,5 @@
 import express from 'express';
 import db from './db.js';
-// ...existing code...
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -31,7 +30,6 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-// ...existing code...
 
 // Register endpoint
 app.post('/register', async (req, res) => {

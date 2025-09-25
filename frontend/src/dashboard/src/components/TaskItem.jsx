@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from './ui/select';
 import { Badge } from './ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
@@ -10,7 +11,8 @@ export function TaskItem({
   status,
   dueDate,
   priority,
-  avatarInitials
+  avatarInitials,
+  onStatusChange
 }) {
   const getStatusColor = (status) => {
     switch (status) {
@@ -67,7 +69,7 @@ export function TaskItem({
             </div>
           </div>
         </div>
-        <div className="flex items-center space-x-2 ml-4">
+        <div className="flex flex-col items-center space-y-2 ml-4">
           <Avatar className="h-8 w-8">
             <AvatarFallback className="text-xs">{avatarInitials}</AvatarFallback>
           </Avatar>
@@ -76,6 +78,19 @@ export function TaskItem({
             priority === 'MEDIUM PRIORITY' ? 'bg-yellow-500' :
             'bg-green-500'
           }`}></div>
+          {/* Status dropdown for admin */}
+          <div className="w-24 mt-2">
+            <Select value={status} onValueChange={value => onStatusChange && onStatusChange(value)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Pending">Open</SelectItem>
+                <SelectItem value="In Progress">In Progress</SelectItem>
+                <SelectItem value="Completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
     </div>
