@@ -1,11 +1,16 @@
+
+
+
+
 import express from 'express';
 import db from './db.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import cors from 'cors';
 
 const app = express();
-app.use(express.json());
 app.use(cors({ origin: "http://localhost:5173" }));
+app.use(express.json({ limit: '10mb' }));
 
 // Login endpoint
 app.post('/login', async (req, res) => {
@@ -197,8 +202,7 @@ app.delete('/schedule/:id', (req, res) => {
     res.json({ message: "Schedule deleted!" });
   });
 });
-import cors from 'cors';
-app.use(cors({ origin: "http://localhost:5173" }));
+// ...existing code...
 // Example: Get all tasks
 app.get('/tasks', (req, res) => {
   db.query("SELECT * FROM tasks", (err, results) => {
@@ -221,12 +225,146 @@ app.post('/tasks', (req, res) => {
 });
 // ...existing code...
 
+
+// Get all users
+
+// Get all users
 app.get('/users', (req, res) => {
   db.query("SELECT * FROM users", (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(results);
   });
 });
+
+// Get user by ID
+app.get('/users/:id', (req, res) => {
+  db.query("SELECT * FROM users WHERE id = ?", [req.params.id], (err, results) => {
+    console.log('GET /users/:id', req.params.id, 'results:', results);
+    if (err) return res.status(500).json({ error: err.message });
+    if (!results.length) return res.status(404).json({ error: 'User not found' });
+    res.json(results[0]);
+  });
+});
+
+// Update user bio
+app.put('/users/:id/bio', (req, res) => {
+  const { bio } = req.body;
+  console.log('PUT /users/:id/bio', req.params.id, 'bio:', JSON.stringify(bio));
+  console.log('Bio type:', typeof bio, 'Bio length:', bio?.length);
+  console.log('SQL params:', [bio, req.params.id]);
+  // Check if id is a number
+  if (isNaN(Number(req.params.id))) {
+    console.error('Bio update failed: id is not a number', req.params.id);
+    return res.status(400).json({ error: 'User id must be a number' });
+  }
+  if (typeof bio !== 'string') {
+    console.log('Bio update failed: bio is not a string', bio);
+    return res.status(400).json({ error: 'Bio must be a string' });
+  }
+  db.query('UPDATE users SET bio = ? WHERE id = ?', [bio, req.params.id], (err, results) => {
+    if (err) {
+      console.error('Bio update DB error:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    console.log('Bio update DB results:', results);
+    // Immediately query the user to verify bio value
+    db.query('SELECT bio FROM users WHERE id = ?', [req.params.id], (err2, results2) => {
+      if (err2) {
+        console.error('Bio select DB error:', err2);
+        return res.status(500).json({ error: err2.message });
+      }
+      console.log('Bio after update:', results2);
+      res.json({ message: 'Bio updated!', bio: results2[0]?.bio });
+    });
+  });
+});
+// Update user name
+app.put('/users/:id/name', (req, res) => {
+  const { name } = req.body;
+  console.log('PUT /users/:id/name', req.params.id, 'name:', JSON.stringify(name));
+  if (isNaN(Number(req.params.id))) {
+    console.error('Name update failed: id is not a number', req.params.id);
+    return res.status(400).json({ error: 'User id must be a number' });
+  }
+  if (typeof name !== 'string') {
+    console.log('Name update failed: name is not a string', name);
+    return res.status(400).json({ error: 'Name must be a string' });
+  }
+  db.query('UPDATE users SET name = ? WHERE id = ?', [name, req.params.id], (err, results) => {
+    if (err) {
+      console.error('Name update DB error:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    db.query('SELECT name FROM users WHERE id = ?', [req.params.id], (err2, results2) => {
+      if (err2) {
+        console.error('Name select DB error:', err2);
+        return res.status(500).json({ error: err2.message });
+      }
+      res.json({ message: 'Name updated!', name: results2[0]?.name });
+    });
+  });
+});
+
+// Update user email
+app.put('/users/:id/email', (req, res) => {
+  const { email } = req.body;
+  console.log('PUT /users/:id/email', req.params.id, 'email:', JSON.stringify(email));
+  if (isNaN(Number(req.params.id))) {
+    console.error('Email update failed: id is not a number', req.params.id);
+    return res.status(400).json({ error: 'User id must be a number' });
+  }
+  if (typeof email !== 'string') {
+    console.log('Email update failed: email is not a string', email);
+    return res.status(400).json({ error: 'Email must be a string' });
+  }
+  db.query('UPDATE users SET email = ? WHERE id = ?', [email, req.params.id], (err, results) => {
+    if (err) {
+      console.error('Email update DB error:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    db.query('SELECT email FROM users WHERE id = ?', [req.params.id], (err2, results2) => {
+      if (err2) {
+        console.error('Email select DB error:', err2);
+        return res.status(500).json({ error: err2.message });
+      }
+      res.json({ message: 'Email updated!', email: results2[0]?.email });
+    });
+  });
+});
+
+
+
+
+  // Update user phone number
+  app.put('/users/:id/phone', (req, res) => {
+    const { phone } = req.body;
+    console.log('PUT /users/:id/phone', req.params.id, 'phone:', JSON.stringify(phone));
+    console.log('Phone type:', typeof phone, 'Phone length:', phone?.length);
+    console.log('SQL params:', [phone, req.params.id]);
+    if (isNaN(Number(req.params.id))) {
+      console.error('Phone update failed: id is not a number', req.params.id);
+      return res.status(400).json({ error: 'User id must be a number' });
+    }
+    if (typeof phone !== 'string') {
+      console.log('Phone update failed: phone is not a string', phone);
+      return res.status(400).json({ error: 'Phone must be a string' });
+    }
+    db.query('UPDATE users SET phone = ? WHERE id = ?', [phone, req.params.id], (err, results) => {
+      if (err) {
+        console.error('Phone update DB error:', err);
+        return res.status(500).json({ error: err.message });
+      }
+      console.log('Phone update DB results:', results);
+      db.query('SELECT phone FROM users WHERE id = ?', [req.params.id], (err2, results2) => {
+        if (err2) {
+          console.error('Phone select DB error:', err2);
+          return res.status(500).json({ error: err2.message });
+        }
+        console.log('Phone after update:', results2);
+        res.json({ message: 'Phone updated!', phone: results2[0]?.phone });
+      });
+    });
+  });
 
 app.post('/users', (req, res) => {
   const { name, email, password, role } = req.body;

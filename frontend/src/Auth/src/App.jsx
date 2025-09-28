@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { register } from "../../apiHelpers";
 import { AuthCard } from "./components/AuthCard.jsx";
 import { SignInForm } from "./components/SignInForm.jsx";
@@ -10,13 +10,24 @@ import DashboardApp from '../../dashboard/src/App.jsx';
 import '../../dashboard/src/index.css';
 
 
-
 export default function App() {
   const [currentView, setCurrentView] = useState("signin");
   const [pendingUser, setPendingUser] = useState(null);
   const [showDashboard, setShowDashboard] = useState(false);
   const [showCreateHouseForm, setShowCreateHouseForm] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
+  const [authUser, setAuthUser] = useState(null);
 
+  // On app load, check localStorage for token/user
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    const user = localStorage.getItem("authUser");
+    if (token && user) {
+      setAuthToken(token);
+      setAuthUser(JSON.parse(user));
+      setShowDashboard(true);
+    }
+  }, []);
   const handleTabSwitch = (view) => {
     setCurrentView(view);
   };
@@ -63,7 +74,19 @@ export default function App() {
         console.log('House payload:', housePayload);
         const res = await addHouse(housePayload);
         console.log('House creation response:', res.data);
-        setShowDashboard(true);
+        // Automatically sign in the user
+        const { email, password } = pendingUser;
+        if (email && password) {
+          try {
+            const loginRes = await import('../../apiHelpers').then(m => m.login({ email, password }));
+            const token = loginRes.data?.token;
+            const user = loginRes.data?.user || loginRes.data?.userData || loginRes.data;
+            handleSignInSuccess(token, user);
+          } catch (loginErr) {
+            console.error('Auto-login failed:', loginErr);
+            alert('Account created, but automatic sign-in failed. Please sign in manually.');
+          }
+        }
         setShowCreateHouseForm(false);
         setPendingUser(null);
       } catch (err) {
@@ -76,8 +99,13 @@ export default function App() {
     setCurrentView("signin");
   };
 
-  const handleSignInSuccess = () => {
-  setShowDashboard(true);
+  // Called by SignInForm on successful sign-in
+  const handleSignInSuccess = (token, user) => {
+    setAuthToken(token);
+    setAuthUser(user);
+    localStorage.setItem("authToken", token);
+    localStorage.setItem("authUser", JSON.stringify(user));
+    setShowDashboard(true);
   };
 
   const renderContent = () => {
@@ -123,35 +151,39 @@ export default function App() {
     }
   };
 
-  if (showDashboard) {
-    return <DashboardApp />;
-  }
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-purple-600 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <AuthCard description={getDescription()}>
-          {(currentView !== "forgot-password" && (currentView === "signin" || currentView === "create-house")) && (
-            <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
-              <button
-                onClick={() => handleTabSwitch("signin")}
-                className={`flex-1 py-2 px-4 rounded-md text-center transition-all duration-200 ${currentView === "signin" ? "bg-white text-blue-600 font-semibold" : "text-gray-500"}`}
-              >
-                Sign In
-              </button>
-              <button
-                onClick={() => setCurrentView("create-house")}
-                className={`flex-1 py-2 px-4 rounded-md text-center transition-all duration-200 ${currentView === "create-house" ? "bg-white text-blue-600 font-semibold" : "text-gray-500"}`}
-              >
-                Create House
-              </button>
+  // If authenticated, show dashboard
+  let content;
+  if (showDashboard && authToken && authUser) {
+    content = <DashboardApp user={authUser} token={authToken} />;
+  } else {
+    content = (
+      <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-purple-600 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <AuthCard description={getDescription()}>
+            {(currentView !== "forgot-password" && (currentView === "signin" || currentView === "create-house")) && (
+              <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => handleTabSwitch("signin")}
+                  className={`flex-1 py-2 px-4 rounded-md text-center transition-all duration-200 ${currentView === "signin" ? "bg-white text-blue-600 font-semibold" : "text-gray-500"}`}
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => setCurrentView("create-house")}
+                  className={`flex-1 py-2 px-4 rounded-md text-center transition-all duration-200 ${currentView === "create-house" ? "bg-white text-blue-600 font-semibold" : "text-gray-500"}`}
+                >
+                  Create House
+                </button>
+              </div>
+            )}
+            {renderContent()}
+            <div className="text-center mt-6 text-sm text-black">
+              By continuing, you agree to our <button className="underline hover:text-black">Terms of Service</button> and <button className="underline hover:text-black">Privacy Policy</button>.
             </div>
-          )}
-          {renderContent()}
-          <div className="text-center mt-6 text-sm text-black">
-            By continuing, you agree to our <button className="underline hover:text-black">Terms of Service</button> and <button className="underline hover:text-black">Privacy Policy</button>.
-          </div>
-        </AuthCard>
+          </AuthCard>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+  return content;
 }

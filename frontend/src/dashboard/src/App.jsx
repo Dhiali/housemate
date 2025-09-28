@@ -43,9 +43,9 @@ import {
   Database,
   HelpCircle
 } from 'lucide-react';
-import { useState } from 'react';
-import { useEffect } from 'react';
-import { getTasks } from '../../apiHelpers';
+import { useState, useEffect } from 'react';
+import { getTasks, getHouse } from '../../apiHelpers';
+import { updateUserBio, updateUserPhone } from '../../apiHelpers';
 import { Button } from './components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog';
@@ -65,13 +65,25 @@ import { HousemateCard } from './components/HousemateCard';
 import { BillItem } from './components/BillItem';
 import { SettingsContent } from './components/SettingsContent';
 
-export default function App() {
+export default function App({ user }) {
   console.log("App component is rendering");
   const [currentPage, setCurrentPage] = useState('Dashboard');
   // Add state for upcoming tasks view dropdown
   const [upcomingTasksView, setUpcomingTasksView] = useState('everyone');
   const [tasks, setTasks] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
+
+  // Fetch house info for signed-in user
+  const [householdSettings, setHouseholdSettings] = useState({
+    houseName: '',
+    avatar: '',
+    address: '',
+    currency: 'USD',
+    currencySymbol: '$',
+    defaultSplitMethod: 'equal',
+    taskAutoAssign: false,
+    billReminderDays: 3
+  });
 
   useEffect(() => {
     setLoadingTasks(true);
@@ -93,6 +105,31 @@ export default function App() {
       .catch(() => setTasks([]))
       .finally(() => setLoadingTasks(false));
   }, []);
+
+  useEffect(() => {
+    // Only fetch if user and user.house_id exist
+    if (user && user.house_id) {
+      getHouse(user.house_id)
+        .then(res => {
+          const house = res.data;
+          setHouseholdSettings(prev => ({
+            ...prev,
+            houseName: house.name || '',
+            avatar: house.avatar || '',
+            address: house.address || '',
+          }));
+        })
+        .catch(() => {
+          // fallback to defaults if error
+          setHouseholdSettings(prev => ({
+            ...prev,
+            houseName: '',
+            avatar: '',
+            address: '',
+          }));
+        });
+    }
+  }, [user]);
   
   const [bills, setBills] = useState([
     {
@@ -250,24 +287,35 @@ export default function App() {
   // Settings page state
   const [settingsTab, setSettingsTab] = useState('profile');
   const [profileSettings, setProfileSettings] = useState({
-    name: 'You',
-    email: 'your.email@email.com',
-    phone: '+1 (555) 321-0987',
-    bio: 'House co-admin. Manages the household dashboard and coordinates activities.',
-    preferredContact: 'email',
-    timezone: 'America/New_York',
-    language: 'en'
+  name: 'You',
+  email: 'your.email@email.com',
+  phone: '', // phone is empty by default
+  bio: '', // bio is empty by default
+  preferredContact: 'email',
+  timezone: 'America/New_York',
+  language: 'en'
   });
+
+  // Load signed-in user's bio from DB (if available)
+  useEffect(() => {
+    if (user && user.id) {
+      // getUser returns a promise
+      import('../../apiHelpers').then(({ getUser }) => {
+        getUser(user.id).then(res => {
+          const dbUser = res.data;
+          setProfileSettings(prev => ({
+            ...prev,
+            name: dbUser.name || '',
+            email: dbUser.email || '',
+            bio: dbUser.bio || '',
+            phone: dbUser.phone || ''
+          }));
+        });
+      });
+    }
+  }, [user]);
   
-  const [householdSettings, setHouseholdSettings] = useState({
-    houseName: 'Our Shared Home',
-    address: '123 Main Street, Anytown, ST 12345',
-    currency: 'USD',
-    currencySymbol: '$',
-    defaultSplitMethod: 'equal',
-    taskAutoAssign: false,
-    billReminderDays: 3
-  });
+  // householdSettings state is now declared above and fetched dynamically
   
   const [notificationSettings, setNotificationSettings] = useState({
     emailNotifications: true,
@@ -1019,8 +1067,13 @@ export default function App() {
       <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
         <div className="p-6">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
-              <Home size={16} className="text-white" />
+            <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center overflow-hidden">
+              <img
+                src={"/HouseMate logo.png"}
+                alt="HouseMate Logo"
+                className="w-8 h-8 object-contain"
+                onError={e => { e.target.onerror = null; e.target.style.display = 'none'; }}
+              />
             </div>
             <span className="font-semibold text-gray-900">HouseMate</span>
           </div>
@@ -1050,7 +1103,7 @@ export default function App() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-8 py-6">
+        <div className="bg-white border-b border-gray-200 px-8 py-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">{currentPage}</h1>
             <p className="text-gray-500 mt-1">
@@ -1062,6 +1115,19 @@ export default function App() {
               {currentPage === 'Settings' && 'Configure your household preferences'}
             </p>
           </div>
+          {/* House avatar and name on far right */}
+          {currentPage === 'Dashboard' && (
+            <div className="flex items-center space-x-3">
+              <img
+                src={householdSettings.avatar ? `data:image/png;base64,${householdSettings.avatar}` : "/HouseMate logo.png"}
+                alt="House Avatar"
+                className="w-12 h-12 rounded-full object-cover border-2 border-purple-500 shadow"
+                style={{background: 'white'}}
+                onError={e => { e.target.onerror = null; e.target.src = "/HouseMate logo.png"; }}
+              />
+              <span className="font-semibold text-lg text-gray-900">{householdSettings.houseName}</span>
+            </div>
+          )}
         </div>
 
         {/* Page Content */}
@@ -3399,13 +3465,36 @@ export default function App() {
             settingsTab={settingsTab}
             setSettingsTab={setSettingsTab}
             profileSettings={profileSettings}
-            setProfileSettings={setProfileSettings}
+            setProfileSettings={setProfileSettings} // Synchronous for input
             notificationSettings={notificationSettings}
             setNotificationSettings={setNotificationSettings}
             privacySettings={privacySettings}
             setPrivacySettings={setPrivacySettings}
             appSettings={appSettings}
             setAppSettings={setAppSettings}
+            userRole={user?.role || 'standard'}
+            onSaveProfile={async (newSettings) => {
+              // Only update DB on Save
+              if (user && user.id && typeof newSettings.name === 'string') {
+                const { updateUserName } = await import('../../apiHelpers');
+                console.log('Calling updateUserName with:', { id: user.id, name: newSettings.name });
+                await updateUserName(user.id, newSettings.name || '');
+              }
+              if (user && user.id && typeof newSettings.email === 'string') {
+                const { updateUserEmail } = await import('../../apiHelpers');
+                console.log('Calling updateUserEmail with:', { id: user.id, email: newSettings.email });
+                await updateUserEmail(user.id, newSettings.email || '');
+              }
+              if (user && user.id && typeof newSettings.bio === 'string') {
+                console.log('Calling updateUserBio with:', { id: user.id, bio: newSettings.bio });
+                await updateUserBio(user.id, newSettings.bio || '');
+              }
+              if (user && user.id && typeof newSettings.phone === 'string') {
+                console.log('Calling updateUserPhone with:', { id: user.id, phone: newSettings.phone });
+                await updateUserPhone(user.id, newSettings.phone || '');
+              }
+              setProfileSettings(newSettings);
+            }}
           />
         )}
 

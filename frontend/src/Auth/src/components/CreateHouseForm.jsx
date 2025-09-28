@@ -7,6 +7,11 @@ import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 
 export function CreateHouseForm({ onCreateHouse }) {
+  // Validation states
+  const [houseNameStatus, setHouseNameStatus] = useState(null); // 'valid', 'error', 'warning'
+  const [addressStatus, setAddressStatus] = useState(null);
+  const [avatarStatus, setAvatarStatus] = useState(null);
+  const [avatarMsg, setAvatarMsg] = useState("");
   const [houseName, setHouseName] = useState("");
   const [address, setAddress] = useState("");
   const [houseRules, setHouseRules] = useState("");
@@ -19,28 +24,44 @@ export function CreateHouseForm({ onCreateHouse }) {
   const handleAvatarChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       setAvatar(e.target.files[0]);
+      setAvatarStatus('valid');
+      setAvatarMsg('Avatar selected');
+    } else {
+      setAvatarStatus('warning');
+      setAvatarMsg('No avatar selected');
     }
   };
 
-  const handleCreateHouse = (e) => {
+  const handleCreateHouse = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
     if (!houseName || !address) {
       setError("House name and address are required.");
+      if (!houseName) setHouseNameStatus('error');
+      if (!address) setAddressStatus('error');
       return;
     }
     setLoading(true);
-    let avatarUrl = null;
+    let avatarBase64 = null;
     if (avatar) {
-      avatarUrl = avatar.name;
+      avatarBase64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          // Remove the data:image/...;base64, prefix
+          const base64 = reader.result.split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(avatar);
+      });
     }
     if (onCreateHouse) {
       onCreateHouse({
         house_name: houseName,
         address,
         house_rules: houseRules,
-        avatar: avatarUrl
+        avatar: avatarBase64
       });
     }
     setLoading(false);
@@ -57,9 +78,15 @@ export function CreateHouseForm({ onCreateHouse }) {
           type="text"
           placeholder="Enter house name"
           value={houseName}
-          onChange={(e) => setHouseName(e.target.value)}
+          onChange={e => {
+            setHouseName(e.target.value);
+            if (e.target.value.length > 1) setHouseNameStatus('valid');
+            else setHouseNameStatus('error');
+          }}
           className="bg-gray-50 border-0 rounded-lg h-12"
         />
+        {houseNameStatus === 'valid' && <div className="text-green-600 text-xs mt-1">Looks good!</div>}
+        {houseNameStatus === 'error' && <div className="text-red-500 text-xs mt-1">House name required</div>}
       </div>
 
       <div>
@@ -71,9 +98,15 @@ export function CreateHouseForm({ onCreateHouse }) {
           type="text"
           placeholder="Enter house address"
           value={address}
-          onChange={(e) => setAddress(e.target.value)}
+          onChange={e => {
+            setAddress(e.target.value);
+            if (e.target.value.length > 1) setAddressStatus('valid');
+            else setAddressStatus('error');
+          }}
           className="bg-gray-50 border-0 rounded-lg h-12"
         />
+        {addressStatus === 'valid' && <div className="text-green-600 text-xs mt-1">Looks good!</div>}
+        {addressStatus === 'error' && <div className="text-red-500 text-xs mt-1">Address required</div>}
       </div>
 
       <div>
@@ -113,6 +146,8 @@ export function CreateHouseForm({ onCreateHouse }) {
             </div>
           </label>
         </div>
+        {avatarStatus === 'valid' && <div className="text-green-600 text-xs mt-1">{avatarMsg}</div>}
+        {avatarStatus === 'warning' && <div className="text-orange-500 text-xs mt-1">{avatarMsg}</div>}
       </div>
 
       {error && <div className="text-red-500 mb-2">{error}</div>}

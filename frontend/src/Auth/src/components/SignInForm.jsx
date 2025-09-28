@@ -7,6 +7,11 @@ import { Label } from "./ui/label";
 import { Checkbox } from "./ui/checkbox";
 
 export function SignInForm({ onForgotPassword, onCreateHouse, onSignInSuccess }) {
+  // Validation states
+  const [emailStatus, setEmailStatus] = useState(null); // 'valid', 'error', 'warning'
+  const [emailMsg, setEmailMsg] = useState("");
+  const [passwordStatus, setPasswordStatus] = useState(null);
+  const [passwordMsg, setPasswordMsg] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,7 +36,10 @@ export function SignInForm({ onForgotPassword, onCreateHouse, onSignInSuccess })
       setSuccess("Login successful!");
       if (onSignInSuccess) {
         setError("");
-        onSignInSuccess();
+        // Expecting res.data.token and res.data.user (adjust if needed)
+        const token = res.data?.token;
+        const user = res.data?.user || res.data?.userData || res.data;
+        onSignInSuccess(token, user);
       }
     } catch (err) {
       console.log("Login error:", err);
@@ -42,7 +50,7 @@ export function SignInForm({ onForgotPassword, onCreateHouse, onSignInSuccess })
   };
 
   return (
-    <div className="space-y-6">
+  <div className="space-y-6">
       <div>
         <Label htmlFor="email" className="text-sm text-gray-700 mb-2 block">
           Email Address
@@ -52,9 +60,21 @@ export function SignInForm({ onForgotPassword, onCreateHouse, onSignInSuccess })
           type="email"
           placeholder="Enter your email"
           value={email}
-          onChange={e => setEmail(e.target.value)}
+          onChange={e => {
+            setEmail(e.target.value);
+            const emailVal = e.target.value;
+            if (!emailVal.match(/^[^@\s]+@[^@\s]+\.[^@\s]+$/)) {
+              setEmailStatus('error');
+              setEmailMsg('Invalid email format');
+            } else {
+              setEmailStatus('valid');
+              setEmailMsg('Email format valid');
+            }
+          }}
           className="bg-gray-50 border-0 rounded-lg h-12"
         />
+        {emailStatus === 'valid' && <div className="text-green-600 text-xs mt-1">{emailMsg}</div>}
+        {emailStatus === 'error' && <div className="text-red-500 text-xs mt-1">{emailMsg}</div>}
       </div>
        <div>
         <Label htmlFor="password" className="text-sm text-gray-700 mb-2 block">
@@ -66,9 +86,21 @@ export function SignInForm({ onForgotPassword, onCreateHouse, onSignInSuccess })
             type={showPassword ? "text" : "password"}
             placeholder="Enter your password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={e => {
+              setPassword(e.target.value);
+              const val = e.target.value;
+              if (val.length < 6) {
+                setPasswordStatus('error');
+                setPasswordMsg('Password too short');
+              } else {
+                setPasswordStatus('valid');
+                setPasswordMsg('Password length ok');
+              }
+            }}
             className="bg-gray-50 border-0 rounded-lg h-12 pr-12"
           />
+          {passwordStatus === 'valid' && <div className="text-green-600 text-xs mt-1">{passwordMsg}</div>}
+          {passwordStatus === 'error' && <div className="text-red-500 text-xs mt-1">{passwordMsg}</div>}
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}

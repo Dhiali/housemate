@@ -1,3 +1,12 @@
+export const updateUserName = (id, name) => {
+  console.log('updateUserName called with:', { id, name });
+  return API.put(`/users/${id}/name`, { name });
+};
+
+export const updateUserEmail = (id, email) => {
+  console.log('updateUserEmail called with:', { id, email });
+  return API.put(`/users/${id}/email`, { email });
+};
 export const login = (data) => API.post('/login', data);
 // Auth
 export const register = (user) => API.post('/register', user);
@@ -19,6 +28,15 @@ export const getUsers = () => API.get("/users");
 export const getUser = (id) => API.get(`/users/${id}`);
 export const addUser = (user) => API.post("/users", user);
 export const updateUser = (id, data) => API.put(`/users/${id}`, data);
+export const updateUserBio = (id, bio) => {
+  console.log('updateUserBio called with:', { id, bio });
+  return API.put(`/users/${id}/bio`, { bio });
+};
+
+export const updateUserPhone = (id, phone) => {
+  console.log('updateUserPhone called with:', { id, phone });
+  return API.put(`/users/${id}/phone`, { phone });
+};
 export const deleteUser = (id) => API.delete(`/users/${id}`);
 
 // Tasks

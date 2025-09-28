@@ -33,7 +33,9 @@ export function SettingsContent({
   privacySettings,
   setPrivacySettings,
   appSettings,
-  setAppSettings
+  setAppSettings,
+  userRole,
+  onSaveProfile
 }) {
   return (
     <div className="flex-1 flex">
@@ -149,6 +151,35 @@ export function SettingsContent({
                     onChange={(e) => setProfileSettings({...profileSettings, email: e.target.value})}
                   />
                 </div>
+                <div className="col-span-2">
+                  <Label htmlFor="profilePhone">Phone Number</Label>
+                  <Input
+                    id="profilePhone"
+                    type="tel"
+                    value={profileSettings.phone || ''}
+                    onChange={(e) => {
+                      let value = e.target.value;
+                      // If field is empty and user starts typing, auto-add '+27'
+                      if (!profileSettings.phone && value && !value.startsWith('+27')) {
+                        value = '+27' + value.replace(/^\+?/, '');
+                      }
+                      // Prevent removing '+27' prefix
+                      if (!value.startsWith('+27')) {
+                        value = '+27';
+                      }
+                      setProfileSettings({ ...profileSettings, phone: value });
+                    }}
+                    placeholder="+27..."
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label className="font-medium text-gray-900">Role</Label>
+                  <div className="mt-1">
+                    <span className="inline-block px-3 py-1 rounded bg-purple-100 text-purple-700 text-sm font-semibold border border-purple-200">
+                      {userRole === 'admin' ? 'Administrator' : userRole === 'standard' ? 'Standard' : userRole === 'read-only' ? 'Read-only' : userRole}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               <div>
@@ -162,9 +193,23 @@ export function SettingsContent({
                 />
               </div>
 
-              <div className="flex justify-end">
-                <Button className="bg-purple-600 hover:bg-purple-700">
+              <div className="flex justify-end space-x-3">
+                <Button className="bg-purple-600 hover:bg-purple-700" onClick={async () => {
+                  console.log('Save Changes clicked, bio value:', profileSettings.bio);
+                  if (typeof onSaveProfile === 'function') {
+                    await onSaveProfile(profileSettings);
+                  } else if (typeof setProfileSettings === 'function') {
+                    setProfileSettings(profileSettings);
+                  }
+                }}>
                   Save Changes
+                </Button>
+                <Button variant="outline" className="text-red-600 border-red-300" onClick={() => {
+                  localStorage.removeItem('authToken');
+                  localStorage.removeItem('authUser');
+                  window.location.reload();
+                }}>
+                  Logout
                 </Button>
               </div>
             </div>

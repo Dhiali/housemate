@@ -9,6 +9,15 @@ import { Checkbox } from "./ui/checkbox";
 
 // Accept onSignUpSuccess prop
 export function SignUpForm({ onCreateHouseMateAccount, houseId, onSignUpSuccess }) {
+  // Validation states
+  const [firstNameStatus, setFirstNameStatus] = useState(null); // 'valid', 'error', 'warning'
+  const [lastNameStatus, setLastNameStatus] = useState(null);
+  const [emailStatus, setEmailStatus] = useState(null);
+  const [emailMsg, setEmailMsg] = useState("");
+  const [passwordStatus, setPasswordStatus] = useState(null);
+  const [passwordMsg, setPasswordMsg] = useState("");
+  const [confirmStatus, setConfirmStatus] = useState(null);
+  const [confirmMsg, setConfirmMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -22,6 +31,7 @@ export function SignUpForm({ onCreateHouseMateAccount, houseId, onSignUpSuccess 
   const [agreeToTerms, setAgreeToTerms] = useState(false);
 
   const handleRegister = (e) => {
+  // ...existing code...
     e.preventDefault();
     setError("");
     setSuccess("");
@@ -52,7 +62,7 @@ export function SignUpForm({ onCreateHouseMateAccount, houseId, onSignUpSuccess 
   };
 
   return (
-    <div className="space-y-6">
+  <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="firstName" className="text-sm text-gray-700 mb-2 block">
@@ -63,9 +73,15 @@ export function SignUpForm({ onCreateHouseMateAccount, houseId, onSignUpSuccess 
             type="text"
             placeholder="Enter your first name"
             value={firstName}
-            onChange={e => setFirstName(e.target.value)}
+            onChange={e => {
+              setFirstName(e.target.value);
+              if (e.target.value.length > 1) setFirstNameStatus('valid');
+              else setFirstNameStatus('error');
+            }}
             className="bg-gray-50 border-0 rounded-lg h-12"
           />
+          {firstNameStatus === 'valid' && <div className="text-green-600 text-xs mt-1">Looks good!</div>}
+          {firstNameStatus === 'error' && <div className="text-red-500 text-xs mt-1">First name required</div>}
         </div>
         <div>
           <Label htmlFor="lastName" className="text-sm text-gray-700 mb-2 block">
@@ -76,9 +92,15 @@ export function SignUpForm({ onCreateHouseMateAccount, houseId, onSignUpSuccess 
             type="text"
             placeholder="Enter your last name"
             value={lastName}
-            onChange={e => setLastName(e.target.value)}
+            onChange={e => {
+              setLastName(e.target.value);
+              if (e.target.value.length > 1) setLastNameStatus('valid');
+              else setLastNameStatus('error');
+            }}
             className="bg-gray-50 border-0 rounded-lg h-12"
           />
+          {lastNameStatus === 'valid' && <div className="text-green-600 text-xs mt-1">Looks good!</div>}
+          {lastNameStatus === 'error' && <div className="text-red-500 text-xs mt-1">Last name required</div>}
         </div>
       </div>
       <div>
@@ -90,9 +112,38 @@ export function SignUpForm({ onCreateHouseMateAccount, houseId, onSignUpSuccess 
           type="email"
           placeholder="Enter your email"
           value={email}
-          onChange={e => setEmail(e.target.value)}
+          onChange={async e => {
+            setEmail(e.target.value);
+            // Simple email format check
+            const emailVal = e.target.value;
+            if (!emailVal.match(/^[^@\s]+@[^@\s]+\.[^@\s]+$/)) {
+              setEmailStatus('error');
+              setEmailMsg('Invalid email format');
+            } else {
+              // Check uniqueness (simulate API call)
+              setEmailStatus('warning');
+              setEmailMsg('Checking email...');
+              try {
+                const res = await fetch('http://localhost:3000/users');
+                const users = await res.json();
+                if (users.some(u => u.email === emailVal)) {
+                  setEmailStatus('error');
+                  setEmailMsg('Email already taken');
+                } else {
+                  setEmailStatus('valid');
+                  setEmailMsg('Email is available');
+                }
+              } catch {
+                setEmailStatus('warning');
+                setEmailMsg('Could not verify email');
+              }
+            }
+          }}
           className="bg-gray-50 border-0 rounded-lg h-12"
         />
+        {emailStatus === 'valid' && <div className="text-green-600 text-xs mt-1">{emailMsg}</div>}
+        {emailStatus === 'error' && <div className="text-red-500 text-xs mt-1">{emailMsg}</div>}
+        {emailStatus === 'warning' && <div className="text-orange-500 text-xs mt-1">{emailMsg}</div>}
       </div>
     
     <div>
@@ -105,9 +156,26 @@ export function SignUpForm({ onCreateHouseMateAccount, houseId, onSignUpSuccess 
             type={showPassword ? "text" : "password"}
             placeholder="Enter your password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={e => {
+              setPassword(e.target.value);
+              // Password strength check
+              const val = e.target.value;
+              if (val.length < 6) {
+                setPasswordStatus('error');
+                setPasswordMsg('Password too short');
+              } else if (!val.match(/[A-Z]/) || !val.match(/[0-9]/)) {
+                setPasswordStatus('warning');
+                setPasswordMsg('Add a capital letter and a number');
+              } else {
+                setPasswordStatus('valid');
+                setPasswordMsg('Strong password');
+              }
+            }}
             className="bg-gray-50 border-0 rounded-lg h-12 pr-12"
           />
+          {passwordStatus === 'valid' && <div className="text-green-600 text-xs mt-1">{passwordMsg}</div>}
+          {passwordStatus === 'error' && <div className="text-red-500 text-xs mt-1">{passwordMsg}</div>}
+          {passwordStatus === 'warning' && <div className="text-orange-500 text-xs mt-1">{passwordMsg}</div>}
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
@@ -128,9 +196,23 @@ export function SignUpForm({ onCreateHouseMateAccount, houseId, onSignUpSuccess 
             type={showConfirmPassword ? "text" : "password"}
             placeholder="Confirm your password"
             value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
+            onChange={e => {
+              setConfirmPassword(e.target.value);
+              if (e.target.value === password && e.target.value.length > 0) {
+                setConfirmStatus('valid');
+                setConfirmMsg('Passwords match');
+              } else if (e.target.value.length === 0) {
+                setConfirmStatus(null);
+                setConfirmMsg('');
+              } else {
+                setConfirmStatus('error');
+                setConfirmMsg('Passwords do not match');
+              }
+            }}
             className="bg-gray-50 border-0 rounded-lg h-12 pr-12"
           />
+          {confirmStatus === 'valid' && <div className="text-green-600 text-xs mt-1">{confirmMsg}</div>}
+          {confirmStatus === 'error' && <div className="text-red-500 text-xs mt-1">{confirmMsg}</div>}
           <button
             type="button"
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
