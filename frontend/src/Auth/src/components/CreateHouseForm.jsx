@@ -37,7 +37,7 @@ export function CreateHouseForm({ onCreateHouse }) {
     }
     if (onCreateHouse) {
       onCreateHouse({
-        name: houseName,
+        house_name: houseName,
         address,
         house_rules: houseRules,
         avatar: avatarUrl

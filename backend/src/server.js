@@ -42,44 +42,46 @@ app.post('/register', async (req, res) => {
     phone = null,
     preferred_contact = 'email',
     avatar = null,
-    house_id,
     address = null,
-    house_rules = null
+    house_rules = null,
+    house_name = null // Expect house_name from frontend
   } = req.body;
-  if (!email || !password || !name || !surname || !house_id) {
+  if (!email || !password || !name || !surname) {
+    console.error('Register error: missing required fields', { name, surname, email, password });
     return res.status(400).json({ error: 'Missing required fields' });
   }
   try {
     // Check if user exists
     const [existing] = await new Promise((resolve, reject) => {
       db.query('SELECT id FROM users WHERE email = ?', [email], (err, results) => {
-        if (err) reject(err);
-        else resolve(results);
+        if (err) {
+          console.error('Register error: DB select', err);
+          reject(err);
+        } else resolve(results);
       });
     });
     if (existing) {
+      console.error('Register error: Email already registered', email);
       return res.status(409).json({ error: 'Email already registered' });
     }
     // Hash password
     const hashed = await bcrypt.hash(password, 10);
-    // Check if this is the first user for the house
-    const [houseUsers] = await new Promise((resolve, reject) => {
-      db.query('SELECT COUNT(*) as count FROM users WHERE house_id = ?', [house_id], (err, results) => {
-        if (err) reject(err);
-        else resolve(results);
-      });
+    // Insert user only
+    const userId = await new Promise((resolve, reject) => {
+      db.query(
+        `INSERT INTO users (name, surname, email, password, bio, phone, preferred_contact, avatar, role, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'admin', 'active')`,
+        [name, surname, email, hashed, bio, phone, preferred_contact, avatar],
+        (err, results) => {
+          if (err) {
+            console.error('Register error: DB insert user', err);
+            reject(err);
+          } else resolve(results.insertId);
+        }
+      );
     });
-    const role = houseUsers.count === 0 ? 'admin' : 'standard';
-    // Insert user
-    db.query(
-      `INSERT INTO users (name, surname, email, password, bio, phone, preferred_contact, avatar, role, house_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
-      [name, surname, email, hashed, bio, phone, preferred_contact, avatar, role, house_id],
-      (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: 'User registered!', id: results.insertId, role });
-      }
-    );
+    res.json({ message: 'User registered!', user_id: userId });
   } catch (err) {
+    console.error('Register error: General', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -106,7 +108,16 @@ app.post('/houses', (req, res) => {
     [name, address, house_rules, avatar, created_by],
     (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
-      res.json({ message: "House created!", id: results.insertId });
+      const houseId = results.insertId;
+      // Update the user to set their house_id to the new house's ID
+      db.query(
+        "UPDATE users SET house_id = ? WHERE id = ?",
+        [houseId, created_by],
+        (err2) => {
+          if (err2) return res.status(500).json({ error: err2.message });
+          res.json({ message: "House created!", id: houseId });
+        }
+      );
     }
   );
 });

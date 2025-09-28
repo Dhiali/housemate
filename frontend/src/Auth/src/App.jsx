@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { register } from "../../apiHelpers";
 import { AuthCard } from "./components/AuthCard.jsx";
 import { SignInForm } from "./components/SignInForm.jsx";
 import { SignUpForm } from "./components/SignUpForm.jsx";
@@ -25,41 +26,48 @@ export default function App() {
   };
 
   const handleCreateHouseMateAccount = (userData) => {
-    setPendingUser(userData);
-    setShowCreateHouseForm(true);
-    setCurrentView("create-house");
+    // Debug: log userData before sending
+    console.log('Register user payload:', userData);
+    register(userData)
+      .then(res => {
+        const userId = res.data?.id || res.data?.user_id;
+        if (userId) {
+          setPendingUser({ ...userData, id: userId });
+          setShowCreateHouseForm(true);
+          setCurrentView("create-house");
+        } else {
+          // Handle error: user not created
+          alert("User registration failed. Please try again.");
+        }
+      })
+      .catch(err => {
+        console.error('Error registering user:', err);
+        alert("User registration failed. Please try again.");
+      });
   };
 
   const handleCreateHouse = async (houseData) => {
-    // Create user first, then house with user ID, then update user with house ID
+    // Use /houses endpoint to create house and link to user
     if (pendingUser) {
       try {
-        const userRes = await addUser(pendingUser);
-        const userId = userRes.data?.id || userRes.data?.user?.id;
-        if (userId) {
-          const houseRes = await addHouse({ ...houseData, created_by: userId });
-          console.log('House creation response:', houseRes.data);
-          let houseId = null;
-          if (houseRes.data) {
-            if (houseRes.data.id) houseId = houseRes.data.id;
-            else if (houseRes.data.house && houseRes.data.house.id) houseId = houseRes.data.house.id;
-            else if (houseRes.data.insertId) houseId = houseRes.data.insertId;
-          }
-          if (houseId) {
-            const updateUrl = `/users/${userId}`;
-            const updatePayload = { house_id: houseId };
-            console.log('Updating user:', updateUrl, updatePayload);
-            await updateUser(userId, updatePayload);
-          } else {
-            console.error('Could not extract houseId from response:', houseRes.data);
-          }
+        const { name, avatar, ...houseDataRest } = houseData;
+        const housePayload = {
+          name: houseDataRest.house_name,
+          address: houseDataRest.address,
+          house_rules: houseDataRest.house_rules,
+          created_by: pendingUser.id
+        };
+        if (avatar) {
+          housePayload.avatar = avatar;
         }
+        console.log('House payload:', housePayload);
+        const res = await addHouse(housePayload);
+        console.log('House creation response:', res.data);
         setShowDashboard(true);
         setShowCreateHouseForm(false);
         setPendingUser(null);
       } catch (err) {
-        // Handle error (optional: show error message)
-        console.error('Error creating user/house:', err);
+        console.error('Error creating house:', err);
       }
     }
   };
