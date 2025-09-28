@@ -22,7 +22,7 @@ export function CreateHouseForm({ onCreateHouse }) {
     }
   };
 
-  const handleCreateHouse = async (e) => {
+  const handleCreateHouse = (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
@@ -31,30 +31,17 @@ export function CreateHouseForm({ onCreateHouse }) {
       return;
     }
     setLoading(true);
-    try {
-      let avatarUrl = null;
-      if (avatar) {
-        // Simulate upload, replace with real upload logic if needed
-        avatarUrl = avatar.name;
-      }
-      const res = await addHouse({
+    let avatarUrl = null;
+    if (avatar) {
+      avatarUrl = avatar.name;
+    }
+    if (onCreateHouse) {
+      onCreateHouse({
         name: houseName,
         address,
         house_rules: houseRules,
-        avatar: avatarUrl,
-        created_by: 1 // TODO: Replace with actual user id after registration
+        avatar: avatarUrl
       });
-      console.log('House creation response:', res.data);
-      setSuccess("House created!");
-      setHouseName(""); setAddress(""); setHouseRules(""); setAvatar(null);
-      // Pass house id to parent (try res.data.id, fallback to res.data.house?.id)
-      if (onCreateHouse) {
-        if (res.data && res.data.id) onCreateHouse(res.data.id);
-        else if (res.data && res.data.house && res.data.house.id) onCreateHouse(res.data.house.id);
-        else onCreateHouse(null);
-      }
-    } catch (err) {
-      setError(err?.response?.data?.error || "Failed to create house.");
     }
     setLoading(false);
   };

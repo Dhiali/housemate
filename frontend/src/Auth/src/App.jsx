@@ -4,6 +4,7 @@ import { SignInForm } from "./components/SignInForm.jsx";
 import { SignUpForm } from "./components/SignUpForm.jsx";
 import { CreateHouseForm } from "./components/CreateHouseForm.jsx";
 import { ForgotPasswordForm } from "./components/ForgotPasswordForm.jsx";
+import { addUser, addHouse, updateUser } from "../../apiHelpers";
 import DashboardApp from '../../dashboard/src/App.jsx';
 import '../../dashboard/src/index.css';
 
@@ -11,8 +12,9 @@ import '../../dashboard/src/index.css';
 
 export default function App() {
   const [currentView, setCurrentView] = useState("signin");
-  const [createdHouseId, setCreatedHouseId] = useState(null);
+  const [pendingUser, setPendingUser] = useState(null);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [showCreateHouseForm, setShowCreateHouseForm] = useState(false);
 
   const handleTabSwitch = (view) => {
     setCurrentView(view);
@@ -22,13 +24,44 @@ export default function App() {
     setCurrentView("forgot-password");
   };
 
-  const handleCreateHouseMateAccount = () => {
+  const handleCreateHouseMateAccount = (userData) => {
+    setPendingUser(userData);
+    setShowCreateHouseForm(true);
     setCurrentView("create-house");
   };
 
-  const handleCreateHouse = (houseId) => {
-    setCreatedHouseId(houseId);
-    setCurrentView("signup");
+  const handleCreateHouse = async (houseData) => {
+    // Create user first, then house with user ID, then update user with house ID
+    if (pendingUser) {
+      try {
+        const userRes = await addUser(pendingUser);
+        const userId = userRes.data?.id || userRes.data?.user?.id;
+        if (userId) {
+          const houseRes = await addHouse({ ...houseData, created_by: userId });
+          console.log('House creation response:', houseRes.data);
+          let houseId = null;
+          if (houseRes.data) {
+            if (houseRes.data.id) houseId = houseRes.data.id;
+            else if (houseRes.data.house && houseRes.data.house.id) houseId = houseRes.data.house.id;
+            else if (houseRes.data.insertId) houseId = houseRes.data.insertId;
+          }
+          if (houseId) {
+            const updateUrl = `/users/${userId}`;
+            const updatePayload = { house_id: houseId };
+            console.log('Updating user:', updateUrl, updatePayload);
+            await updateUser(userId, updatePayload);
+          } else {
+            console.error('Could not extract houseId from response:', houseRes.data);
+          }
+        }
+        setShowDashboard(true);
+        setShowCreateHouseForm(false);
+        setPendingUser(null);
+      } catch (err) {
+        // Handle error (optional: show error message)
+        console.error('Error creating user/house:', err);
+      }
+    }
   };
 
   const handleBack = () => {
@@ -50,7 +83,15 @@ export default function App() {
           />
         );
       case "create-house":
-        return <CreateHouseForm onCreateHouse={handleCreateHouse} />;
+        return (
+          <>
+            {!showCreateHouseForm ? (
+              <SignUpForm onCreateHouseMateAccount={handleCreateHouseMateAccount} />
+            ) : (
+              <CreateHouseForm onCreateHouse={handleCreateHouse} />
+            )}
+          </>
+        );
       case "signup":
         return <SignUpForm houseId={createdHouseId} onCreateHouseMateAccount={handleCreateHouseMateAccount} onSignUpSuccess={() => setShowDashboard(true)} />;
       case "forgot-password":

@@ -21,7 +21,7 @@ export function SignUpForm({ onCreateHouseMateAccount, houseId, onSignUpSuccess 
   const [confirmPassword, setConfirmPassword] = useState("");
   const [agreeToTerms, setAgreeToTerms] = useState(false);
 
-  const handleRegister = async (e) => {
+  const handleRegister = (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
@@ -37,25 +37,16 @@ export function SignUpForm({ onCreateHouseMateAccount, houseId, onSignUpSuccess 
       setError("Passwords do not match.");
       return;
     }
-    if (!houseId) {
-      setError("House must be created first.");
-      return;
-    }
     setLoading(true);
-    try {
-      const res = await register({
+    // Pass user info up, do not send to backend yet
+    if (onCreateHouseMateAccount) {
+      onCreateHouseMateAccount({
         name: firstName,
         surname: lastName,
         email,
         password,
-        house_id: houseId,
         // Add other fields here as needed (bio, phone, preferred_contact, avatar)
       });
-      setSuccess("Account created! Redirecting to dashboard...");
-      setFirstName(""); setLastName(""); setEmail(""); setPassword(""); setConfirmPassword("");
-      if (onSignUpSuccess) onSignUpSuccess();
-    } catch (err) {
-      setError(err?.response?.data?.error || "Registration failed.");
     }
     setLoading(false);
   };
