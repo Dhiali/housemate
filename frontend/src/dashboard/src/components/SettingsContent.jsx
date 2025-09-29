@@ -37,6 +37,43 @@ export function SettingsContent({
   userRole,
   onSaveProfile
 }) {
+  const [avatarPreview, setAvatarPreview] = React.useState(profileSettings.avatar || null);
+  const [avatarFile, setAvatarFile] = React.useState(null);
+  const [avatarUploading, setAvatarUploading] = React.useState(false);
+  const [saveStatus, setSaveStatus] = React.useState(null); // { type: 'success'|'error', message: string }
+
+  // Show preview if avatar changes
+  React.useEffect(() => {
+    setAvatarPreview(profileSettings.avatar || null);
+  }, [profileSettings.avatar]);
+
+  // Avatar upload handler
+  async function handleAvatarChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+    setAvatarUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      // Assume user id is in profileSettings.id
+      const userId = profileSettings.id || profileSettings.userId || profileSettings.user_id;
+      if (!userId) throw new Error('User ID missing for avatar upload');
+      const res = await fetch(`http://localhost:3000/users/${userId}/avatar`, {
+        method: 'PUT',
+        body: formData
+      });
+      const data = await res.json();
+      if (data.avatar) {
+        setProfileSettings(prev => ({ ...prev, avatar: data.avatar }));
+      }
+    } catch (err) {
+      alert('Avatar upload failed: ' + err.message);
+    } finally {
+      setAvatarUploading(false);
+    }
+  }
   return (
     <div className="flex-1 flex">
       {/* Settings Sidebar */}
@@ -118,13 +155,24 @@ export function SettingsContent({
               <div>
                 <Label className="text-base font-medium text-gray-900 mb-4 block">Profile Picture</Label>
                 <div className="flex items-center space-x-4">
-                  <div className="w-20 h-20 bg-purple-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-2xl font-medium">YO</span>
+                  <div className="w-20 h-20 bg-purple-500 rounded-full flex items-center justify-center overflow-hidden">
+                    {avatarPreview ? (
+                      <img src={avatarPreview.startsWith('/uploads/') ? `http://localhost:3000${avatarPreview}` : avatarPreview} alt="Avatar" className="w-full h-full object-cover rounded-full" />
+                    ) : (
+                      <span className="text-white text-2xl font-medium">YO</span>
+                    )}
                   </div>
                   <div className="flex-1">
-                    <Button variant="outline" size="sm">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id="avatarInput"
+                      style={{ display: 'none' }}
+                      onChange={handleAvatarChange}
+                    />
+                    <Button variant="outline" size="sm" onClick={() => document.getElementById('avatarInput').click()} disabled={avatarUploading}>
                       <Camera size={16} className="mr-2" />
-                      Change Photo
+                      {avatarUploading ? 'Uploading...' : 'Change Photo'}
                     </Button>
                     <p className="text-sm text-gray-500 mt-1">JPG, PNG up to 5MB</p>
                   </div>
@@ -132,6 +180,7 @@ export function SettingsContent({
               </div>
 
               <Separator />
+
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -161,7 +210,7 @@ export function SettingsContent({
                       let value = e.target.value;
                       // If field is empty and user starts typing, auto-add '+27'
                       if (!profileSettings.phone && value && !value.startsWith('+27')) {
-                        value = '+27' + value.replace(/^\+?/, '');
+                        value = '+27' + value.replace(/^?/, '');
                       }
                       // Prevent removing '+27' prefix
                       if (!value.startsWith('+27')) {
@@ -182,6 +231,23 @@ export function SettingsContent({
                 </div>
               </div>
 
+              <div className="col-span-2">
+                <Label htmlFor="preferredContact">Preferred Contact Method</Label>
+                <Select
+                  id="preferredContact"
+                  value={profileSettings.preferredContact || 'email'}
+                  onValueChange={(value) => setProfileSettings({ ...profileSettings, preferredContact: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="email">Email</SelectItem>
+                    <SelectItem value="phone">Phone Number</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div>
                 <Label htmlFor="profileBio">Bio</Label>
                 <Textarea
@@ -194,16 +260,29 @@ export function SettingsContent({
               </div>
 
               <div className="flex justify-end space-x-3">
-                <Button className="bg-purple-600 hover:bg-purple-700" onClick={async () => {
-                  console.log('Save Changes clicked, bio value:', profileSettings.bio);
-                  if (typeof onSaveProfile === 'function') {
-                    await onSaveProfile(profileSettings);
-                  } else if (typeof setProfileSettings === 'function') {
-                    setProfileSettings(profileSettings);
-                  }
-                }}>
-                  Save Changes
-                </Button>
+                <div className="flex flex-col items-end space-y-2 w-full">
+                  <Button className="bg-purple-600 hover:bg-purple-700" onClick={async () => {
+                    setSaveStatus(null);
+                    try {
+                      if (typeof onSaveProfile === 'function') {
+                        await onSaveProfile(profileSettings);
+                      } else if (typeof setProfileSettings === 'function') {
+                        setProfileSettings(profileSettings);
+                      }
+                      setSaveStatus({ type: 'success', message: 'Changes saved successfully!' });
+                    } catch (err) {
+                      setSaveStatus({ type: 'error', message: err?.message || 'Error saving changes.' });
+                    }
+                    setTimeout(() => setSaveStatus(null), 3000);
+                  }}>
+                    Save Changes
+                  </Button>
+                  {saveStatus && (
+                    <div className={`mt-2 text-sm px-3 py-2 rounded transition-all ${saveStatus.type === 'success' ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-red-100 text-red-700 border border-red-300'}`}>
+                      {saveStatus.message}
+                    </div>
+                  )}
+                </div>
                 <Button variant="outline" className="text-red-600 border-red-300" onClick={() => {
                   localStorage.removeItem('authToken');
                   localStorage.removeItem('authUser');

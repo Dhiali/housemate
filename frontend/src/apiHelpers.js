@@ -1,3 +1,7 @@
+export const updateUserPreferredContact = (id, preferred_contact) => {
+  console.log('updateUserPreferredContact called with:', { id, preferred_contact });
+  return API.put(`/users/${id}/preferred_contact`, { preferred_contact });
+};
 export const updateUserName = (id, name) => {
   console.log('updateUserName called with:', { id, name });
   return API.put(`/users/${id}/name`, { name });

@@ -308,7 +308,10 @@ export default function App({ user }) {
             name: dbUser.name || '',
             email: dbUser.email || '',
             bio: dbUser.bio || '',
-            phone: dbUser.phone || ''
+            phone: dbUser.phone || '',
+            preferredContact: dbUser.preferred_contact || 'email',
+            avatar: dbUser.avatar || null,
+            id: dbUser.id // Ensure id is present for upload
           }));
         });
       });
@@ -3477,23 +3480,36 @@ export default function App({ user }) {
               // Only update DB on Save
               if (user && user.id && typeof newSettings.name === 'string') {
                 const { updateUserName } = await import('../../apiHelpers');
-                console.log('Calling updateUserName with:', { id: user.id, name: newSettings.name });
                 await updateUserName(user.id, newSettings.name || '');
               }
               if (user && user.id && typeof newSettings.email === 'string') {
                 const { updateUserEmail } = await import('../../apiHelpers');
-                console.log('Calling updateUserEmail with:', { id: user.id, email: newSettings.email });
                 await updateUserEmail(user.id, newSettings.email || '');
               }
               if (user && user.id && typeof newSettings.bio === 'string') {
-                console.log('Calling updateUserBio with:', { id: user.id, bio: newSettings.bio });
                 await updateUserBio(user.id, newSettings.bio || '');
               }
               if (user && user.id && typeof newSettings.phone === 'string') {
-                console.log('Calling updateUserPhone with:', { id: user.id, phone: newSettings.phone });
                 await updateUserPhone(user.id, newSettings.phone || '');
               }
-              setProfileSettings(newSettings);
+              if (user && user.id && typeof newSettings.preferredContact === 'string') {
+                const { updateUserPreferredContact } = await import('../../apiHelpers');
+                await updateUserPreferredContact(user.id, newSettings.preferredContact);
+              }
+              // After saving, reload user profile from backend to ensure latest preferredContact
+              if (user && user.id) {
+                const { getUser } = await import('../../apiHelpers');
+                const res = await getUser(user.id);
+                const dbUser = res.data;
+                setProfileSettings(prev => ({
+                  ...prev,
+                  name: dbUser.name || '',
+                  email: dbUser.email || '',
+                  bio: dbUser.bio || '',
+                  phone: dbUser.phone || '',
+                  preferredContact: dbUser.preferred_contact || 'email'
+                }));
+              }
             }}
           />
         )}

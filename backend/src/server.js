@@ -1,12 +1,11 @@
-
-
-
-
 import express from 'express';
 import db from './db.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import cors from 'cors';
+import path from 'path';
+import fs from 'fs';
+import upload from './avatarUpload.js';
 
 const app = express();
 app.use(cors({ origin: "http://localhost:5173" }));
@@ -203,6 +202,24 @@ app.delete('/schedule/:id', (req, res) => {
   });
 });
 // ...existing code...
+// Serve uploaded avatars statically
+app.use('/uploads/avatars', express.static(path.join(process.cwd(), 'uploads', 'avatars')));
+// Avatar upload endpoint
+app.put('/users/:id/avatar', upload.single('avatar'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+  // Convert image buffer to base64 data URL
+  const mimeType = req.file.mimetype;
+  const base64 = req.file.buffer.toString('base64');
+  const dataUrl = `data:${mimeType};base64,${base64}`;
+  db.query('UPDATE users SET avatar = ? WHERE id = ?', [dataUrl, req.params.id], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ message: 'Avatar updated!', avatar: dataUrl });
+  });
+});
 // Example: Get all tasks
 app.get('/tasks', (req, res) => {
   db.query("SELECT * FROM tasks", (err, results) => {
@@ -278,6 +295,35 @@ app.put('/users/:id/bio', (req, res) => {
     });
   });
 });
+
+// Update user preferred contact method
+app.put('/users/:id/preferred_contact', (req, res) => {
+  const { preferred_contact } = req.body;
+  console.log('PUT /users/:id/preferred_contact', req.params.id, 'preferred_contact:', JSON.stringify(preferred_contact));
+  if (isNaN(Number(req.params.id))) {
+    console.error('Preferred contact update failed: id is not a number', req.params.id);
+    return res.status(400).json({ error: 'User id must be a number' });
+  }
+  if (preferred_contact !== 'email' && preferred_contact !== 'phone') {
+    console.log('Preferred contact update failed: invalid value', preferred_contact);
+    return res.status(400).json({ error: 'Preferred contact must be "email" or "phone"' });
+  }
+  db.query('UPDATE users SET preferred_contact = ? WHERE id = ?', [preferred_contact, req.params.id], (err, results) => {
+    if (err) {
+      console.error('Preferred contact update DB error:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    db.query('SELECT preferred_contact FROM users WHERE id = ?', [req.params.id], (err2, results2) => {
+      if (err2) {
+        console.error('Preferred contact select DB error:', err2);
+        return res.status(500).json({ error: err2.message });
+      }
+      res.json({ message: 'Preferred contact updated!', preferred_contact: results2[0]?.preferred_contact });
+    });
+  });
+});
+
+
 // Update user name
 app.put('/users/:id/name', (req, res) => {
   const { name } = req.body;
