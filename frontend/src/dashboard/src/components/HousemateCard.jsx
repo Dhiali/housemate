@@ -22,6 +22,7 @@ export function HousemateCard({
   preferredContact,
   showContact,
   bio,
+  isHouseCreator,
   onContactToggle,
   onViewDetails
 }) {
@@ -76,12 +77,22 @@ export function HousemateCard({
           <div>
             <h3 className="font-semibold text-gray-900">{name}</h3>
             <div className="flex items-center space-x-2 mt-1">
-              <Badge 
-                variant="outline" 
-                className={`text-xs ${getRoleColor(role)}`}
-              >
-                {role.charAt(0).toUpperCase() + role.slice(1)}
-              </Badge>
+              <div className="flex items-center space-x-1">
+                <Badge 
+                  variant="outline" 
+                  className={`text-xs ${getRoleColor(role)}`}
+                >
+                  {role.charAt(0).toUpperCase() + role.slice(1)}
+                </Badge>
+                {isHouseCreator && (
+                  <Badge 
+                    variant="outline" 
+                    className="text-xs bg-yellow-100 text-yellow-700 border-yellow-200"
+                  >
+                    Creator
+                  </Badge>
+                )}
+              </div>
               <span className="text-sm text-gray-500">
                 {isOnline ? 'Online' : `Last seen ${getTimeAgo(lastActive)}`}
               </span>
@@ -103,20 +114,36 @@ export function HousemateCard({
       </div>
 
       {/* Bio */}
-      <p className="text-sm text-gray-600 mb-4">{bio}</p>
+      <p className="text-sm text-gray-600 mb-4">
+        {bio && bio.trim() ? bio : (
+          <span className="text-gray-400 italic">No bio available</span>
+        )}
+      </p>
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4 mb-4">
         <div className="text-center">
-          <div className="text-lg font-semibold text-gray-900">{tasksCompleted}</div>
+          <div className="text-lg font-semibold text-gray-900">
+            {tasksCompleted > 0 ? tasksCompleted : (
+              <span className="text-gray-400 text-sm">N/A</span>
+            )}
+          </div>
           <div className="text-xs text-gray-500">Tasks Done</div>
         </div>
         <div className="text-center">
-          <div className="text-lg font-semibold text-gray-900">{tasksAssigned}</div>
+          <div className="text-lg font-semibold text-gray-900">
+            {tasksAssigned > 0 ? tasksAssigned : (
+              <span className="text-gray-400 text-sm">N/A</span>
+            )}
+          </div>
           <div className="text-xs text-gray-500">Pending</div>
         </div>
         <div className="text-center">
-          <div className="text-lg font-semibold text-gray-900">R{totalBillsPaid.toFixed(0)}</div>
+          <div className="text-lg font-semibold text-gray-900">
+            {totalBillsPaid > 0 ? `R${totalBillsPaid.toFixed(0)}` : (
+              <span className="text-gray-400 text-sm">N/A</span>
+            )}
+          </div>
           <div className="text-xs text-gray-500">Bills Paid</div>
         </div>
       </div>
@@ -150,8 +177,12 @@ export function HousemateCard({
             </div>
             <div className="flex items-center space-x-2 text-sm">
               <Phone size={14} className="text-gray-400" />
-              <span className="text-gray-600">{phone}</span>
-              {preferredContact === 'phone' && (
+              <span className="text-gray-600">
+                {phone && phone.trim() ? phone : (
+                  <span className="text-gray-400 italic">Not provided</span>
+                )}
+              </span>
+              {preferredContact === 'phone' && phone && phone.trim() && (
                 <Badge variant="secondary" className="text-xs">Preferred</Badge>
               )}
             </div>

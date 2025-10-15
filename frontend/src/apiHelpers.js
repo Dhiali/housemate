@@ -30,6 +30,7 @@ export const deleteHouse = (id) => API.delete(`/houses/${id}`);
 // Users
 export const getUsers = () => API.get("/users");
 export const getUser = (id) => API.get(`/users/${id}`);
+export const getHousemates = (houseId) => API.get(`/houses/${houseId}/users`);
 export const addUser = (user) => API.post("/users", user);
 export const updateUser = (id, data) => API.put(`/users/${id}`, data);
 export const updateUserBio = (id, bio) => {

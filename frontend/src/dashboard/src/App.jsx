@@ -41,10 +41,11 @@ import {
   Volume2,
   Lock,
   Database,
-  HelpCircle
+  HelpCircle,
+  UserPlus
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { getTasks, getHouse } from '../../apiHelpers';
+import { getTasks, getHouse, getHousemates } from '../../apiHelpers';
 import { updateUserBio, updateUserPhone } from '../../apiHelpers';
 import { Button } from './components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
@@ -77,7 +78,8 @@ export default function App({ user }) {
   const [householdSettings, setHouseholdSettings] = useState({
     houseName: '',
     avatar: '',
-    address: '',
+    address: '123 Maple Street, Downtown, City 12345',
+    houseRules: 'Keep common areas clean\nNo shoes in bedrooms\nQuiet hours: 10 PM - 7 AM\nTake turns with dishes\nGuests must be approved by all housemates',
     currency: 'USD',
     currencySymbol: '$',
     defaultSplitMethod: 'equal',
@@ -117,6 +119,7 @@ export default function App({ user }) {
             houseName: house.name || '',
             avatar: house.avatar || '',
             address: house.address || '',
+            houseRules: house.house_rules || '',
           }));
         })
         .catch(() => {
@@ -126,8 +129,50 @@ export default function App({ user }) {
             houseName: '',
             avatar: '',
             address: '',
+            houseRules: '',
           }));
         });
+    }
+  }, [user]);
+
+  // Fetch housemates when user has house_id
+  useEffect(() => {
+    if (user && user.house_id) {
+      setLoadingHousemates(true);
+      getHousemates(user.house_id)
+        .then(res => {
+          const housematesData = res.data.map(housemate => ({
+            id: housemate.id,
+            name: `${housemate.name} ${housemate.surname || ''}`.trim(),
+            initials: `${housemate.name?.[0] || ''}${housemate.surname?.[0] || ''}`.toUpperCase(),
+            email: housemate.email,
+            phone: housemate.phone || '',
+            role: housemate.role,
+            bio: housemate.bio || '',
+            avatar: housemate.avatar,
+            lastActive: housemate.last_login,
+            isOnline: false, // We'd need to implement real-time status
+            joinedDate: housemate.created_at,
+            preferredContact: housemate.preferred_contact || 'email',
+            showContact: true, // Default to true, could be a user setting
+            isHouseCreator: Boolean(housemate.is_house_creator), // Mark the house creator
+            // These would come from other API calls in a real app
+            tasksCompleted: 0,
+            tasksAssigned: 0,
+            totalBillsPaid: 0,
+            avatarBg: `bg-${['blue', 'purple', 'green', 'orange', 'pink', 'indigo'][housemate.id % 6]}-500`
+          }));
+          setHousemates(housematesData);
+        })
+        .catch(error => {
+          console.error('Error fetching housemates:', error);
+          setHousemates([]);
+        })
+        .finally(() => {
+          setLoadingHousemates(false);
+        });
+    } else {
+      setHousemates([]);
     }
   }, [user]);
   
@@ -276,6 +321,8 @@ export default function App({ user }) {
   const [isInviteHousemateOpen, setIsInviteHousemateOpen] = useState(false);
   const [isManageRolesOpen, setIsManageRolesOpen] = useState(false);
   const [selectedActivityType, setSelectedActivityType] = useState(null);
+  const [housemates, setHousemates] = useState([]);
+  const [loadingHousemates, setLoadingHousemates] = useState(false);
   const [inviteFormData, setInviteFormData] = useState({
     name: '',
     email: '',
@@ -283,7 +330,7 @@ export default function App({ user }) {
     sendInviteEmail: true,
     personalMessage: ''
   });
-  
+
   // Settings page state
   const [settingsTab, setSettingsTab] = useState('profile');
   const [profileSettings, setProfileSettings] = useState({
@@ -393,82 +440,7 @@ export default function App({ user }) {
   ];
 
   const locations = ['Kitchen', 'Living Room', 'Bathroom', 'Bedroom', 'Office', 'Garage', 'Garden', 'Other'];
-  const housemates = ['Sarah M.', 'Mike R.', 'Alex K.', 'You'];
-  
-  const housemateProfiles = [
-    {
-      id: 1,
-      name: 'Sarah Mitchell',
-      initials: 'SM',
-      email: 'sarah.mitchell@email.com',
-      phone: '+1 (555) 123-4567',
-      role: 'admin',
-      avatarBg: 'bg-blue-500',
-      lastActive: '2024-12-15T14:30:00Z',
-      isOnline: true,
-      joinedDate: '2024-01-15',
-      tasksCompleted: 23,
-      tasksAssigned: 5,
-      totalBillsPaid: 1250.75,
-      preferredContact: 'email',
-      showContact: true,
-      bio: 'House admin and organizer. Loves keeping everything tidy and on schedule.'
-    },
-    {
-      id: 2,
-      name: 'Mike Rodriguez',
-      initials: 'MR',
-      email: 'mike.rodriguez@email.com',
-      phone: '+1 (555) 987-6543',
-      role: 'standard',
-      avatarBg: 'bg-orange-500',
-      lastActive: '2024-12-14T09:15:00Z',
-      isOnline: false,
-      joinedDate: '2024-02-01',
-      tasksCompleted: 18,
-      tasksAssigned: 3,
-      totalBillsPaid: 890.25,
-      preferredContact: 'phone',
-      showContact: true,
-      bio: 'Great cook and always helps with grocery shopping. Works from home most days.'
-    },
-    {
-      id: 3,
-      name: 'Alex Kim',
-      initials: 'AK',
-      email: 'alex.kim@email.com',
-      phone: '+1 (555) 456-7890',
-      role: 'standard',
-      avatarBg: 'bg-green-500',
-      lastActive: '2024-12-13T18:45:00Z',
-      isOnline: false,
-      joinedDate: '2024-03-10',
-      tasksCompleted: 15,
-      tasksAssigned: 2,
-      totalBillsPaid: 675.50,
-      preferredContact: 'email',
-      showContact: false,
-      bio: 'Tech enthusiast who handles all our smart home setup and wifi issues.'
-    },
-    {
-      id: 4,
-      name: 'You',
-      initials: 'YO',
-      email: 'your.email@email.com',
-      phone: '+1 (555) 321-0987',
-      role: 'admin',
-      avatarBg: 'bg-purple-500',
-      lastActive: '2024-12-15T16:00:00Z',
-      isOnline: true,
-      joinedDate: '2024-01-01',
-      tasksCompleted: 20,
-      tasksAssigned: 4,
-      totalBillsPaid: 1100.00,
-      preferredContact: 'email',
-      showContact: true,
-      bio: 'House co-admin. Manages the household dashboard and coordinates activities.'
-    }
-  ];
+
   
   const paymentMethods = [
     { value: 'cash', label: 'Cash' },
@@ -1003,9 +975,14 @@ export default function App({ user }) {
 
   const handleRoleChange = (housemateId, newRole) => {
     // In a real app, this would update the backend
-    const housemate = housemateProfiles.find(h => h.id === housemateId);
+    const housemate = housemates.find(h => h.id === housemateId);
     if (housemate) {
       console.log(`Changing ${housemate.name}'s role from ${housemate.role} to ${newRole}`);
+      
+      // Update local state
+      setHousemates(prev => prev.map(h => 
+        h.id === housemateId ? { ...h, role: newRole } : h
+      ));
       
       // Show confirmation (in a real app, you'd show a toast notification)
       alert(`${housemate.name}'s role has been updated to ${newRole.charAt(0).toUpperCase() + newRole.slice(1)}`);
@@ -1055,7 +1032,7 @@ export default function App({ user }) {
       'read-only': 0
     };
 
-    housemateProfiles.forEach(housemate => {
+    housemates.forEach(housemate => {
       if (stats.hasOwnProperty(housemate.role)) {
         stats[housemate.role]++;
       }
@@ -1065,20 +1042,20 @@ export default function App({ user }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="h-screen min-h-0 bg-gray-50 flex overflow-hidden">
       {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
+  <div className="w-64 bg-white border-r border-gray-200 flex flex-col sticky top-0 h-screen flex-none overflow-hidden">
         <div className="p-6">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center overflow-hidden">
+            <div className="w-14 h-14 bg-purple-600 rounded-xl flex items-center justify-center overflow-hidden">
               <img
                 src={"/HouseMate logo.png"}
                 alt="HouseMate Logo"
-                className="w-8 h-8 object-contain"
+                className="w-12 h-12 object-contain"
                 onError={e => { e.target.onerror = null; e.target.style.display = 'none'; }}
               />
             </div>
-            <span className="font-semibold text-gray-900">HouseMate</span>
+            <span className="font-bold text-2xl text-gray-900">HouseMate</span>
           </div>
         </div>
         
@@ -1104,7 +1081,7 @@ export default function App({ user }) {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col h-full min-h-0 overflow-y-auto">
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-8 py-6 flex items-center justify-between">
           <div>
@@ -1167,6 +1144,42 @@ export default function App({ user }) {
                   icon={<AlertTriangle size={20} />}
                   variant="danger"
                 />
+              </div>
+            </div>
+
+            {/* House Information Section */}
+            <div className="px-8 pb-4">
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">House Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* House Address */}
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <MapPin size={16} className="text-gray-500" />
+                      <h4 className="font-medium text-gray-700">Address</h4>
+                    </div>
+                    <p className="text-gray-600 pl-6">
+                      {householdSettings.address || 'No address set'}
+                    </p>
+                  </div>
+                  
+                  {/* House Rules */}
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <FileText size={16} className="text-gray-500" />
+                      <h4 className="font-medium text-gray-700">House Rules</h4>
+                    </div>
+                    <div className="text-gray-600 pl-6">
+                      {householdSettings.houseRules ? (
+                        <div className="whitespace-pre-wrap text-sm">
+                          {householdSettings.houseRules}
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 italic">No house rules set</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1233,7 +1246,7 @@ export default function App({ user }) {
                       </SelectTrigger>
                       <SelectContent>
                         {housemates.map((housemate) => (
-                          <SelectItem key={housemate} value={housemate}>{housemate}</SelectItem>
+                          <SelectItem key={housemate.id} value={housemate.name}>{housemate.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -1565,6 +1578,17 @@ export default function App({ user }) {
                         iconBg="bg-orange-500"
                       />
                     </button>
+                    <button 
+                      onClick={() => setIsInviteHousemateOpen(true)}
+                      className="w-full text-left"
+                    >
+                      <QuickAction
+                        icon={<UserPlus size={16} className="text-white" />}
+                        title="Invite New Housemate"
+                        description="Send invitation to join house"
+                        iconBg="bg-blue-500"
+                      />
+                    </button>
                   </div>
                 </div>
 
@@ -1695,7 +1719,7 @@ export default function App({ user }) {
                             </SelectTrigger>
                             <SelectContent>
                               {housemates.map((housemate) => (
-                                <SelectItem key={housemate} value={housemate}>{housemate}</SelectItem>
+                                <SelectItem key={housemate.id} value={housemate.name}>{housemate.name}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -2523,7 +2547,7 @@ export default function App({ user }) {
                         </SelectTrigger>
                         <SelectContent>
                           {housemates.map((housemate) => (
-                            <SelectItem key={housemate} value={housemate}>{housemate}</SelectItem>
+                            <SelectItem key={housemate.id} value={housemate.name}>{housemate.name}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -2727,106 +2751,10 @@ export default function App({ user }) {
                   <p className="text-gray-500 mt-1">Manage your household members and their information</p>
                 </div>
                 <div className="flex space-x-3">
-                  <Dialog open={isInviteHousemateOpen} onOpenChange={setIsInviteHousemateOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline">
-                        <Plus size={16} className="mr-2" />
-                        Invite Housemate
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Invite New Housemate</DialogTitle>
-                        <DialogDescription>
-                          Send an invitation to join your household
-                        </DialogDescription>
-                      </DialogHeader>
-                      
-                      <div className="space-y-4 py-4">
-                        <div>
-                          <Label htmlFor="invite-name">Full Name</Label>
-                          <Input
-                            id="invite-name"
-                            value={inviteFormData.name}
-                            onChange={(e) => setInviteFormData({...inviteFormData, name: e.target.value})}
-                            placeholder="e.g., John Smith"
-                          />
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="invite-email">Email Address</Label>
-                          <Input
-                            id="invite-email"
-                            type="email"
-                            value={inviteFormData.email}
-                            onChange={(e) => setInviteFormData({...inviteFormData, email: e.target.value})}
-                            placeholder="john.smith@email.com"
-                          />
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="invite-role">Role</Label>
-                          <Select value={inviteFormData.role} onValueChange={(value) => setInviteFormData({...inviteFormData, role: value})}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="standard">
-                                <div className="flex flex-col items-start">
-                                  <span className="font-medium">Standard</span>
-                                  <span className="text-xs text-gray-500">Can create tasks and bills</span>
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="admin">
-                                <div className="flex flex-col items-start">
-                                  <span className="font-medium">Admin</span>
-                                  <span className="text-xs text-gray-500">Full access to all features</span>
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="read-only">
-                                <div className="flex flex-col items-start">
-                                  <span className="font-medium">Read-only</span>
-                                  <span className="text-xs text-gray-500">View only access</span>
-                                </div>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="invite-message">Personal Message (Optional)</Label>
-                          <Textarea
-                            id="invite-message"
-                            value={inviteFormData.personalMessage}
-                            onChange={(e) => setInviteFormData({...inviteFormData, personalMessage: e.target.value})}
-                            placeholder="Add a personal welcome message..."
-                            rows={3}
-                          />
-                        </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id="send-email"
-                            checked={inviteFormData.sendInviteEmail}
-                            onCheckedChange={(checked) => setInviteFormData({...inviteFormData, sendInviteEmail: checked})}
-                          />
-                          <Label htmlFor="send-email" className="text-sm">
-                            Send invitation email immediately
-                          </Label>
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-end space-x-3">
-                        <Button variant="outline" onClick={() => setIsInviteHousemateOpen(false)}>
-                          Cancel
-                        </Button>
-                        <Button onClick={handleInviteHousemate} className="bg-purple-600 hover:bg-purple-700">
-                          <Mail size={16} className="mr-2" />
-                          Send Invitation
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                  <Button variant="outline" onClick={() => setIsInviteHousemateOpen(true)}>
+                    <Plus size={16} className="mr-2" />
+                    Invite Housemate
+                  </Button>
                   
                   <Dialog open={isManageRolesOpen} onOpenChange={setIsManageRolesOpen}>
                     <DialogTrigger asChild>
@@ -2936,12 +2864,15 @@ export default function App({ user }) {
                               <div className="flex justify-between items-center">
                                 <h3 className="font-semibold text-gray-900">Member Role Management</h3>
                                 <div className="text-sm text-gray-500">
-                                  {housemateProfiles.length} total members
+                                  {housemates.length} total members
                                 </div>
                               </div>
                               
                               <div className="space-y-3">
-                                {housemateProfiles.map((housemate) => (
+                                {loadingHousemates ? (
+                                  <div className="text-center py-4 text-gray-500">Loading members...</div>
+                                ) : (
+                                  housemates.map((housemate) => (
                                   <div key={housemate.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                                     <div className="flex items-center space-x-4">
                                       <div className="relative">
@@ -2990,7 +2921,8 @@ export default function App({ user }) {
                                       )}
                                     </div>
                                   </div>
-                                ))}
+                                  ))
+                                )}
                               </div>
                             </div>
                           </TabsContent>
@@ -3071,14 +3003,24 @@ export default function App({ user }) {
               </div>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {housemateProfiles.map((housemate) => (
-                  <HousemateCard
-                    key={housemate.id}
-                    {...housemate}
-                    onContactToggle={toggleContactVisibility}
-                    onViewDetails={handleHousemateClick}
-                  />
-                ))}
+                {loadingHousemates ? (
+                  <div className="col-span-full flex justify-center py-8">
+                    <div className="text-gray-500">Loading housemates...</div>
+                  </div>
+                ) : housemates.length === 0 ? (
+                  <div className="col-span-full text-center py-8">
+                    <div className="text-gray-500">No housemates found.</div>
+                  </div>
+                ) : (
+                  housemates.map((housemate) => (
+                    <HousemateCard
+                      key={housemate.id}
+                      {...housemate}
+                      onContactToggle={toggleContactVisibility}
+                      onViewDetails={handleHousemateClick}
+                    />
+                  ))
+                )}
               </div>
             </div>
 
@@ -3094,7 +3036,7 @@ export default function App({ user }) {
                       <div className="text-sm text-purple-700">Full access to all features</div>
                     </div>
                     <Badge className="bg-purple-100 text-purple-700 border-purple-200">
-                      2 members
+                      {housemates.filter(h => h.role === 'admin').length} members
                     </Badge>
                   </div>
                   
@@ -3104,7 +3046,7 @@ export default function App({ user }) {
                       <div className="text-sm text-blue-700">Can create tasks and bills</div>
                     </div>
                     <Badge className="bg-blue-100 text-blue-700 border-blue-200">
-                      2 members
+                      {housemates.filter(h => h.role === 'standard').length} members
                     </Badge>
                   </div>
                   
@@ -3114,9 +3056,21 @@ export default function App({ user }) {
                       <div className="text-sm text-gray-700">View only access</div>
                     </div>
                     <Badge className="bg-gray-100 text-gray-700 border-gray-200">
-                      0 members
+                      {housemates.filter(h => h.role === 'read-only').length} members
                     </Badge>
                   </div>
+                  
+                  {housemates.filter(h => h.isHouseCreator).length > 0 && (
+                    <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                      <div>
+                        <div className="font-medium text-yellow-900">House Creator</div>
+                        <div className="text-sm text-yellow-700">Original house creator</div>
+                      </div>
+                      <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">
+                        {housemates.filter(h => h.isHouseCreator).length} member
+                      </Badge>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -3210,7 +3164,12 @@ export default function App({ user }) {
                     {/* Bio */}
                     <div>
                       <Label className="text-sm font-medium text-gray-900">About</Label>
-                      <p className="text-sm text-gray-600 mt-1">{selectedHousemate.bio}</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {selectedHousemate.bio && selectedHousemate.bio.trim() ? 
+                          selectedHousemate.bio : 
+                          <span className="text-gray-400 italic">No bio available</span>
+                        }
+                      </p>
                     </div>
 
                     {/* Stats Grid */}
@@ -3225,7 +3184,12 @@ export default function App({ user }) {
                               : 'bg-green-50 border-green-200 hover:bg-green-100'
                           }`}
                         >
-                          <div className="text-2xl font-semibold text-green-700">{selectedHousemate.tasksCompleted}</div>
+                          <div className="text-2xl font-semibold text-green-700">
+                            {selectedHousemate.tasksCompleted > 0 ? 
+                              selectedHousemate.tasksCompleted : 
+                              <span className="text-gray-400 text-lg">N/A</span>
+                            }
+                          </div>
                           <div className="text-sm text-green-600">Tasks Completed</div>
                           <div className="text-xs text-green-500 mt-1">Click to view details</div>
                         </button>
@@ -3237,7 +3201,12 @@ export default function App({ user }) {
                               : 'bg-yellow-50 border-yellow-200 hover:bg-yellow-100'
                           }`}
                         >
-                          <div className="text-2xl font-semibold text-yellow-700">{selectedHousemate.tasksAssigned}</div>
+                          <div className="text-2xl font-semibold text-yellow-700">
+                            {selectedHousemate.tasksAssigned > 0 ? 
+                              selectedHousemate.tasksAssigned : 
+                              <span className="text-gray-400 text-lg">N/A</span>
+                            }
+                          </div>
                           <div className="text-sm text-yellow-600">Tasks Pending</div>
                           <div className="text-xs text-yellow-500 mt-1">Click to view details</div>
                         </button>
@@ -3249,7 +3218,12 @@ export default function App({ user }) {
                               : 'bg-blue-50 border-blue-200 hover:bg-blue-100'
                           }`}
                         >
-                          <div className="text-2xl font-semibold text-blue-700">${selectedHousemate.totalBillsPaid.toFixed(0)}</div>
+                          <div className="text-2xl font-semibold text-blue-700">
+                            {selectedHousemate.totalBillsPaid > 0 ? 
+                              `$${selectedHousemate.totalBillsPaid.toFixed(0)}` : 
+                              <span className="text-gray-400 text-lg">N/A</span>
+                            }
+                          </div>
                           <div className="text-sm text-blue-600">Bills Contributed</div>
                           <div className="text-xs text-blue-500 mt-1">Click to view details</div>
                         </button>
@@ -3402,7 +3376,12 @@ export default function App({ user }) {
                               <Phone size={16} className="text-gray-400" />
                               <div>
                                 <div className="text-sm font-medium text-gray-900">Phone</div>
-                                <div className="text-sm text-gray-600">{selectedHousemate.phone}</div>
+                                <div className="text-sm text-gray-600">
+                                  {selectedHousemate.phone && selectedHousemate.phone.trim() ? 
+                                    selectedHousemate.phone : 
+                                    <span className="text-gray-400 italic">Not provided</span>
+                                  }
+                                </div>
                               </div>
                             </div>
                             {selectedHousemate.preferredContact === 'phone' && (
@@ -3476,6 +3455,14 @@ export default function App({ user }) {
             appSettings={appSettings}
             setAppSettings={setAppSettings}
             userRole={user?.role || 'standard'}
+            householdSettings={householdSettings}
+            setHouseholdSettings={setHouseholdSettings}
+            onSaveHouseholdSettings={async (newHouseholdSettings) => {
+              // In a real app, this would update the backend
+              console.log('Saving household settings:', newHouseholdSettings);
+              // For now, just update local state
+              setHouseholdSettings(newHouseholdSettings);
+            }}
             onSaveProfile={async (newSettings) => {
               // Only update DB on Save
               if (user && user.id && typeof newSettings.name === 'string') {
@@ -3523,6 +3510,103 @@ export default function App({ user }) {
           </div>
         )}
       </div>
+      
+      {/* Global Modals - Always Available */}
+      <Dialog open={isInviteHousemateOpen} onOpenChange={setIsInviteHousemateOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Invite New Housemate</DialogTitle>
+            <DialogDescription>
+              Send an invitation to join your household
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="invite-name">Full Name</Label>
+              <Input
+                id="invite-name"
+                value={inviteFormData.name}
+                onChange={(e) => setInviteFormData({...inviteFormData, name: e.target.value})}
+                placeholder="e.g., John Smith"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="invite-email">Email Address</Label>
+              <Input
+                id="invite-email"
+                type="email"
+                value={inviteFormData.email}
+                onChange={(e) => setInviteFormData({...inviteFormData, email: e.target.value})}
+                placeholder="john.smith@email.com"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="invite-role">Role</Label>
+              <Select value={inviteFormData.role} onValueChange={(value) => setInviteFormData({...inviteFormData, role: value})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="standard">
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium">Standard</span>
+                      <span className="text-xs text-gray-500">Can create tasks and bills</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="admin">
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium">Admin</span>
+                      <span className="text-xs text-gray-500">Full access to all features</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="read-only">
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium">Read-only</span>
+                      <span className="text-xs text-gray-500">View only access</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="invite-message">Personal Message (Optional)</Label>
+              <Textarea
+                id="invite-message"
+                value={inviteFormData.personalMessage}
+                onChange={(e) => setInviteFormData({...inviteFormData, personalMessage: e.target.value})}
+                placeholder="Add a personal welcome message..."
+                rows={3}
+              />
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="send-email"
+                checked={inviteFormData.sendInviteEmail}
+                onCheckedChange={(checked) => setInviteFormData({...inviteFormData, sendInviteEmail: checked})}
+              />
+              <Label htmlFor="send-email" className="text-sm">
+                Send invitation email immediately
+              </Label>
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-3">
+            <Button variant="outline" onClick={() => setIsInviteHousemateOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleInviteHousemate} className="bg-purple-600 hover:bg-purple-700">
+              <Mail size={16} className="mr-2" />
+              Send Invitation
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }

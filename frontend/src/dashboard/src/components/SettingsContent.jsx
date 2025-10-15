@@ -13,7 +13,11 @@ import {
   Moon,
   Key,
   MessageCircle,
-  Volume2
+  Volume2,
+  Home,
+  MapPin,
+  FileText,
+  Pencil
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -35,7 +39,10 @@ export function SettingsContent({
   appSettings,
   setAppSettings,
   userRole,
-  onSaveProfile
+  onSaveProfile,
+  householdSettings,
+  setHouseholdSettings,
+  onSaveHouseholdSettings
 }) {
   const [avatarPreview, setAvatarPreview] = React.useState(profileSettings.avatar || null);
   const [avatarFile, setAvatarFile] = React.useState(null);
@@ -108,6 +115,19 @@ export function SettingsContent({
             <Shield size={20} />
             <span className="font-medium">Privacy</span>
           </button>
+          
+          {/* House Information tab - Admin only */}
+          {userRole === 'admin' && (
+            <button
+              onClick={() => setSettingsTab('house')}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                settingsTab === 'house' ? 'bg-purple-100 text-purple-600' : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Home size={20} />
+              <span className="font-medium">House Information</span>
+            </button>
+          )}
           
           <button
             onClick={() => setSettingsTab('appearance')}
@@ -400,6 +420,143 @@ export function SettingsContent({
                 <Button className="bg-purple-600 hover:bg-purple-700">
                   Save Changes
                 </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* House Information Settings - Admin Only */}
+        {settingsTab === 'house' && userRole === 'admin' && (
+          <div className="max-w-2xl">
+            <div className="mb-8">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-2">House Information</h2>
+              <p className="text-gray-600">Manage your household details, address, and rules</p>
+            </div>
+
+            <div className="space-y-6">
+              {/* House Avatar and Name */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-6">House Avatar & Name</h3>
+                
+                <div className="flex items-start space-x-6">
+                  {/* Avatar Section */}
+                  <div className="flex flex-col items-center space-y-3">
+                    <div className="relative">
+                      <img
+                        src={householdSettings.avatar ? `data:image/png;base64,${householdSettings.avatar}` : "/HouseMate logo.png"}
+                        alt="House Avatar"
+                        className="w-24 h-24 rounded-full object-cover border-2 border-gray-200"
+                        onError={e => { e.target.onerror = null; e.target.src = "/HouseMate logo.png"; }}
+                      />
+                    </div>
+                    <div className="text-center">
+                      <input
+                        type="file"
+                        id="house-avatar-upload"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file && file.type.startsWith('image/')) {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                              setHouseholdSettings(prev => ({
+                                ...prev,
+                                avatar: e.target.result.split(',')[1] // Remove data:image/...;base64, prefix
+                              }));
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="hidden"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => document.getElementById('house-avatar-upload').click()}
+                      >
+                        <Camera size={16} className="mr-2" />
+                        Change Avatar
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* House Name */}
+                  <div className="flex-1 space-y-2">
+                    <Label htmlFor="house-name">House Name</Label>
+                    <Input
+                      id="house-name"
+                      value={householdSettings.houseName}
+                      onChange={(e) => setHouseholdSettings(prev => ({
+                        ...prev,
+                        houseName: e.target.value
+                      }))}
+                      placeholder="Enter house name"
+                    />
+                    <p className="text-sm text-gray-500">This appears in the dashboard header and notifications</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* House Address */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex items-center space-x-2 mb-4">
+                  <MapPin size={20} className="text-gray-500" />
+                  <h3 className="text-lg font-semibold text-gray-900">House Address</h3>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="house-address">Address</Label>
+                  <Textarea
+                    id="house-address"
+                    value={householdSettings.address}
+                    onChange={(e) => setHouseholdSettings(prev => ({
+                      ...prev,
+                      address: e.target.value
+                    }))}
+                    placeholder="Enter your house address"
+                    rows={3}
+                  />
+                  <p className="text-sm text-gray-500">Full address including street, city, state, and postal code</p>
+                </div>
+              </div>
+
+              {/* House Rules */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex items-center space-x-2 mb-4">
+                  <FileText size={20} className="text-gray-500" />
+                  <h3 className="text-lg font-semibold text-gray-900">House Rules</h3>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="house-rules">Rules & Guidelines</Label>
+                  <Textarea
+                    id="house-rules"
+                    value={householdSettings.houseRules}
+                    onChange={(e) => setHouseholdSettings(prev => ({
+                      ...prev,
+                      houseRules: e.target.value
+                    }))}
+                    placeholder="Enter house rules and guidelines for all housemates"
+                    rows={6}
+                  />
+                  <p className="text-sm text-gray-500">These rules will be visible to all housemates on the dashboard</p>
+                </div>
+              </div>
+
+              {/* Save Button */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex justify-end">
+                  <Button 
+                    onClick={() => {
+                      if (onSaveHouseholdSettings) {
+                        onSaveHouseholdSettings(householdSettings);
+                      }
+                    }}
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
+                    Save House Information
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

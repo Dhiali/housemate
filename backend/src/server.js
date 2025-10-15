@@ -263,6 +263,38 @@ app.get('/users/:id', (req, res) => {
   });
 });
 
+// Get users by house ID (housemates) - includes all members, admins, and house creator
+app.get('/houses/:houseId/users', (req, res) => {
+  const houseId = req.params.houseId;
+  console.log('GET /houses/:houseId/users', houseId);
+  
+  if (isNaN(Number(houseId))) {
+    return res.status(400).json({ error: 'House ID must be a number' });
+  }
+
+  // Query to get all users associated with the house:
+  // 1. Users who belong to the house (house_id = houseId)
+  // 2. The user who created the house (from houses.created_by)
+  const query = `
+    SELECT DISTINCT u.id, u.name, u.surname, u.email, u.role, u.bio, u.phone, 
+           u.preferred_contact, u.avatar, u.created_at, u.last_login,
+           CASE WHEN h.created_by = u.id THEN 1 ELSE 0 END as is_house_creator
+    FROM users u
+    LEFT JOIN houses h ON h.id = ?
+    WHERE u.house_id = ? OR u.id = h.created_by
+    ORDER BY is_house_creator DESC, u.role DESC, u.name ASC
+  `;
+
+  db.query(query, [houseId, houseId], (err, results) => {
+    if (err) {
+      console.error('Error fetching housemates:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    console.log('Housemates found:', results.length);
+    res.json(results);
+  });
+});
+
 // Update user bio
 app.put('/users/:id/bio', (req, res) => {
   const { bio } = req.body;

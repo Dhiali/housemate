@@ -1,16 +1,7 @@
 import multer from 'multer';
-import path from 'path';
 
-// Storage config: save to uploads/avatars, filename: userID-timestamp.ext
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.join(process.cwd(), 'uploads', 'avatars'));
-  },
-  filename: function (req, file, cb) {
-    const ext = path.extname(file.originalname);
-    cb(null, `${req.params.id}-${Date.now()}${ext}`);
-  }
-});
+// Use in-memory storage so we can convert to base64 and store in DB (no files on disk)
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage,
