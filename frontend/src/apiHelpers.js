@@ -72,5 +72,11 @@ export const addSchedule = (item) => API.post("/schedule", item);
 export const updateSchedule = (id, data) => API.put(`/schedule/${id}`, data);
 export const deleteSchedule = (id) => API.delete(`/schedule/${id}`);
 
+// User Statistics
+export const getUserStatistics = (userId) => API.get(`/users/${userId}/statistics`);
+export const getUserCompletedTasks = (userId) => API.get(`/users/${userId}/tasks/completed`);
+export const getUserPendingTasks = (userId) => API.get(`/users/${userId}/tasks/pending`);
+export const getUserContributedBills = (userId) => API.get(`/users/${userId}/bills/contributed`);
+
 // Recent Activities
 export const getRecentActivities = (houseId) => API.get(`/houses/${houseId}/activities`);

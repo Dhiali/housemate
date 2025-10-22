@@ -605,6 +605,146 @@ app.get('/houses/:houseId/users', (req, res) => {
   });
 });
 
+// Get user statistics (tasks and bills)
+app.get('/users/:userId/statistics', (req, res) => {
+  const userId = req.params.userId;
+  console.log('GET /users/:userId/statistics', userId);
+
+  if (isNaN(Number(userId))) {
+    return res.status(400).json({ error: 'User ID must be a number' });
+  }
+
+  // Get statistics in parallel
+  const tasksCompletedQuery = `
+    SELECT COUNT(*) as count FROM tasks 
+    WHERE assigned_to = ? AND status = 'completed'
+  `;
+
+  const tasksPendingQuery = `
+    SELECT COUNT(*) as count FROM tasks 
+    WHERE assigned_to = ? AND status IN ('open', 'in_progress')
+  `;
+
+  const billsContributedQuery = `
+    SELECT COUNT(*) as count FROM bills 
+    WHERE id IN (
+      SELECT DISTINCT bill_id FROM bill_share 
+      WHERE user_id = ? AND status = 'paid'
+    )
+  `;
+
+  // Execute all queries
+  db.query(tasksCompletedQuery, [userId], (err1, completedResults) => {
+    if (err1) {
+      console.error('Error fetching completed tasks:', err1);
+      return res.status(500).json({ error: err1.message });
+    }
+
+    db.query(tasksPendingQuery, [userId], (err2, pendingResults) => {
+      if (err2) {
+        console.error('Error fetching pending tasks:', err2);
+        return res.status(500).json({ error: err2.message });
+      }
+
+      db.query(billsContributedQuery, [userId], (err3, billsResults) => {
+        if (err3) {
+          console.error('Error fetching bills contributed:', err3);
+          return res.status(500).json({ error: err3.message });
+        }
+
+        const statistics = {
+          tasksCompleted: completedResults[0].count,
+          tasksPending: pendingResults[0].count,
+          billsContributed: billsResults[0].count
+        };
+
+        console.log('User statistics:', statistics);
+        res.json(statistics);
+      });
+    });
+  });
+});
+
+// Get user's completed tasks
+app.get('/users/:userId/tasks/completed', (req, res) => {
+  const userId = req.params.userId;
+  console.log('GET /users/:userId/tasks/completed', userId);
+
+  if (isNaN(Number(userId))) {
+    return res.status(400).json({ error: 'User ID must be a number' });
+  }
+
+  const query = `
+    SELECT t.*, u.name as created_by_name, u.surname as created_by_surname
+    FROM tasks t
+    LEFT JOIN users u ON t.created_by = u.id
+    WHERE t.assigned_to = ? AND t.status = 'completed'
+    ORDER BY t.updated_at DESC
+  `;
+
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error('Error fetching completed tasks:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(results);
+  });
+});
+
+// Get user's pending tasks
+app.get('/users/:userId/tasks/pending', (req, res) => {
+  const userId = req.params.userId;
+  console.log('GET /users/:userId/tasks/pending', userId);
+
+  if (isNaN(Number(userId))) {
+    return res.status(400).json({ error: 'User ID must be a number' });
+  }
+
+  const query = `
+    SELECT t.*, u.name as created_by_name, u.surname as created_by_surname
+    FROM tasks t
+    LEFT JOIN users u ON t.created_by = u.id
+    WHERE t.assigned_to = ? AND t.status IN ('open', 'in_progress')
+    ORDER BY t.due_date ASC, t.created_at DESC
+  `;
+
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error('Error fetching pending tasks:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(results);
+  });
+});
+
+// Get user's contributed bills
+app.get('/users/:userId/bills/contributed', (req, res) => {
+  const userId = req.params.userId;
+  console.log('GET /users/:userId/bills/contributed', userId);
+
+  if (isNaN(Number(userId))) {
+    return res.status(400).json({ error: 'User ID must be a number' });
+  }
+
+  const query = `
+    SELECT b.*, bs.amount_paid, bs.paid_date, bs.status as payment_status,
+           u.name as created_by_name, u.surname as created_by_surname
+    FROM bills b
+    JOIN bill_share bs ON b.id = bs.bill_id
+    LEFT JOIN users u ON b.created_by = u.id
+    WHERE bs.user_id = ? AND bs.status = 'paid'
+    ORDER BY bs.paid_date DESC
+  `;
+
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error('Error fetching contributed bills:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(results);
+  });
+});
+
 // Get recent activities for a house
 app.get('/houses/:houseId/activities', (req, res) => {
   const houseId = req.params.houseId;

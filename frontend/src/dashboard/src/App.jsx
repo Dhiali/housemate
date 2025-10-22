@@ -45,7 +45,7 @@ import {
   UserPlus
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { getTasks, addTask, getHouse, getHousemates } from '../../apiHelpers';
+import { getTasks, addTask, getHouse, getHousemates, getUserStatistics, getUserCompletedTasks, getUserPendingTasks, getUserContributedBills } from '../../apiHelpers';
 import { updateUserBio, updateUserPhone } from '../../apiHelpers';
 import { Button } from './components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
@@ -121,6 +121,32 @@ export default function App({ user }) {
     }
   };
 
+  // Function to fetch statistics for housemates
+  const fetchHousemateStatistics = async (housematesData) => {
+    try {
+      const updatedHousemates = await Promise.all(
+        housematesData.map(async (housemate) => {
+          try {
+            const statsResponse = await getUserStatistics(housemate.id);
+            return {
+              ...housemate,
+              tasksCompleted: statsResponse.data.tasksCompleted,
+              tasksAssigned: statsResponse.data.tasksPending, // Pending tasks are "assigned"
+              totalBillsPaid: statsResponse.data.billsContributed
+            };
+          } catch (error) {
+            console.error(`Error fetching statistics for ${housemate.name}:`, error);
+            return housemate; // Return original data if stats fetch fails
+          }
+        })
+      );
+      
+      setHousemates(updatedHousemates);
+    } catch (error) {
+      console.error('Error updating housemate statistics:', error);
+    }
+  };
+
   // Fetch tasks when user has house_id
   useEffect(() => {
     fetchTasks();
@@ -190,13 +216,16 @@ export default function App({ user }) {
             preferredContact: housemate.preferred_contact || 'email',
             showContact: housemate.show_contact_info !== undefined ? Boolean(housemate.show_contact_info) : true,
             isHouseCreator: Boolean(housemate.is_house_creator), // Mark the house creator
-            // These would come from other API calls in a real app
+            // Statistics will be fetched separately
             tasksCompleted: 0,
             tasksAssigned: 0,
             totalBillsPaid: 0,
             avatarBg: `bg-${['blue', 'purple', 'green', 'orange', 'pink', 'indigo'][housemate.id % 6]}-500`
           }));
           setHousemates(housematesData);
+          
+          // Fetch statistics for each housemate
+          fetchHousemateStatistics(housematesData);
         })
         .catch(error => {
           console.error('Error fetching housemates:', error);
@@ -253,6 +282,9 @@ export default function App({ user }) {
           avatarBg: `bg-${['blue', 'purple', 'green', 'orange', 'pink', 'indigo'][housemate.id % 6]}-500`
         }));
         setHousemates(housematesData);
+        
+        // Fetch statistics for each housemate
+        fetchHousemateStatistics(housematesData);
       } catch (error) {
         console.error('Error refreshing housemates:', error);
       } finally {
@@ -406,6 +438,12 @@ export default function App({ user }) {
   const [isInviteHousemateOpen, setIsInviteHousemateOpen] = useState(false);
   const [isManageRolesOpen, setIsManageRolesOpen] = useState(false);
   const [selectedActivityType, setSelectedActivityType] = useState(null);
+  
+  // State for housemate detailed data
+  const [housemateCompletedTasks, setHousemateCompletedTasks] = useState([]);
+  const [housematePendingTasks, setHousematePendingTasks] = useState([]);
+  const [housemateContributedBills, setHousemateContributedBills] = useState([]);
+  const [loadingHousemateDetails, setLoadingHousemateDetails] = useState(false);
   const [housemates, setHousemates] = useState([]);
   const [loadingHousemates, setLoadingHousemates] = useState(false);
   const [recentActivities, setRecentActivities] = useState([]);
@@ -965,6 +1003,9 @@ export default function App({ user }) {
     setSelectedHousemate(housemate);
     setSelectedActivityType(null); // Reset activity view when opening modal
     setIsHousemateDetailOpen(true);
+    
+    // Fetch detailed data for this housemate
+    fetchHousemateDetails(housemate.id);
   };
 
   const handleActivityClick = (activityType) => {
@@ -976,11 +1017,11 @@ export default function App({ user }) {
     // Check if there are any items for this activity type
     let hasItems = false;
     if (activityType === 'completed') {
-      hasItems = selectedHousemate.tasksCompleted > 0 && getHousemateCompletedTasks(selectedHousemate.name).length > 0;
+      hasItems = selectedHousemate.tasksCompleted > 0 && housemateCompletedTasks.length > 0;
     } else if (activityType === 'pending') {
-      hasItems = selectedHousemate.tasksAssigned > 0 && getHousematePendingTasks(selectedHousemate.name).length > 0;
+      hasItems = selectedHousemate.tasksAssigned > 0 && housematePendingTasks.length > 0;
     } else if (activityType === 'bills') {
-      hasItems = selectedHousemate.totalBillsPaid > 0 && getHousemateBillPayments(selectedHousemate.name).length > 0;
+      hasItems = selectedHousemate.totalBillsPaid > 0 && housemateContributedBills.length > 0;
     }
 
     // Only set the activity type if there are items to show
@@ -989,78 +1030,97 @@ export default function App({ user }) {
     }
   };
 
-  const getHousemateCompletedTasks = (housemateName) => {
-    // For demo purposes, we'll create some completed tasks
-    // In a real app, you'd filter from a completed tasks array
-    return [
-      {
-        id: 1,
-        title: 'Clean Kitchen',
-        description: 'Deep clean kitchen counters, sink, and appliances',
-        completedDate: '2024-12-14',
-        priority: 'HIGH PRIORITY'
-      },
-      {
-        id: 2,
-        title: 'Take Out Trash',
-        description: 'Empty all trash bins and take to curb',
-        completedDate: '2024-12-13',
-        priority: 'MEDIUM PRIORITY'
-      },
-      {
-        id: 3,
-        title: 'Vacuum Living Room',
-        description: 'Vacuum carpet and clean under furniture',
-        completedDate: '2024-12-12',
-        priority: 'LOW PRIORITY'
-      }
-    ].slice(0, housemateName === 'Sarah Mitchell' ? 3 : housemateName === 'Mike Rodriguez' ? 2 : 1);
+  // Function to fetch housemate's completed tasks
+  const fetchHousemateCompletedTasks = async (housemateId) => {
+    try {
+      const response = await getUserCompletedTasks(housemateId);
+      return response.data.map(task => ({
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        completedDate: task.updated_at ? new Date(task.updated_at).toLocaleDateString() : 'Unknown',
+        priority: task.priority ? task.priority.toUpperCase() + ' PRIORITY' : 'MEDIUM PRIORITY',
+        category: task.category,
+        location: task.location
+      }));
+    } catch (error) {
+      console.error('Error fetching completed tasks:', error);
+      return [];
+    }
   };
 
-  const getHousematePendingTasks = (housemateName) => {
-    return tasks.filter(task => task.assignedTo === housemateName || 
-      (housemateName === 'You' && task.assignedTo === 'You'));
+  // Function to fetch housemate's pending tasks
+  const fetchHousematePendingTasks = async (housemateId) => {
+    try {
+      const response = await getUserPendingTasks(housemateId);
+      return response.data.map(task => ({
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        dueDate: task.due_date ? new Date(task.due_date).toLocaleDateString() : 'No due date',
+        priority: task.priority ? task.priority.toUpperCase() + ' PRIORITY' : 'MEDIUM PRIORITY',
+        status: task.status === 'in_progress' ? 'In Progress' : 'Pending',
+        category: task.category,
+        location: task.location,
+        createdBy: task.created_by_name ? `${task.created_by_name} ${task.created_by_surname || ''}`.trim() : 'Unknown'
+      }));
+    } catch (error) {
+      console.error('Error fetching pending tasks:', error);
+      return [];
+    }
   };
 
-  const getHousemateBillPayments = (housemateName) => {
-    // For demo purposes, we'll create some bill payment records
-    // In a real app, you'd have a payments history table
-    const payments = [
-      {
-        id: 1,
-        billTitle: 'Electricity Bill',
-        amount: 45.13,
-        paidDate: '2024-12-10',
-        paymentMethod: 'Bank Transfer'
-      },
-      {
-        id: 2,
-        billTitle: 'Internet Bill',
-        amount: 22.50,
-        paidDate: '2024-12-08',
-        paymentMethod: 'Credit Card'
-      },
-      {
-        id: 3,
-        billTitle: 'Water Bill',
-        amount: 16.81,
-        paidDate: '2024-12-05',
-        paymentMethod: 'Mobile Payment'
-      },
-      {
-        id: 4,
-        billTitle: 'Grocery Shopping',
-        amount: 39.20,
-        paidDate: '2024-12-03',
-        paymentMethod: 'Cash'
-      }
-    ];
+  // Wrapper functions for compatibility with existing UI code
+  const getHousemateCompletedTasks = () => {
+    return housemateCompletedTasks;
+  };
 
-    // Return different amounts based on housemate
-    if (housemateName === 'Sarah Mitchell') return payments;
-    if (housemateName === 'Mike Rodriguez') return payments.slice(0, 3);
-    if (housemateName === 'Alex Kim') return payments.slice(0, 2);
-    return payments.slice(0, 3); // For "You"
+  const getHousematePendingTasks = () => {
+    return housematePendingTasks;
+  };
+
+  // Function to fetch housemate's contributed bills
+  const fetchHousemateContributedBills = async (housemateId) => {
+    try {
+      const response = await getUserContributedBills(housemateId);
+      return response.data.map(bill => ({
+        id: bill.id,
+        billTitle: bill.title,
+        amount: parseFloat(bill.amount_paid),
+        paidDate: bill.paid_date ? new Date(bill.paid_date).toLocaleDateString() : 'Unknown',
+        paymentMethod: bill.payment_method || 'Unknown',
+        totalAmount: parseFloat(bill.amount),
+        description: bill.description
+      }));
+    } catch (error) {
+      console.error('Error fetching contributed bills:', error);
+      return [];
+    }
+  };
+
+  // Wrapper function for compatibility with existing UI code
+  const getHousemateBillPayments = () => {
+    return housemateContributedBills;
+  };
+
+  // Function to fetch all housemate details when modal opens
+  const fetchHousemateDetails = async (housemateId) => {
+    setLoadingHousemateDetails(true);
+    try {
+      const [completedTasks, pendingTasks, contributedBills] = await Promise.all([
+        fetchHousemateCompletedTasks(housemateId),
+        fetchHousematePendingTasks(housemateId),
+        fetchHousemateContributedBills(housemateId)
+      ]);
+      
+      setHousemateCompletedTasks(completedTasks);
+      setHousematePendingTasks(pendingTasks);
+      setHousemateContributedBills(contributedBills);
+    } catch (error) {
+      console.error('Error fetching housemate details:', error);
+    } finally {
+      setLoadingHousemateDetails(false);
+    }
   };
 
   const toggleContactVisibility = (housemateId) => {
@@ -3481,7 +3541,7 @@ export default function App({ user }) {
                         <div className="max-h-80 overflow-y-auto space-y-3">
                           {selectedActivityType === 'completed' && (
                             <>
-                              {getHousemateCompletedTasks(selectedHousemate.name).map((task) => (
+                              {housemateCompletedTasks.map((task) => (
                                 <div key={task.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
                                   <div className="flex items-center space-x-3">
                                     <CheckCircle size={16} className="text-green-600" />
@@ -3500,7 +3560,7 @@ export default function App({ user }) {
                                   </div>
                                 </div>
                               ))}
-                              {getHousemateCompletedTasks(selectedHousemate.name).length === 0 && (
+                              {housemateCompletedTasks.length === 0 && (
                                 <div className="text-center py-8 text-gray-500">
                                   <CheckCircle size={32} className="mx-auto mb-2 text-gray-300" />
                                   <p className="text-sm">No completed tasks yet</p>
@@ -3511,7 +3571,7 @@ export default function App({ user }) {
 
                           {selectedActivityType === 'pending' && (
                             <>
-                              {getHousematePendingTasks(selectedHousemate.name).map((task, index) => (
+                              {housematePendingTasks.map((task, index) => (
                                 <div key={index} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                                   <div className="flex items-center space-x-3">
                                     <Clock size={16} className="text-yellow-600" />
@@ -3528,7 +3588,7 @@ export default function App({ user }) {
                                   </div>
                                 </div>
                               ))}
-                              {getHousematePendingTasks(selectedHousemate.name).length === 0 && (
+                              {housematePendingTasks.length === 0 && (
                                 <div className="text-center py-8 text-gray-500">
                                   <Clock size={32} className="mx-auto mb-2 text-gray-300" />
                                   <p className="text-sm">No pending tasks</p>
@@ -3539,7 +3599,7 @@ export default function App({ user }) {
 
                           {selectedActivityType === 'bills' && (
                             <>
-                              {getHousemateBillPayments(selectedHousemate.name).map((payment) => (
+                              {housemateContributedBills.map((payment) => (
                                 <div key={payment.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
                                   <div className="flex items-center space-x-3">
                                     <CreditCard size={16} className="text-blue-600" />
@@ -3556,7 +3616,7 @@ export default function App({ user }) {
                                   </div>
                                 </div>
                               ))}
-                              {getHousemateBillPayments(selectedHousemate.name).length === 0 && (
+                              {housemateContributedBills.length === 0 && (
                                 <div className="text-center py-8 text-gray-500">
                                   <CreditCard size={32} className="mx-auto mb-2 text-gray-300" />
                                   <p className="text-sm">No bill payments yet</p>
@@ -3570,13 +3630,13 @@ export default function App({ user }) {
                         <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                           <div className="text-sm text-gray-600">
                             {selectedActivityType === 'completed' && (
-                              <>Showing {getHousemateCompletedTasks(selectedHousemate.name).length} completed tasks</>
+                              <>Showing {housemateCompletedTasks.length} completed tasks</>
                             )}
                             {selectedActivityType === 'pending' && (
-                              <>Showing {getHousematePendingTasks(selectedHousemate.name).length} pending tasks</>
+                              <>Showing {housematePendingTasks.length} pending tasks</>
                             )}
                             {selectedActivityType === 'bills' && (
-                              <>Total contributed: ${getHousemateBillPayments(selectedHousemate.name).reduce((sum, payment) => sum + payment.amount, 0).toFixed(2)} across {getHousemateBillPayments(selectedHousemate.name).length} payments</>
+                              <>Total contributed: ${housemateContributedBills.reduce((sum, payment) => sum + payment.amount, 0).toFixed(2)} across {housemateContributedBills.length} payments</>
                             )}
                           </div>
                         </div>
