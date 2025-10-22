@@ -45,7 +45,7 @@ import {
   UserPlus
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { getTasks, getHouse, getHousemates } from '../../apiHelpers';
+import { getTasks, addTask, getHouse, getHousemates } from '../../apiHelpers';
 import { updateUserBio, updateUserPhone } from '../../apiHelpers';
 import { Button } from './components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
@@ -87,26 +87,44 @@ export default function App({ user }) {
     billReminderDays: 3
   });
 
-  useEffect(() => {
-    setLoadingTasks(true);
-    getTasks()
-      .then(res => {
-        // Map backend data to frontend format if needed
-        const mapped = res.data.map(task => ({
+  // Function to fetch tasks
+  const fetchTasks = async () => {
+    if (!user || !user.house_id) {
+      return;
+    }
+    
+    try {
+      setLoadingTasks(true);
+      const res = await getTasks(user.house_id);
+      console.log('Tasks API response:', res.data);
+      
+      // Map backend data to frontend format
+      const mapped = res.data.map(task => {
+        const categoryData = categories.find(cat => cat.id === task.category) || categories[categories.length - 1];
+        return {
           ...task,
-          // Example mapping, adjust as needed:
-          icon: <CheckSquare size={16} className="text-gray-600" />,
-          avatarInitials: task.assigned_to ? task.assigned_to.split(' ').map(n => n[0]).join('') : 'UN',
+          icon: categoryData.icon,
+          avatarInitials: task.assigned_to_name ? 
+            `${task.assigned_to_name[0]}${task.assigned_to_surname?.[0] || ''}`.toUpperCase() : 'UN',
           dueDate: task.due_date ? `Due ${new Date(task.due_date).toLocaleDateString()}` : 'No due date',
-          assignedTo: task.assigned_to,
-          priority: task.priority || 'MEDIUM PRIORITY',
-          status: task.status || 'Pending',
-        }));
-        setTasks(mapped);
-      })
-      .catch(() => setTasks([]))
-      .finally(() => setLoadingTasks(false));
-  }, []);
+          assignedTo: task.assigned_to_name ? `${task.assigned_to_name} ${task.assigned_to_surname || ''}`.trim() : 'Unknown',
+          priority: task.priority ? task.priority.toUpperCase() + ' PRIORITY' : 'MEDIUM PRIORITY',
+          status: task.status === 'completed' ? 'Completed' : task.status === 'in_progress' ? 'In Progress' : 'Pending',
+        };
+      });
+      setTasks(mapped);
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      setTasks([]);
+    } finally {
+      setLoadingTasks(false);
+    }
+  };
+
+  // Fetch tasks when user has house_id
+  useEffect(() => {
+    fetchTasks();
+  }, [user?.house_id]);
 
   useEffect(() => {
     // Only fetch if user and user.house_id exist
@@ -135,26 +153,42 @@ export default function App({ user }) {
     }
   }, [user]);
 
+  // Function to fetch recent activities
+  const fetchRecentActivities = async (houseId) => {
+    try {
+      const { getRecentActivities } = await import('../../apiHelpers');
+      const res = await getRecentActivities(houseId);
+      return res.data;
+    } catch (error) {
+      console.error('Error fetching recent activities:', error);
+      return [];
+    }
+  };
+
   // Fetch housemates when user has house_id
   useEffect(() => {
+    console.log('User object:', user);
+    console.log('User house_id:', user?.house_id);
     if (user && user.house_id) {
+      console.log('Fetching housemates for house_id:', user.house_id);
       setLoadingHousemates(true);
       getHousemates(user.house_id)
         .then(res => {
+          console.log('Housemates API response:', res.data);
           const housematesData = res.data.map(housemate => ({
             id: housemate.id,
             name: `${housemate.name} ${housemate.surname || ''}`.trim(),
             initials: `${housemate.name?.[0] || ''}${housemate.surname?.[0] || ''}`.toUpperCase(),
             email: housemate.email,
             phone: housemate.phone || '',
-            role: housemate.role,
+            role: housemate.is_house_creator ? 'admin' : housemate.role, // House creators are always admin
             bio: housemate.bio || '',
             avatar: housemate.avatar,
             lastActive: housemate.last_login,
             isOnline: false, // We'd need to implement real-time status
             joinedDate: housemate.created_at,
             preferredContact: housemate.preferred_contact || 'email',
-            showContact: true, // Default to true, could be a user setting
+            showContact: housemate.show_contact_info !== undefined ? Boolean(housemate.show_contact_info) : true,
             isHouseCreator: Boolean(housemate.is_house_creator), // Mark the house creator
             // These would come from other API calls in a real app
             tasksCompleted: 0,
@@ -166,15 +200,66 @@ export default function App({ user }) {
         })
         .catch(error => {
           console.error('Error fetching housemates:', error);
+          console.error('Full error:', error.response || error);
           setHousemates([]);
         })
         .finally(() => {
           setLoadingHousemates(false);
         });
+
+      // Also fetch recent activities
+      setLoadingActivities(true);
+      fetchRecentActivities(user.house_id)
+        .then(activities => {
+          setRecentActivities(activities);
+        })
+        .catch(error => {
+          console.error('Error fetching activities:', error);
+          setRecentActivities([]);
+        })
+        .finally(() => {
+          setLoadingActivities(false);
+        });
     } else {
       setHousemates([]);
     }
   }, [user]);
+
+  // Function to refresh housemates data
+  const refreshHousemates = async () => {
+    if (user && user.house_id) {
+      try {
+        setLoadingHousemates(true);
+        const res = await getHousemates(user.house_id);
+        const housematesData = res.data.map(housemate => ({
+          id: housemate.id,
+          name: `${housemate.name} ${housemate.surname || ''}`.trim(),
+          initials: `${housemate.name?.[0] || ''}${housemate.surname?.[0] || ''}`.toUpperCase(),
+          email: housemate.email,
+          phone: housemate.phone || '',
+          role: housemate.is_house_creator ? 'admin' : housemate.role, // House creators are always admin
+          bio: housemate.bio || '',
+          avatar: housemate.avatar,
+          lastActive: housemate.last_login,
+          isOnline: false, // We'd need to implement real-time status
+          joinedDate: housemate.created_at,
+          preferredContact: housemate.preferred_contact || 'email',
+          showContact: true, // Default to true, could be a user setting
+          isHouseCreator: Boolean(housemate.is_house_creator), // Mark the house creator
+          // These would come from other API calls in a real app
+          tasksCompleted: 0,
+          tasksAssigned: 0,
+          totalBillsPaid: 0,
+          avatarBg: `bg-${['blue', 'purple', 'green', 'orange', 'pink', 'indigo'][housemate.id % 6]}-500`
+        }));
+        setHousemates(housematesData);
+      } catch (error) {
+        console.error('Error refreshing housemates:', error);
+      } finally {
+        setLoadingHousemates(false);
+      }
+    }
+  };
   
   const [bills, setBills] = useState([
     {
@@ -270,7 +355,7 @@ export default function App({ user }) {
     dueDate: '',
     assignedTo: '',
     createdBy: 'You',
-    priority: 'MEDIUM PRIORITY'
+    priority: 'medium'
   });
   
   const [isBillFormOpen, setIsBillFormOpen] = useState(false);
@@ -323,12 +408,17 @@ export default function App({ user }) {
   const [selectedActivityType, setSelectedActivityType] = useState(null);
   const [housemates, setHousemates] = useState([]);
   const [loadingHousemates, setLoadingHousemates] = useState(false);
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [loadingActivities, setLoadingActivities] = useState(false);
   const [inviteFormData, setInviteFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
+    password: '',
+    confirmPassword: '',
     role: 'standard',
-    sendInviteEmail: true,
-    personalMessage: ''
+    personalMessage: '',
+    sendEmail: true
   });
 
   // Settings page state
@@ -359,6 +449,12 @@ export default function App({ user }) {
             preferredContact: dbUser.preferred_contact || 'email',
             avatar: dbUser.avatar || null,
             id: dbUser.id // Ensure id is present for upload
+          }));
+          
+          // Update privacy settings from database
+          setPrivacySettings(prev => ({
+            ...prev,
+            showContactInfo: dbUser.show_contact_info !== undefined ? Boolean(dbUser.show_contact_info) : true
           }));
         });
       });
@@ -414,7 +510,7 @@ export default function App({ user }) {
       description: 'Household task'
     },
     {
-      id: 'bills',
+      id: 'bills_payments',
       name: 'Bills & Payments',
       icon: <CreditCard size={20} className="text-green-600" />,
       description: 'Household task'
@@ -485,40 +581,70 @@ export default function App({ user }) {
     }
   ];
 
-  const handleSubmitTask = () => {
+  const handleSubmitTask = async () => {
     if (!taskFormData.category || !taskFormData.title || !taskFormData.assignedTo) {
+      alert('Please fill in all required fields: category, title, and assigned to.');
       return;
     }
 
-    const categoryData = categories.find(cat => cat.id === taskFormData.category);
-    const assignedPerson = housemates.find(person => person === taskFormData.assignedTo);
-    
-    const newTask = {
-      icon: categoryData?.icon || <CheckSquare size={16} className="text-gray-600" />,
-      title: taskFormData.title,
-      description: taskFormData.description,
-      assignedTo: taskFormData.assignedTo,
-      status: 'Pending',
-      dueDate: taskFormData.dueDate ? `Due ${new Date(taskFormData.dueDate).toLocaleDateString()}` : 'No due date',
-  priority: taskFormData.priority,
-      avatarInitials: assignedPerson === 'You' ? 'YO' : assignedPerson?.split(' ').map(n => n[0]).join('') || 'UN'
-    };
+    if (!user || !user.house_id) {
+      alert('User information or house ID is missing.');
+      return;
+    }
 
-    setTasks(prevTasks => [...prevTasks, newTask]);
-    
-    // Reset form
-    setTaskFormData({
-      category: '',
-      title: '',
-      description: '',
-      location: '',
-      dueDate: '',
-      assignedTo: '',
-      createdBy: 'You',
-      priority: 'MEDIUM PRIORITY'
-    });
-    
-    setIsTaskFormOpen(false);
+    try {
+      // Find the assigned housemate by name to get their ID
+      const assignedHousemate = housemates.find(hm => hm.name === taskFormData.assignedTo);
+      if (!assignedHousemate) {
+        alert('Selected housemate not found.');
+        return;
+      }
+
+      // Prepare task data for backend
+      const taskData = {
+        house_id: user.house_id,
+        title: taskFormData.title,
+        description: taskFormData.description || null,
+        category: taskFormData.category,
+        location: taskFormData.location || null,
+        due_date: taskFormData.dueDate || null,
+        priority: taskFormData.priority, // Already in correct format: 'low', 'medium', 'high'
+        assigned_to: assignedHousemate.id,
+        created_by: user.id
+      };
+
+      console.log('Creating task with data:', taskData);
+      
+      // Call API to create task
+      const response = await addTask(taskData);
+      console.log('Task created successfully:', response.data);
+
+      // Refresh tasks list
+      await fetchTasks();
+
+      // Reset form
+      setTaskFormData({
+        category: '',
+        title: '',
+        description: '',
+        location: '',
+        dueDate: '',
+        assignedTo: '',
+        createdBy: 'You',
+        priority: 'medium'
+      });
+      
+      setIsTaskFormOpen(false);
+      
+      alert('Task created successfully!');
+      
+      // Refresh housemates data to update task counts
+      refreshHousemates();
+      
+    } catch (error) {
+      console.error('Error creating task:', error);
+      alert('Failed to create task. Please try again.');
+    }
   };
 
   const handleSubmitBill = () => {
@@ -565,6 +691,9 @@ export default function App({ user }) {
     });
     
     setIsBillFormOpen(false);
+    
+    // Refresh housemates data to update bill contributions
+    refreshHousemates();
   };
 
   const handleRecordPayment = (billId) => {
@@ -615,6 +744,9 @@ export default function App({ user }) {
     });
     setSelectedBillId(null);
     setIsPaymentFormOpen(false);
+    
+    // Refresh housemates data to update bill contributions
+    refreshHousemates();
   };
 
   // Helper functions for schedule
@@ -836,7 +968,25 @@ export default function App({ user }) {
   };
 
   const handleActivityClick = (activityType) => {
-    setSelectedActivityType(selectedActivityType === activityType ? null : activityType);
+    if (selectedActivityType === activityType) {
+      setSelectedActivityType(null);
+      return;
+    }
+
+    // Check if there are any items for this activity type
+    let hasItems = false;
+    if (activityType === 'completed') {
+      hasItems = selectedHousemate.tasksCompleted > 0 && getHousemateCompletedTasks(selectedHousemate.name).length > 0;
+    } else if (activityType === 'pending') {
+      hasItems = selectedHousemate.tasksAssigned > 0 && getHousematePendingTasks(selectedHousemate.name).length > 0;
+    } else if (activityType === 'bills') {
+      hasItems = selectedHousemate.totalBillsPaid > 0 && getHousemateBillPayments(selectedHousemate.name).length > 0;
+    }
+
+    // Only set the activity type if there are items to show
+    if (hasItems) {
+      setSelectedActivityType(activityType);
+    }
   };
 
   const getHousemateCompletedTasks = (housemateName) => {
@@ -918,65 +1068,85 @@ export default function App({ user }) {
     console.log(`Toggling contact visibility for housemate ${housemateId}`);
   };
 
-  const handleInviteHousemate = () => {
-    if (!inviteFormData.name || !inviteFormData.email) {
+  const handleInviteHousemate = async () => {
+    // Validation
+    if (!inviteFormData.firstName || !inviteFormData.lastName || !inviteFormData.email || !inviteFormData.password) {
+      alert('Please fill in all required fields.');
       return;
     }
 
-    // Generate initials from name
-    const initials = inviteFormData.name
-      .split(' ')
-      .map(name => name.charAt(0).toUpperCase())
-      .join('')
-      .substring(0, 2);
+    if (inviteFormData.password !== inviteFormData.confirmPassword) {
+      alert('Passwords do not match.');
+      return;
+    }
 
-    // Generate a random avatar background color
-    const avatarColors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500', 'bg-pink-500', 'bg-indigo-500'];
-    const randomColor = avatarColors[Math.floor(Math.random() * avatarColors.length)];
+    if (inviteFormData.password.length < 6) {
+      alert('Password must be at least 6 characters long.');
+      return;
+    }
 
-    const newHousemate = {
-      id: housemateProfiles.length + 1,
-      name: inviteFormData.name,
-      initials: initials,
-      email: inviteFormData.email,
-      phone: '', // Will be updated by the user later
-  role: inviteFormData.role,
-      avatarBg: randomColor,
-      lastActive: new Date().toISOString(),
-      isOnline: false,
-      joinedDate: new Date().toISOString().split('T')[0],
-      tasksCompleted: 0,
-      tasksAssigned: 0,
-      totalBillsPaid: 0,
-      preferredContact: 'email',
-      showContact: true,
-      bio: 'New housemate - welcome to the household!'
-    };
+    if (!user || !user.house_id) {
+      alert('Unable to determine house ID. Please try again.');
+      return;
+    }
 
-    // In a real app, this would send an invitation email and create the user
-    console.log('Sending invitation to:', newHousemate);
-    console.log('Personal message:', inviteFormData.personalMessage);
-    console.log('Send email notification:', inviteFormData.sendInviteEmail);
+    try {
+      // Create new housemate in the database
+      const { register } = await import('../../apiHelpers');
+      
+      const newHousemateData = {
+        name: inviteFormData.firstName,
+        surname: inviteFormData.lastName,
+        email: inviteFormData.email,
+        password: inviteFormData.password,
+        bio: inviteFormData.personalMessage || 'New housemate - welcome to the household!',
+        phone: '', // Will be updated by the user later
+        preferred_contact: 'email',
+        avatar: null,
+        house_id: user.house_id, // Use the admin's house_id
+        role: inviteFormData.role
+      };
 
-    // Reset form
-    setInviteFormData({
-      name: '',
-      email: '',
-      role: 'standard',
-      sendInviteEmail: true,
-      personalMessage: ''
-    });
+      console.log('Creating new housemate:', newHousemateData);
+      
+      await register(newHousemateData);
 
-    setIsInviteHousemateOpen(false);
+      // Reset form
+      setInviteFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        role: 'standard',
+        personalMessage: '',
+        sendEmail: true
+      });
 
-    // Show success message (in a real app, you'd show a toast notification)
-    alert(`Invitation sent to ${inviteFormData.name} (${inviteFormData.email})`);
+      setIsInviteHousemateOpen(false);
+
+      // Refresh the housemates list
+      await refreshHousemates();
+
+      // Show success message
+      alert(`Housemate ${inviteFormData.firstName} ${inviteFormData.lastName} has been created successfully!`);
+
+    } catch (error) {
+      console.error('Error creating housemate:', error);
+      alert(`Error creating housemate: ${error.response?.data?.error || error.message}`);
+    }
   };
 
   const handleRoleChange = (housemateId, newRole) => {
     // In a real app, this would update the backend
     const housemate = housemates.find(h => h.id === housemateId);
     if (housemate) {
+      // Prevent changing house creator's role
+      if (housemate.isHouseCreator) {
+        alert('Cannot change the role of the house creator. House creators must remain as Admin.');
+        return;
+      }
+      
       console.log(`Changing ${housemate.name}'s role from ${housemate.role} to ${newRole}`);
       
       // Update local state
@@ -1366,7 +1536,7 @@ export default function App({ user }) {
                                         {...task}
                                         onStatusChange={newStatus => {
                                           setTasks(prevTasks => {
-                                            return prevTasks.map((t, i) => {
+                                            const updatedTasks = prevTasks.map((t, i) => {
                                               if (i === tasks.indexOf(task)) {
                                                 let updatedStatus = newStatus;
                                                 // If not completed and past due date, set overdue
@@ -1392,6 +1562,9 @@ export default function App({ user }) {
                                               }
                                               return t;
                                             });
+                                            // Refresh housemates data after task status change
+                                            refreshHousemates();
+                                            return updatedTasks;
                                           });
                                         }}
                                       />
@@ -1476,7 +1649,7 @@ export default function App({ user }) {
                                 <div className="w-24">
                                   <Select value={item.status}
                                     onValueChange={newStatus => {
-                                      setTasks(prevTasks => prevTasks.map(t => {
+                                      const updatedTasks = tasks.map(t => {
                                         if (t.title === item.title && t.assignedTo === item.assignedTo) {
                                           let updatedStatus = newStatus;
                                           // If not completed and past due date, set overdue
@@ -1501,7 +1674,10 @@ export default function App({ user }) {
                                           return { ...t, status: updatedStatus };
                                         }
                                         return t;
-                                      }));
+                                      });
+                                      setTasks(updatedTasks);
+                                      // Refresh housemates data after task status change
+                                      refreshHousemates();
                                     }}
                                   >
                                     <SelectTrigger>
@@ -1595,32 +1771,37 @@ export default function App({ user }) {
                 {/* Recent Activity */}
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
                   <h3 className="font-semibold text-gray-900 mb-4">Recent Activity</h3>
-                  <div className="space-y-1">
-                    <ActivityItem
-                      user="Sarah"
-                      action="completed Kitchen Cleaning"
-                      timeAgo="2 hours ago"
-                      color="bg-green-500"
-                    />
-                    <ActivityItem
-                      user="Mike"
-                      action="started Bathroom Cleaning"
-                      timeAgo="4 hours ago"
-                      color="bg-yellow-500"
-                    />
-                    <ActivityItem
-                      user="New task assigned:"
-                      action="Vacuum Living Room"
-                      timeAgo="1 day ago"
-                      color="bg-blue-500"
-                    />
-                    <ActivityItem
-                      user="Internet Bill"
-                      action="is overdue"
-                      timeAgo="2 days ago"
-                      color="bg-red-500"
-                    />
-                  </div>
+                  {loadingActivities ? (
+                    <div className="space-y-1">
+                      <div className="animate-pulse">
+                        <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                          <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
+                          <div className="flex-1">
+                            <div className="h-4 bg-gray-300 rounded w-3/4 mb-1"></div>
+                            <div className="h-3 bg-gray-300 rounded w-1/2"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : recentActivities.length > 0 ? (
+                    <div className="space-y-1">
+                      {recentActivities.map((activity) => (
+                        <ActivityItem
+                          key={activity.id}
+                          user={activity.user.name}
+                          action={activity.description.replace(activity.user.name, '').trim()}
+                          timeAgo={activity.timeAgo}
+                          color="bg-blue-500"
+                          avatar={activity.user.avatar}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>No recent activity yet</p>
+                      <p className="text-sm mt-1">Activity will appear here as housemates join and interact</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Housemates */}
@@ -1767,9 +1948,9 @@ export default function App({ user }) {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="LOW PRIORITY">Low Priority</SelectItem>
-                              <SelectItem value="MEDIUM PRIORITY">Medium Priority</SelectItem>
-                              <SelectItem value="HIGH PRIORITY">High Priority</SelectItem>
+                              <SelectItem value="low">Low Priority</SelectItem>
+                              <SelectItem value="medium">Medium Priority</SelectItem>
+                              <SelectItem value="high">High Priority</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -2898,7 +3079,7 @@ export default function App({ user }) {
                                         {housemate.role === 'read-only' ? 'Read-only' : housemate.role.charAt(0).toUpperCase() + housemate.role.slice(1)}
                                       </Badge>
                                       
-                                      {housemate.name !== 'You' && (
+                                      {housemate.name !== 'You' && !housemate.isHouseCreator && (
                                         <Select 
                                           value={housemate.role} 
                                           onValueChange={(value) => handleRoleChange(housemate.id, value)}
@@ -2914,7 +3095,15 @@ export default function App({ user }) {
                                         </Select>
                                       )}
                                       
-                                      {housemate.name === 'You' && (
+                                      {housemate.isHouseCreator && (
+                                        <div className="text-sm text-gray-500 px-3 py-1">
+                                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                                            House Creator - Admin
+                                          </Badge>
+                                        </div>
+                                      )}
+                                      
+                                      {housemate.name === 'You' && !housemate.isHouseCreator && (
                                         <div className="text-sm text-gray-500 px-3 py-1">
                                           Cannot modify own role
                                         </div>
@@ -3009,7 +3198,13 @@ export default function App({ user }) {
                   </div>
                 ) : housemates.length === 0 ? (
                   <div className="col-span-full text-center py-8">
-                    <div className="text-gray-500">No housemates found.</div>
+                    <div className="text-gray-500">
+                      No housemates found.
+                      <br />
+                      <small className="text-xs">
+                        Debug: User ID: {user?.id}, House ID: {user?.house_id}, Housemates count: {housemates.length}
+                      </small>
+                    </div>
                   </div>
                 ) : (
                   housemates.map((housemate) => (
@@ -3077,47 +3272,50 @@ export default function App({ user }) {
               {/* Recent Activity */}
               <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <h3 className="font-semibold text-gray-900 mb-4">Recent Activity</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-medium">SM</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900">Sarah completed "Clean Kitchen"</div>
-                      <div className="text-xs text-gray-500">2 hours ago</div>
-                    </div>
+                {loadingActivities ? (
+                  <div className="space-y-3">
+                    {[...Array(4)].map((_, i) => (
+                      <div key={i} className="animate-pulse">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
+                          <div className="flex-1">
+                            <div className="h-4 bg-gray-300 rounded w-3/4 mb-1"></div>
+                            <div className="h-3 bg-gray-300 rounded w-1/2"></div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-medium">MR</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900">Mike paid Electricity Bill</div>
-                      <div className="text-xs text-gray-500">1 day ago</div>
-                    </div>
+                ) : recentActivities.length > 0 ? (
+                  <div className="space-y-3">
+                    {recentActivities.map((activity) => (
+                      <div key={activity.id} className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center overflow-hidden">
+                          {activity.user.avatar && activity.user.avatar.trim() !== '' ? (
+                            <img 
+                              src={activity.user.avatar}
+                              alt={`${activity.user.name}'s profile`}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-white text-xs font-medium">
+                              {activity.user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-gray-900">{activity.description}</div>
+                          <div className="text-xs text-gray-500">{activity.timeAgo}</div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-medium">AK</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900">Alex updated contact preferences</div>
-                      <div className="text-xs text-gray-500">2 days ago</div>
-                    </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>No recent activity yet</p>
+                    <p className="text-sm mt-1">Activity will appear here as housemates join and interact</p>
                   </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-medium">YO</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900">You created new task "Vacuum Living Room"</div>
-                      <div className="text-xs text-gray-500">3 days ago</div>
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
 
@@ -3129,9 +3327,20 @@ export default function App({ user }) {
                     {selectedHousemate && (
                       <>
                         <div className="relative">
-                          <div className={`w-12 h-12 ${selectedHousemate.avatarBg} rounded-full flex items-center justify-center`}>
-                            <span className="text-white font-medium">{selectedHousemate.initials}</span>
-                          </div>
+                          {selectedHousemate.avatar && selectedHousemate.avatar.trim() !== '' ? (
+                            <img 
+                              src={selectedHousemate.avatar}
+                              alt={`${selectedHousemate.name}'s profile`}
+                              className="w-12 h-12 rounded-full object-cover border-2 border-white"
+                              onError={(e) => {
+                                console.log('Avatar failed to load for:', selectedHousemate.name, selectedHousemate.avatar);
+                              }}
+                            />
+                          ) : (
+                            <div className={`w-12 h-12 ${selectedHousemate.avatarBg} rounded-full flex items-center justify-center`}>
+                              <span className="text-white font-medium">{selectedHousemate.initials}</span>
+                            </div>
+                          )}
                           {selectedHousemate.isOnline && (
                             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
                           )}
@@ -3178,10 +3387,13 @@ export default function App({ user }) {
                       <div className="grid grid-cols-3 gap-4">
                         <button
                           onClick={() => handleActivityClick('completed')}
-                          className={`text-center p-4 rounded-lg border transition-all hover:shadow-md ${
-                            selectedActivityType === 'completed' 
-                              ? 'bg-green-100 border-green-300 shadow-md' 
-                              : 'bg-green-50 border-green-200 hover:bg-green-100'
+                          disabled={selectedHousemate.tasksCompleted === 0}
+                          className={`text-center p-4 rounded-lg border transition-all ${
+                            selectedHousemate.tasksCompleted === 0 
+                              ? 'bg-gray-50 border-gray-200 cursor-not-allowed opacity-60'
+                              : selectedActivityType === 'completed' 
+                                ? 'bg-green-100 border-green-300 shadow-md hover:shadow-lg' 
+                                : 'bg-green-50 border-green-200 hover:bg-green-100 hover:shadow-md cursor-pointer'
                           }`}
                         >
                           <div className="text-2xl font-semibold text-green-700">
@@ -3191,14 +3403,21 @@ export default function App({ user }) {
                             }
                           </div>
                           <div className="text-sm text-green-600">Tasks Completed</div>
-                          <div className="text-xs text-green-500 mt-1">Click to view details</div>
+                          {selectedHousemate.tasksCompleted > 0 ? (
+                            <div className="text-xs text-green-500 mt-1">Click to view details</div>
+                          ) : (
+                            <div className="text-xs text-gray-400 mt-1">No tasks completed</div>
+                          )}
                         </button>
                         <button
                           onClick={() => handleActivityClick('pending')}
-                          className={`text-center p-4 rounded-lg border transition-all hover:shadow-md ${
-                            selectedActivityType === 'pending' 
-                              ? 'bg-yellow-100 border-yellow-300 shadow-md' 
-                              : 'bg-yellow-50 border-yellow-200 hover:bg-yellow-100'
+                          disabled={selectedHousemate.tasksAssigned === 0}
+                          className={`text-center p-4 rounded-lg border transition-all ${
+                            selectedHousemate.tasksAssigned === 0 
+                              ? 'bg-gray-50 border-gray-200 cursor-not-allowed opacity-60'
+                              : selectedActivityType === 'pending' 
+                                ? 'bg-yellow-100 border-yellow-300 shadow-md hover:shadow-lg' 
+                                : 'bg-yellow-50 border-yellow-200 hover:bg-yellow-100 hover:shadow-md cursor-pointer'
                           }`}
                         >
                           <div className="text-2xl font-semibold text-yellow-700">
@@ -3208,14 +3427,21 @@ export default function App({ user }) {
                             }
                           </div>
                           <div className="text-sm text-yellow-600">Tasks Pending</div>
-                          <div className="text-xs text-yellow-500 mt-1">Click to view details</div>
+                          {selectedHousemate.tasksAssigned > 0 ? (
+                            <div className="text-xs text-yellow-500 mt-1">Click to view details</div>
+                          ) : (
+                            <div className="text-xs text-gray-400 mt-1">No pending tasks</div>
+                          )}
                         </button>
                         <button
                           onClick={() => handleActivityClick('bills')}
-                          className={`text-center p-4 rounded-lg border transition-all hover:shadow-md ${
-                            selectedActivityType === 'bills' 
-                              ? 'bg-blue-100 border-blue-300 shadow-md' 
-                              : 'bg-blue-50 border-blue-200 hover:bg-blue-100'
+                          disabled={selectedHousemate.totalBillsPaid === 0}
+                          className={`text-center p-4 rounded-lg border transition-all ${
+                            selectedHousemate.totalBillsPaid === 0 
+                              ? 'bg-gray-50 border-gray-200 cursor-not-allowed opacity-60'
+                              : selectedActivityType === 'bills' 
+                                ? 'bg-blue-100 border-blue-300 shadow-md hover:shadow-lg' 
+                                : 'bg-blue-50 border-blue-200 hover:bg-blue-100 hover:shadow-md cursor-pointer'
                           }`}
                         >
                           <div className="text-2xl font-semibold text-blue-700">
@@ -3225,7 +3451,11 @@ export default function App({ user }) {
                             }
                           </div>
                           <div className="text-sm text-blue-600">Bills Contributed</div>
-                          <div className="text-xs text-blue-500 mt-1">Click to view details</div>
+                          {selectedHousemate.totalBillsPaid > 0 ? (
+                            <div className="text-xs text-blue-500 mt-1">Click to view details</div>
+                          ) : (
+                            <div className="text-xs text-gray-400 mt-1">No contributions yet</div>
+                          )}
                         </button>
                       </div>
                     </div>
@@ -3496,6 +3726,18 @@ export default function App({ user }) {
                   phone: dbUser.phone || '',
                   preferredContact: dbUser.preferred_contact || 'email'
                 }));
+                
+                // Refresh housemates data to show updated bio/phone in housemate cards
+                await refreshHousemates();
+              }
+            }}
+            onSavePrivacy={async (newPrivacySettings) => {
+              if (user && user.id) {
+                const { updateUserPrivacy } = await import('../../apiHelpers');
+                await updateUserPrivacy(user.id, { show_contact_info: newPrivacySettings.showContactInfo });
+                
+                // Refresh housemates data to show updated privacy settings
+                await refreshHousemates();
               }
             }}
           />
@@ -3515,21 +3757,32 @@ export default function App({ user }) {
       <Dialog open={isInviteHousemateOpen} onOpenChange={setIsInviteHousemateOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Invite New Housemate</DialogTitle>
+            <DialogTitle>Add New Housemate</DialogTitle>
             <DialogDescription>
-              Send an invitation to join your household
+              Create a new housemate account for your household
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            <div>
-              <Label htmlFor="invite-name">Full Name</Label>
-              <Input
-                id="invite-name"
-                value={inviteFormData.name}
-                onChange={(e) => setInviteFormData({...inviteFormData, name: e.target.value})}
-                placeholder="e.g., John Smith"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="invite-firstName">First Name</Label>
+                <Input
+                  id="invite-firstName"
+                  value={inviteFormData.firstName}
+                  onChange={(e) => setInviteFormData({...inviteFormData, firstName: e.target.value})}
+                  placeholder="John"
+                />
+              </div>
+              <div>
+                <Label htmlFor="invite-lastName">Last Name</Label>
+                <Input
+                  id="invite-lastName"
+                  value={inviteFormData.lastName}
+                  onChange={(e) => setInviteFormData({...inviteFormData, lastName: e.target.value})}
+                  placeholder="Smith"
+                />
+              </div>
             </div>
             
             <div>
@@ -3541,6 +3794,29 @@ export default function App({ user }) {
                 onChange={(e) => setInviteFormData({...inviteFormData, email: e.target.value})}
                 placeholder="john.smith@email.com"
               />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="invite-password">Password</Label>
+                <Input
+                  id="invite-password"
+                  type="password"
+                  value={inviteFormData.password}
+                  onChange={(e) => setInviteFormData({...inviteFormData, password: e.target.value})}
+                  placeholder="Create password"
+                />
+              </div>
+              <div>
+                <Label htmlFor="invite-confirmPassword">Confirm Password</Label>
+                <Input
+                  id="invite-confirmPassword"
+                  type="password"
+                  value={inviteFormData.confirmPassword}
+                  onChange={(e) => setInviteFormData({...inviteFormData, confirmPassword: e.target.value})}
+                  placeholder="Confirm password"
+                />
+              </div>
             </div>
             
             <div>
@@ -3583,16 +3859,23 @@ export default function App({ user }) {
               />
             </div>
             
-            <div className="flex items-center space-x-2">
+            {/* Send Email Toggle */}
+            <div className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
+              <div className="flex items-start space-x-3">
+                <Mail className="text-gray-600 mt-0.5" size={20} />
+                <div className="flex-1">
+                  <Label className="text-sm font-medium text-gray-900">Send Email Automatically</Label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Automatically send welcome email with login credentials to the new housemate
+                  </p>
+                </div>
+              </div>
               <Switch
-                id="send-email"
-                checked={inviteFormData.sendInviteEmail}
-                onCheckedChange={(checked) => setInviteFormData({...inviteFormData, sendInviteEmail: checked})}
+                checked={inviteFormData.sendEmail}
+                onCheckedChange={(checked) => setInviteFormData({...inviteFormData, sendEmail: checked})}
               />
-              <Label htmlFor="send-email" className="text-sm">
-                Send invitation email immediately
-              </Label>
             </div>
+
           </div>
           
           <div className="flex justify-end space-x-3">
@@ -3600,8 +3883,8 @@ export default function App({ user }) {
               Cancel
             </Button>
             <Button onClick={handleInviteHousemate} className="bg-purple-600 hover:bg-purple-700">
-              <Mail size={16} className="mr-2" />
-              Send Invitation
+              <Plus size={16} className="mr-2" />
+              Create Housemate
             </Button>
           </div>
         </DialogContent>

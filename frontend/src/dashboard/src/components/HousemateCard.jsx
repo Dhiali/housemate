@@ -12,6 +12,7 @@ export function HousemateCard({
   email,
   phone,
   role,
+  avatar,
   avatarBg,
   lastActive,
   isOnline,
@@ -67,9 +68,17 @@ export function HousemateCard({
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-4">
           <div className="relative">
-            <div className={`w-12 h-12 ${avatarBg} rounded-full flex items-center justify-center`}>
-              <span className="text-white font-medium">{initials}</span>
-            </div>
+            {avatar ? (
+              <img 
+                src={avatar}
+                alt={`${name}'s profile`}
+                className="w-12 h-12 rounded-full object-cover"
+              />
+            ) : (
+              <div className={`w-12 h-12 ${avatarBg} rounded-full flex items-center justify-center`}>
+                <span className="text-white font-medium">{initials}</span>
+              </div>
+            )}
             {isOnline && (
               <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
             )}

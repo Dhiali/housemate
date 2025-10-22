@@ -12,6 +12,7 @@ export function TaskItem({
   dueDate,
   priority,
   avatarInitials,
+  avatar,
   onStatusChange
 }) {
   const getStatusColor = (status) => {
@@ -71,6 +72,9 @@ export function TaskItem({
         </div>
         <div className="flex flex-col items-center space-y-2 ml-4">
           <Avatar className="h-8 w-8">
+            {avatar ? (
+              <AvatarImage src={avatar} alt={`${assignedTo}'s profile`} />
+            ) : null}
             <AvatarFallback className="text-xs">{avatarInitials}</AvatarFallback>
           </Avatar>
           <div className={`w-2 h-2 rounded-full ${

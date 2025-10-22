@@ -42,14 +42,21 @@ export const updateUserPhone = (id, phone) => {
   console.log('updateUserPhone called with:', { id, phone });
   return API.put(`/users/${id}/phone`, { phone });
 };
+
+export const updateUserPrivacy = (id, privacySettings) => {
+  console.log('updateUserPrivacy called with:', { id, privacySettings });
+  return API.put(`/users/${id}/privacy`, privacySettings);
+};
+
 export const deleteUser = (id) => API.delete(`/users/${id}`);
 
 // Tasks
-export const getTasks = () => API.get("/tasks");
+export const getTasks = (houseId) => API.get(`/tasks?house_id=${houseId}`);
 export const getTask = (id) => API.get(`/tasks/${id}`);
 export const addTask = (task) => API.post("/tasks", task);
 export const updateTask = (id, data) => API.put(`/tasks/${id}`, data);
 export const deleteTask = (id) => API.delete(`/tasks/${id}`);
+export const getTaskHistory = (id) => API.get(`/tasks/${id}/history`);
 
 // Bills
 export const getBills = () => API.get("/bills");
@@ -64,3 +71,6 @@ export const getScheduleItem = (id) => API.get(`/schedule/${id}`);
 export const addSchedule = (item) => API.post("/schedule", item);
 export const updateSchedule = (id, data) => API.put(`/schedule/${id}`, data);
 export const deleteSchedule = (id) => API.delete(`/schedule/${id}`);
+
+// Recent Activities
+export const getRecentActivities = (houseId) => API.get(`/houses/${houseId}/activities`);

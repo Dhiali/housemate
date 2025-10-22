@@ -11,3 +11,8 @@ Content-Type: application/json
   "password": "1234",
   "role": "user"
 }
+
+###
+# Test recent activities endpoint
+GET http://localhost:3000/houses/1/activities
+Content-Type: application/json

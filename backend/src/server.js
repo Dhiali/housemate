@@ -48,7 +48,9 @@ app.post('/register', async (req, res) => {
     avatar = null,
     address = null,
     house_rules = null,
-    house_name = null // Expect house_name from frontend
+    house_name = null, // Expect house_name from frontend
+    house_id = null, // For housemate creation
+    role = 'admin' // Default to admin for house creation, can be overridden for housemates
   } = req.body;
   if (!email || !password || !name || !surname) {
     console.error('Register error: missing required fields', { name, surname, email, password });
@@ -70,11 +72,11 @@ app.post('/register', async (req, res) => {
     }
     // Hash password
     const hashed = await bcrypt.hash(password, 10);
-    // Insert user only
+    // Insert user with house_id and role
     const userId = await new Promise((resolve, reject) => {
       db.query(
-        `INSERT INTO users (name, surname, email, password, bio, phone, preferred_contact, avatar, role, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'admin', 'active')`,
-        [name, surname, email, hashed, bio, phone, preferred_contact, avatar],
+        `INSERT INTO users (name, surname, email, password, bio, phone, preferred_contact, avatar, house_id, role, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
+        [name, surname, email, hashed, bio, phone, preferred_contact, avatar, house_id, role],
         (err, results) => {
           if (err) {
             console.error('Register error: DB insert user', err);
@@ -220,26 +222,334 @@ app.put('/users/:id/avatar', upload.single('avatar'), async (req, res) => {
     res.json({ message: 'Avatar updated!', avatar: dataUrl });
   });
 });
-// Example: Get all tasks
+// Get all tasks for a house
 app.get('/tasks', (req, res) => {
-  db.query("SELECT * FROM tasks", (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
+  const { house_id } = req.query;
+  
+  if (!house_id) {
+    return res.status(400).json({ error: 'house_id is required' });
+  }
+
+  const query = `
+    SELECT 
+      t.*,
+      u_assigned.name as assigned_to_name,
+      u_assigned.surname as assigned_to_surname,
+      u_assigned.avatar as assigned_to_avatar,
+      u_created.name as created_by_name,
+      u_created.surname as created_by_surname
+    FROM tasks t
+    LEFT JOIN users u_assigned ON t.assigned_to = u_assigned.id
+    LEFT JOIN users u_created ON t.created_by = u_created.id
+    WHERE t.house_id = ?
+    ORDER BY t.created_at DESC
+  `;
+
+  db.query(query, [house_id], (err, results) => {
+    if (err) {
+      console.error('Error fetching tasks:', err);
+      return res.status(500).json({ error: err.message });
+    }
     res.json(results);
   });
 });
 
-// Example: Add a new task
-app.post('/tasks', (req, res) => {
-  const { title, description, due_date, assigned_to } = req.body;
-  db.query(
-    "INSERT INTO tasks (title, description, due_date, assigned_to) VALUES (?, ?, ?, ?)",
-    [title, description, due_date, assigned_to],
-    (err, results) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ message: "Task created!", id: results.insertId });
+// Get specific task by ID
+app.get('/tasks/:id', (req, res) => {
+  const taskId = req.params.id;
+
+  const query = `
+    SELECT 
+      t.*,
+      u_assigned.name as assigned_to_name,
+      u_assigned.surname as assigned_to_surname,
+      u_assigned.avatar as assigned_to_avatar,
+      u_created.name as created_by_name,
+      u_created.surname as created_by_surname
+    FROM tasks t
+    LEFT JOIN users u_assigned ON t.assigned_to = u_assigned.id
+    LEFT JOIN users u_created ON t.created_by = u_created.id
+    WHERE t.id = ?
+  `;
+
+  db.query(query, [taskId], (err, results) => {
+    if (err) {
+      console.error('Error fetching task:', err);
+      return res.status(500).json({ error: err.message });
     }
-  );
+    
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    
+    res.json(results[0]);
+  });
 });
+
+// Create a new task
+app.post('/tasks', (req, res) => {
+  const { 
+    house_id, 
+    title, 
+    description, 
+    category, 
+    location, 
+    due_date, 
+    priority, 
+    assigned_to, 
+    created_by 
+  } = req.body;
+
+  // Validate required fields
+  if (!house_id || !title || !assigned_to || !created_by) {
+    return res.status(400).json({ 
+      error: 'Missing required fields: house_id, title, assigned_to, created_by' 
+    });
+  }
+
+  const query = `
+    INSERT INTO tasks 
+    (house_id, title, description, category, location, due_date, priority, assigned_to, created_by, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'open')
+  `;
+
+  const values = [
+    house_id,
+    title,
+    description || null,
+    category || 'other',
+    location || null,
+    due_date || null,
+    priority || 'medium',
+    assigned_to,
+    created_by
+  ];
+
+  db.query(query, values, (err, results) => {
+    if (err) {
+      console.error('Error creating task:', err);
+      return res.status(500).json({ error: err.message });
+    }
+
+    // Log task creation in task_history
+    const historyQuery = `
+      INSERT INTO task_history (task_id, changed_by, field_name, old_value, new_value)
+      VALUES (?, ?, ?, NULL, ?)
+    `;
+
+    db.query(historyQuery, [results.insertId, created_by, 'task_created', 'open'], (histErr) => {
+      if (histErr) {
+        console.error('Error logging task history:', histErr);
+      }
+    });
+
+    res.json({ 
+      message: "Task created successfully!", 
+      id: results.insertId,
+      task: {
+        id: results.insertId,
+        house_id,
+        title,
+        description,
+        category,
+        location,
+        due_date,
+        priority,
+        assigned_to,
+        created_by,
+        status: 'open'
+      }
+    });
+  });
+});
+
+// Update a task
+app.put('/tasks/:id', (req, res) => {
+  const taskId = req.params.id;
+  const { 
+    title, 
+    description, 
+    category, 
+    location, 
+    due_date, 
+    priority, 
+    assigned_to, 
+    status,
+    updated_by
+  } = req.body;
+
+  // First, get the current task to track changes
+  db.query('SELECT * FROM tasks WHERE id = ?', [taskId], (err, currentTask) => {
+    if (err) {
+      console.error('Error fetching current task:', err);
+      return res.status(500).json({ error: err.message });
+    }
+
+    if (currentTask.length === 0) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    const current = currentTask[0];
+    
+    // Build update query dynamically
+    const updateFields = [];
+    const updateValues = [];
+    const changes = [];
+
+    if (title !== undefined && title !== current.title) {
+      updateFields.push('title = ?');
+      updateValues.push(title);
+      changes.push({ field: 'title', oldValue: current.title, newValue: title });
+    }
+    
+    if (description !== undefined && description !== current.description) {
+      updateFields.push('description = ?');
+      updateValues.push(description);
+      changes.push({ field: 'description', oldValue: current.description, newValue: description });
+    }
+    
+    if (category !== undefined && category !== current.category) {
+      updateFields.push('category = ?');
+      updateValues.push(category);
+      changes.push({ field: 'category', oldValue: current.category, newValue: category });
+    }
+    
+    if (location !== undefined && location !== current.location) {
+      updateFields.push('location = ?');
+      updateValues.push(location);
+      changes.push({ field: 'location', oldValue: current.location, newValue: location });
+    }
+    
+    if (due_date !== undefined && due_date !== current.due_date) {
+      updateFields.push('due_date = ?');
+      updateValues.push(due_date);
+      changes.push({ field: 'due_date', oldValue: current.due_date, newValue: due_date });
+    }
+    
+    if (priority !== undefined && priority !== current.priority) {
+      updateFields.push('priority = ?');
+      updateValues.push(priority);
+      changes.push({ field: 'priority', oldValue: current.priority, newValue: priority });
+    }
+    
+    if (assigned_to !== undefined && assigned_to !== current.assigned_to) {
+      updateFields.push('assigned_to = ?');
+      updateValues.push(assigned_to);
+      changes.push({ field: 'assigned_to', oldValue: current.assigned_to, newValue: assigned_to });
+    }
+    
+    if (status !== undefined && status !== current.status) {
+      updateFields.push('status = ?');
+      updateValues.push(status);
+      changes.push({ field: 'status', oldValue: current.status, newValue: status });
+    }
+
+    if (updateFields.length === 0) {
+      return res.json({ message: 'No changes detected' });
+    }
+
+    // Add updated_at
+    updateFields.push('updated_at = CURRENT_TIMESTAMP');
+    updateValues.push(taskId);
+
+    const updateQuery = `UPDATE tasks SET ${updateFields.join(', ')} WHERE id = ?`;
+
+    db.query(updateQuery, updateValues, (updateErr) => {
+      if (updateErr) {
+        console.error('Error updating task:', updateErr);
+        return res.status(500).json({ error: updateErr.message });
+      }
+
+      // Log changes in task_history
+      changes.forEach(change => {
+        const historyQuery = `
+          INSERT INTO task_history (task_id, changed_by, field_name, old_value, new_value)
+          VALUES (?, ?, ?, ?, ?)
+        `;
+        
+        db.query(historyQuery, [
+          taskId, 
+          updated_by || null, 
+          change.field, 
+          change.oldValue, 
+          change.newValue
+        ], (histErr) => {
+          if (histErr) {
+            console.error('Error logging task history:', histErr);
+          }
+        });
+      });
+
+      res.json({ message: 'Task updated successfully', changes: changes.length });
+    });
+  });
+});
+
+// Delete a task
+app.delete('/tasks/:id', (req, res) => {
+  const taskId = req.params.id;
+  const { deleted_by } = req.body;
+
+  // First check if task exists
+  db.query('SELECT * FROM tasks WHERE id = ?', [taskId], (err, results) => {
+    if (err) {
+      console.error('Error checking task:', err);
+      return res.status(500).json({ error: err.message });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    // Log deletion in history before deleting
+    const historyQuery = `
+      INSERT INTO task_history (task_id, changed_by, field_name, old_value, new_value)
+      VALUES (?, ?, 'task_deleted', 'active', 'deleted')
+    `;
+
+    db.query(historyQuery, [taskId, deleted_by || null], (histErr) => {
+      if (histErr) {
+        console.error('Error logging task deletion:', histErr);
+      }
+
+      // Delete the task
+      db.query('DELETE FROM tasks WHERE id = ?', [taskId], (deleteErr) => {
+        if (deleteErr) {
+          console.error('Error deleting task:', deleteErr);
+          return res.status(500).json({ error: deleteErr.message });
+        }
+
+        res.json({ message: 'Task deleted successfully' });
+      });
+    });
+  });
+});
+
+// Get task history
+app.get('/tasks/:id/history', (req, res) => {
+  const taskId = req.params.id;
+
+  const query = `
+    SELECT 
+      th.*,
+      u.name as changed_by_name,
+      u.surname as changed_by_surname
+    FROM task_history th
+    LEFT JOIN users u ON th.changed_by = u.id
+    WHERE th.task_id = ?
+    ORDER BY th.changed_at DESC
+  `;
+
+  db.query(query, [taskId], (err, results) => {
+    if (err) {
+      console.error('Error fetching task history:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    
+    res.json(results);
+  });
+});
+
 // ...existing code...
 
 
@@ -277,7 +587,7 @@ app.get('/houses/:houseId/users', (req, res) => {
   // 2. The user who created the house (from houses.created_by)
   const query = `
     SELECT DISTINCT u.id, u.name, u.surname, u.email, u.role, u.bio, u.phone, 
-           u.preferred_contact, u.avatar, u.created_at, u.last_login,
+           u.preferred_contact, u.avatar, u.created_at, u.last_login, u.show_contact_info,
            CASE WHEN h.created_by = u.id THEN 1 ELSE 0 END as is_house_creator
     FROM users u
     LEFT JOIN houses h ON h.id = ?
@@ -294,6 +604,72 @@ app.get('/houses/:houseId/users', (req, res) => {
     res.json(results);
   });
 });
+
+// Get recent activities for a house
+app.get('/houses/:houseId/activities', (req, res) => {
+  const houseId = req.params.houseId;
+  console.log('GET /houses/:houseId/activities', houseId);
+  
+  if (isNaN(Number(houseId))) {
+    return res.status(400).json({ error: 'House ID must be a number' });
+  }
+
+  // Get recent activities from various sources
+  // For now, we'll create sample activities based on user data
+  // In a real app, you'd have separate tables for tasks, bills, etc.
+  const query = `
+    SELECT 
+      u.name, 
+      u.surname, 
+      u.avatar,
+      u.created_at,
+      'joined' as activity_type,
+      'Joined the house' as description,
+      u.created_at as activity_date
+    FROM users u
+    WHERE u.house_id = ?
+    ORDER BY u.created_at DESC
+    LIMIT 10
+  `;
+
+  db.query(query, [houseId], (err, results) => {
+    if (err) {
+      console.error('Error fetching activities:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    
+    // Format activities for frontend
+    const activities = results.map(result => ({
+      id: `user-joined-${result.name}-${result.created_at}`,
+      type: result.activity_type,
+      description: `${result.name} ${result.surname} ${result.description}`,
+      user: {
+        name: `${result.name} ${result.surname}`,
+        avatar: result.avatar
+      },
+      timestamp: result.activity_date,
+      timeAgo: getTimeAgo(new Date(result.activity_date))
+    }));
+    
+    console.log('Activities found:', activities.length);
+    res.json(activities);
+  });
+});
+
+// Helper function to calculate time ago
+function getTimeAgo(date) {
+  const now = new Date();
+  const diff = now - date;
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
+  return date.toLocaleDateString();
+}
 
 // Update user bio
 app.put('/users/:id/bio', (req, res) => {
@@ -454,6 +830,42 @@ app.post('/users', (req, res) => {
       res.json({ message: "User created!", id: results.insertId });
     }
   );
+});
+
+// Update user privacy settings
+app.put('/users/:id/privacy', (req, res) => {
+  const { show_contact_info } = req.body;
+  const { id } = req.params;
+
+  // First check if the column exists, if not, add it
+  db.query('SHOW COLUMNS FROM users LIKE "show_contact_info"', (err, result) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    
+    if (result.length === 0) {
+      // Column doesn't exist, add it
+      db.query('ALTER TABLE users ADD COLUMN show_contact_info BOOLEAN DEFAULT 1', (err) => {
+        if (err) {
+          return res.status(500).json({ error: 'Failed to add privacy column: ' + err.message });
+        }
+        // Now update the user's privacy setting
+        updatePrivacySetting();
+      });
+    } else {
+      // Column exists, update directly
+      updatePrivacySetting();
+    }
+  });
+
+  function updatePrivacySetting() {
+    db.query('UPDATE users SET show_contact_info = ? WHERE id = ?', [show_contact_info, id], (err, results) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      res.json({ message: 'Privacy settings updated!' });
+    });
+  }
 });
 
 app.listen(3000, () => console.log("🚀 Server running on http://localhost:3000"));
