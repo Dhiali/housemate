@@ -1,0 +1,9 @@
+# Nixpacks configuration for Railway
+[phases.install]
+cmd = "npm install"
+
+[phases.build]
+cmd = "echo 'No build step required for Node.js API'"
+
+[start]
+cmd = "npm start"

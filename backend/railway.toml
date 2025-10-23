@@ -1,16 +1,3 @@
-# Railway Deployment Configuration
-# Optimized for free tier usage
-
-[build]
-  builder = "nixpacks"
-
+# Railway Configuration - Simple Node.js Setup
 [deploy]
   startCommand = "npm start"
-  healthcheckPath = "/health"
-  healthcheckTimeout = 300
-  restartPolicyType = "on-failure"
-  numReplicas = 1
-
-[env]
-  NODE_ENV = "production"
-  NPM_CONFIG_PRODUCTION = "false"
