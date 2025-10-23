@@ -1,13 +1,4 @@
 {
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    }
-  ],
   "routes": [
     {
       "handle": "filesystem"
@@ -17,7 +8,6 @@
       "dest": "/index.html"
     }
   ],
-  "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite"
 }
