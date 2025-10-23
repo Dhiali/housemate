@@ -48,6 +48,7 @@ import { useState, useEffect } from 'react';
 import { getTasks, addTask, updateTask, getHouse, getHouseStatistics, getHousemates, getUserStatistics, getUserCompletedTasks, getUserPendingTasks, getUserContributedBills, getBills, addBill, updateBill, deleteBill, payBill } from '../../apiHelpers';
 import { updateUserBio, updateUserPhone } from '../../apiHelpers';
 import { Button } from './components/ui/button';
+import { useSEO, SEO_CONFIG } from '../../hooks/useSEO.js';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog';
 import { Input } from './components/ui/input';
@@ -72,6 +73,29 @@ export default function App({ user }) {
   const [currentPage, setCurrentPage] = useState('Dashboard');
   // Add state for upcoming tasks view dropdown
   const [upcomingTasksView, setUpcomingTasksView] = useState('everyone');
+
+  // SEO: Update page title and meta description based on current page
+  const getSEOConfigForPage = () => {
+    switch (currentPage) {
+      case 'Dashboard':
+        return SEO_CONFIG.home;
+      case 'Bills':
+        return SEO_CONFIG.bills;
+      case 'Tasks':
+        return SEO_CONFIG.tasks;
+      case 'Calendar':
+        return SEO_CONFIG.calendar;
+      case 'Housemates':
+        return SEO_CONFIG.housemates;
+      case 'Settings':
+        return SEO_CONFIG.settings;
+      default:
+        return SEO_CONFIG.home;
+    }
+  };
+
+  const seoConfig = getSEOConfigForPage();
+  useSEO(seoConfig.title, seoConfig.description, seoConfig.keywords);
   const [tasks, setTasks] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
 

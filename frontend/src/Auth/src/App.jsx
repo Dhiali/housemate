@@ -8,6 +8,7 @@ import { ForgotPasswordForm } from "./components/ForgotPasswordForm.jsx";
 import { addUser, addHouse, updateUser } from "../../apiHelpers";
 import DashboardApp from '../../dashboard/src/App.jsx';
 import '../../dashboard/src/index.css';
+import { useSEO, SEO_CONFIG } from '../../hooks/useSEO.js';
 
 
 export default function App() {
@@ -28,6 +29,25 @@ export default function App() {
       setShowDashboard(true);
     }
   }, []);
+
+  // SEO: Update page title and meta description based on current view
+  const getSEOConfig = () => {
+    switch (currentView) {
+      case "signin":
+        return SEO_CONFIG.signin;
+      case "signup":
+        return SEO_CONFIG.signup;
+      case "create-house":
+        return SEO_CONFIG.createHouse;
+      case "forgot-password":
+        return SEO_CONFIG.forgotPassword;
+      default:
+        return SEO_CONFIG.signin;
+    }
+  };
+
+  const seoConfig = getSEOConfig();
+  useSEO(seoConfig.title, seoConfig.description, seoConfig.keywords);
   const handleTabSwitch = (view) => {
     setCurrentView(view);
   };
