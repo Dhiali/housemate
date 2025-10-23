@@ -15,7 +15,17 @@
     "npm": ">=9.0.0"
   },
   "type": "module",
-  "keywords": ["housemate", "expenses", "bills", "roommates"],
+  "keywords": [
+    "housemate",
+    "expenses",
+    "bills",
+    "roommates"
+  ],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "imagemin-webp": "^8.0.0",
+    "sharp": "^0.34.4",
+    "vite-plugin-imagemin": "^0.6.1"
+  }
 }

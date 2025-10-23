@@ -50,66 +50,94 @@ export function SignInForm({ onForgotPassword, onCreateHouse, onSignInSuccess })
   };
 
   return (
-  <div className="space-y-6">
-      <div>
-        <Label htmlFor="email" className="text-sm text-gray-700 mb-2 block">
-          Email Address
-        </Label>
-        <Input
-          id="email"
-          type="email"
-          placeholder="Enter your email"
-          value={email}
-          onChange={e => {
-            setEmail(e.target.value);
-            const emailVal = e.target.value;
-            if (!emailVal.match(/^[^@\s]+@[^@\s]+\.[^@\s]+$/)) {
-              setEmailStatus('error');
-              setEmailMsg('Invalid email format');
-            } else {
-              setEmailStatus('valid');
-              setEmailMsg('Email format valid');
-            }
-          }}
-          className="bg-gray-50 border-0 rounded-lg h-12"
-        />
-        {emailStatus === 'valid' && <div className="text-green-600 text-xs mt-1">{emailMsg}</div>}
-        {emailStatus === 'error' && <div className="text-red-500 text-xs mt-1">{emailMsg}</div>}
-      </div>
-       <div>
-        <Label htmlFor="password" className="text-sm text-gray-700 mb-2 block">
-          Password
-        </Label>
-        <div className="relative">
+    <form onSubmit={handleLogin} className="space-y-6" noValidate>
+      <fieldset className="space-y-6">
+        <legend className="sr-only">Sign In Credentials</legend>
+        
+        <div className="form-group">
+          <Label htmlFor="email" className="text-sm text-gray-700 mb-2 block">
+            Email Address
+          </Label>
           <Input
-            id="password"
-            type={showPassword ? "text" : "password"}
-            placeholder="Enter your password"
-            value={password}
+            id="email"
+            name="email"
+            type="email"
+            placeholder="Enter your email"
+            value={email}
             onChange={e => {
-              setPassword(e.target.value);
-              const val = e.target.value;
-              if (val.length < 6) {
-                setPasswordStatus('error');
-                setPasswordMsg('Password too short');
+              setEmail(e.target.value);
+              const emailVal = e.target.value;
+              if (!emailVal.match(/^[^@\s]+@[^@\s]+\.[^@\s]+$/)) {
+                setEmailStatus('error');
+                setEmailMsg('Invalid email format');
               } else {
-                setPasswordStatus('valid');
-                setPasswordMsg('Password length ok');
+                setEmailStatus('valid');
+                setEmailMsg('Email format valid');
               }
             }}
-            className="bg-gray-50 border-0 rounded-lg h-12 pr-12"
+            className="bg-gray-50 border-0 rounded-lg h-12"
+            required
+            aria-describedby={emailStatus ? "email-feedback" : undefined}
+            aria-invalid={emailStatus === 'error'}
           />
-          {passwordStatus === 'valid' && <div className="text-green-600 text-xs mt-1">{passwordMsg}</div>}
-          {passwordStatus === 'error' && <div className="text-red-500 text-xs mt-1">{passwordMsg}</div>}
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-          >
-            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-          </button>
+          {emailStatus && (
+            <div 
+              id="email-feedback" 
+              className={`text-xs mt-1 ${emailStatus === 'valid' ? 'text-green-600' : 'text-red-500'}`}
+              role={emailStatus === 'error' ? 'alert' : 'status'}
+            >
+              {emailMsg}
+            </div>
+          )}
         </div>
-      </div>
+
+        <div className="form-group">
+          <Label htmlFor="password" className="text-sm text-gray-700 mb-2 block">
+            Password
+          </Label>
+          <div className="relative">
+            <Input
+              id="password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter your password"
+              value={password}
+              onChange={e => {
+                setPassword(e.target.value);
+                const val = e.target.value;
+                if (val.length < 6) {
+                  setPasswordStatus('error');
+                  setPasswordMsg('Password too short');
+                } else {
+                  setPasswordStatus('valid');
+                  setPasswordMsg('Password length ok');
+                }
+              }}
+              className="bg-gray-50 border-0 rounded-lg h-12 pr-12"
+              required
+              aria-describedby={passwordStatus ? "password-feedback" : undefined}
+              aria-invalid={passwordStatus === 'error'}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
+          </div>
+          {passwordStatus && (
+            <div 
+              id="password-feedback" 
+              className={`text-xs mt-1 ${passwordStatus === 'valid' ? 'text-green-600' : 'text-red-500'}`}
+              role={passwordStatus === 'error' ? 'alert' : 'status'}
+            >
+              {passwordMsg}
+            </div>
+          )}
+        </div>
+      </fieldset>
 
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
@@ -131,16 +159,24 @@ export function SignInForm({ onForgotPassword, onCreateHouse, onSignInSuccess })
         </button>
       </div>
 
-  {error && <div className="text-red-500 mb-2">{error}</div>}
-  {success && !error && <div className="text-green-500 mb-2">{success}</div>}
+      {error && (
+        <div className="text-red-500 mb-2" role="alert" aria-live="polite">
+          {error}
+        </div>
+      )}
+      {success && !error && (
+        <div className="text-green-500 mb-2" role="status" aria-live="polite">
+          {success}
+        </div>
+      )}
+
       <Button 
-        onClick={handleLogin}
+        type="submit"
         disabled={loading}
         className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 h-12 rounded-lg"
       >
         {loading ? "Signing in..." : "Sign in to HouseMate"}
       </Button>
-
-    </div>
+    </form>
   );
 }

@@ -26,6 +26,7 @@ import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
+import OptimizedImage from '../../../components/OptimizedImage.jsx';
 
 export function SettingsContent({
   settingsTab,
@@ -462,8 +463,9 @@ export function SettingsContent({
                   {/* Avatar Section */}
                   <div className="flex flex-col items-center space-y-3">
                     <div className="relative">
-                      <img
+                      <OptimizedImage
                         src={householdSettings.avatar ? `data:image/png;base64,${householdSettings.avatar}` : "/HouseMate logo.png"}
+                        webpSrc={householdSettings.avatar ? null : "/HouseMate logo.webp"}
                         alt="House Avatar"
                         className="w-24 h-24 rounded-full object-cover border-2 border-gray-200"
                         onError={e => { e.target.onerror = null; e.target.src = "/HouseMate logo.png"; }}

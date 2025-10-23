@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { register } from "../../apiHelpers";
 import { AuthCard } from "./components/AuthCard.jsx";
 import { SignInForm } from "./components/SignInForm.jsx";
@@ -6,9 +6,11 @@ import { SignUpForm } from "./components/SignUpForm.jsx";
 import { CreateHouseForm } from "./components/CreateHouseForm.jsx";
 import { ForgotPasswordForm } from "./components/ForgotPasswordForm.jsx";
 import { addUser, addHouse, updateUser } from "../../apiHelpers";
-import DashboardApp from '../../dashboard/src/App.jsx';
-import '../../dashboard/src/index.css';
 import { useSEO, SEO_CONFIG } from '../../hooks/useSEO.js';
+import { trackAuth, trackHousehold, trackPageView } from '../../utils/analytics.js';
+
+// Lazy load the Dashboard application
+const DashboardApp = lazy(() => import('../../dashboard/src/App.jsx'));
 
 
 export default function App() {
@@ -29,6 +31,11 @@ export default function App() {
       setShowDashboard(true);
     }
   }, []);
+
+  // Track page views when view changes
+  useEffect(() => {
+    trackPageView(`/auth/${currentView}`, `HouseMate - ${currentView.replace('-', ' ')}`);
+  }, [currentView]);
 
   // SEO: Update page title and meta description based on current view
   const getSEOConfig = () => {
@@ -94,6 +101,11 @@ export default function App() {
         console.log('House payload:', housePayload);
         const res = await addHouse(housePayload);
         console.log('House creation response:', res.data);
+        
+        // Track house creation
+        trackHousehold.createHouse(housePayload.created_by || 1); // Default to 1 user if unknown
+        trackAuth.signUp('email');
+        
         // Automatically sign in the user
         const { email, password } = pendingUser;
         if (email && password) {
@@ -126,6 +138,9 @@ export default function App() {
     localStorage.setItem("authToken", token);
     localStorage.setItem("authUser", JSON.stringify(user));
     setShowDashboard(true);
+    
+    // Track successful sign in
+    trackAuth.signIn('email');
   };
 
   const renderContent = () => {
@@ -172,38 +187,64 @@ export default function App() {
   };
 
   // If authenticated, show dashboard
-  let content;
   if (showDashboard && authToken && authUser) {
-    content = <DashboardApp user={authUser} token={authToken} />;
-  } else {
-    content = (
-      <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-purple-600 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <AuthCard description={getDescription()}>
-            {(currentView !== "forgot-password" && (currentView === "signin" || currentView === "create-house")) && (
-              <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
-                <button
-                  onClick={() => handleTabSwitch("signin")}
-                  className={`flex-1 py-2 px-4 rounded-md text-center transition-all duration-200 ${currentView === "signin" ? "bg-white text-blue-600 font-semibold" : "text-gray-500"}`}
-                >
-                  Sign In
-                </button>
-                <button
-                  onClick={() => setCurrentView("create-house")}
-                  className={`flex-1 py-2 px-4 rounded-md text-center transition-all duration-200 ${currentView === "create-house" ? "bg-white text-blue-600 font-semibold" : "text-gray-500"}`}
-                >
-                  Create House
-                </button>
-              </div>
-            )}
-            {renderContent()}
-            <div className="text-center mt-6 text-sm text-black">
-              By continuing, you agree to our <button className="underline hover:text-black">Terms of Service</button> and <button className="underline hover:text-black">Privacy Policy</button>.
-            </div>
-          </AuthCard>
+    return (
+      <Suspense fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 text-lg">Loading Dashboard...</p>
+          </div>
         </div>
-      </div>
+      }>
+        <DashboardApp user={authUser} token={authToken} />
+      </Suspense>
     );
   }
-  return content;
+
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-purple-600 flex items-center justify-center p-4">
+      <section className="w-full max-w-md">
+        <AuthCard description={getDescription()}>
+          {(currentView !== "forgot-password" && (currentView === "signin" || currentView === "create-house")) && (
+            <nav className="flex mb-6 bg-gray-100 rounded-lg p-1" role="tablist" aria-label="Authentication options">
+              <button
+                onClick={() => handleTabSwitch("signin")}
+                className={`flex-1 py-2 px-4 rounded-md text-center transition-all duration-200 ${currentView === "signin" ? "bg-white text-blue-600 font-semibold" : "text-gray-500"}`}
+                role="tab"
+                aria-selected={currentView === "signin"}
+                aria-controls="signin-panel"
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => setCurrentView("create-house")}
+                className={`flex-1 py-2 px-4 rounded-md text-center transition-all duration-200 ${currentView === "create-house" ? "bg-white text-blue-600 font-semibold" : "text-gray-500"}`}
+                role="tab"
+                aria-selected={currentView === "create-house"}
+                aria-controls="create-house-panel"
+              >
+                Create House
+              </button>
+            </nav>
+          )}
+          
+          <section 
+            id={currentView === "signin" ? "signin-panel" : currentView === "create-house" ? "create-house-panel" : `${currentView}-panel`}
+            role="tabpanel"
+            aria-labelledby={`${currentView}-tab`}
+          >
+            {renderContent()}
+          </section>
+          
+          <footer className="text-center mt-6 text-sm text-black">
+            By continuing, you agree to our{' '}
+            <button className="underline hover:text-black" type="button">Terms of Service</button>
+            {' '}and{' '}
+            <button className="underline hover:text-black" type="button">Privacy Policy</button>.
+          </footer>
+        </AuthCard>
+      </section>
+    </main>
+  );
 }

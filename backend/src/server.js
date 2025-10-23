@@ -6,7 +6,7 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
-import upload from './avatarUpload.js';
+import upload, { processImage, processHouseAvatar, bufferToDataUrl } from './avatarUploadWebP.js';
 
 // Load environment variables
 dotenv.config();
@@ -697,22 +697,50 @@ app.delete('/schedule/:id', (req, res) => {
 // ...existing code...
 // Serve uploaded avatars statically
 app.use('/uploads/avatars', express.static(path.join(process.cwd(), 'uploads', 'avatars')));
-// Avatar upload endpoint
-app.put('/users/:id/avatar', upload.single('avatar'), async (req, res) => {
+// Avatar upload endpoint with WebP optimization
+app.put('/users/:id/avatar', upload.single('avatar'), processImage, async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
-  // Convert image buffer to base64 data URL
-  const mimeType = req.file.mimetype;
-  const base64 = req.file.buffer.toString('base64');
-  const dataUrl = `data:${mimeType};base64,${base64}`;
+  
+  // Convert processed WebP image buffer to base64 data URL
+  const dataUrl = bufferToDataUrl(req.file.buffer, req.file.mimetype);
+  
   db.query('UPDATE users SET avatar = ? WHERE id = ?', [dataUrl, req.params.id], (err, results) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
-    res.json({ message: 'Avatar updated!', avatar: dataUrl });
+    res.json({ 
+      message: 'Avatar updated with WebP optimization!', 
+      avatar: dataUrl,
+      originalSize: req.file.size,
+      optimizedFormat: 'webp'
+    });
   });
 });
+
+// House avatar upload endpoint with WebP optimization
+app.put('/houses/:id/avatar', upload.single('avatar'), processHouseAvatar, async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+  
+  // Convert processed WebP image buffer to base64 data URL
+  const dataUrl = bufferToDataUrl(req.file.buffer, req.file.mimetype);
+  
+  db.query('UPDATE houses SET avatar = ? WHERE id = ?', [dataUrl, req.params.id], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ 
+      message: 'House avatar updated with WebP optimization!', 
+      avatar: dataUrl,
+      originalSize: req.file.size,
+      optimizedFormat: 'webp'
+    });
+  });
+});
+
 // Get all tasks for a house
 app.get('/tasks', (req, res) => {
   const { house_id } = req.query;

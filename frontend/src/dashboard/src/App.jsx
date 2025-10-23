@@ -58,6 +58,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from './components/ui/badge';
 import { Switch } from './components/ui/switch';
 import { Separator } from './components/ui/separator';
+import OptimizedImage from '../../components/OptimizedImage.jsx';
 import { Avatar, AvatarFallback, AvatarImage } from './components/ui/avatar';
 import { StatsCard } from './components/StatsCard';
 import { TaskItem } from './components/TaskItem';
@@ -1586,14 +1587,15 @@ export default function App({ user }) {
   };
 
   return (
-    <div className="h-screen min-h-0 bg-gray-50 flex overflow-hidden">
-      {/* Sidebar */}
-  <div className="w-64 bg-white border-r border-gray-200 flex flex-col sticky top-0 h-screen flex-none overflow-hidden">
-        <div className="p-6">
+    <div className="h-screen min-h-0 bg-gray-50 flex overflow-hidden" role="application" aria-label="HouseMate Dashboard Application">
+      {/* Sidebar Navigation */}
+      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col sticky top-0 h-screen flex-none overflow-hidden" role="navigation" aria-label="Main navigation">
+        <header className="p-6">
           <div className="flex items-center space-x-2">
             <div className="w-14 h-14 bg-purple-600 rounded-xl flex items-center justify-center overflow-hidden">
-              <img
-                src={"/HouseMate logo.png"}
+              <OptimizedImage
+                src="/HouseMate logo.png"
+                webpSrc="/HouseMate logo.webp"
                 alt="HouseMate Logo"
                 className="w-12 h-12 object-contain"
                 onError={e => { e.target.onerror = null; e.target.style.display = 'none'; }}
@@ -1601,12 +1603,12 @@ export default function App({ user }) {
             </div>
             <span className="font-bold text-2xl text-gray-900">HouseMate</span>
           </div>
-        </div>
+        </header>
         
-        <nav className="flex-1 px-4">
-          <ul className="space-y-1">
+        <nav className="flex-1 px-4" role="navigation" aria-label="Dashboard navigation">
+          <ul className="space-y-1" role="list">
             {sidebarItems.map((item, index) => (
-              <li key={index}>
+              <li key={index} role="listitem">
                 <button
                   onClick={() => setCurrentPage(item.label)}
                   className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
@@ -1614,6 +1616,8 @@ export default function App({ user }) {
                       ? 'bg-purple-100 text-purple-600'
                       : 'text-gray-600 hover:bg-gray-100'
                   }`}
+                  aria-current={item.active ? 'page' : undefined}
+                  aria-label={`Navigate to ${item.label} page`}
                 >
                   {item.icon}
                   <span>{item.label}</span>
@@ -1622,12 +1626,12 @@ export default function App({ user }) {
             ))}
           </ul>
         </nav>
-      </div>
+      </aside>
 
-      {/* Main Content */}
-    <div className="flex-1 flex flex-col h-full min-h-0 overflow-y-auto">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-8 py-6 flex items-center justify-between">
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col h-full min-h-0 overflow-y-auto" role="main" aria-label="Main content area">
+        {/* Page Header */}
+        <header className="bg-white border-b border-gray-200 px-8 py-6 flex items-center justify-between" role="banner">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">{currentPage}</h1>
             <p className="text-gray-500 mt-1">
@@ -1641,9 +1645,10 @@ export default function App({ user }) {
           </div>
           {/* House avatar and name on far right */}
           {currentPage === 'Dashboard' && (
-            <div className="flex items-center space-x-3">
-              <img
+            <div className="flex items-center space-x-3" role="complementary" aria-label="House information">
+              <OptimizedImage
                 src={householdSettings.avatar ? `data:image/png;base64,${householdSettings.avatar}` : "/HouseMate logo.png"}
+                webpSrc={householdSettings.avatar ? null : "/HouseMate logo.webp"}
                 alt="House Avatar"
                 className="w-12 h-12 rounded-full object-cover border-2 border-purple-500 shadow"
                 style={{background: 'white'}}
@@ -1652,14 +1657,14 @@ export default function App({ user }) {
               <span className="font-semibold text-lg text-gray-900">{householdSettings.houseName}</span>
             </div>
           )}
-        </div>
+        </header>
 
         {/* Page Content */}
         {currentPage === 'Dashboard' && (
           <>
-            {/* Stats Cards - Full Width */}
-            <div className="p-8 pb-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Dashboard Statistics Overview */}
+            <section className="p-8 pb-4" role="region" aria-labelledby="dashboard-stats">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" role="group" aria-label="Dashboard statistics">
                 <StatsCard
                   title="Total Tasks"
                   amount={dashboardStats.totalTasks.toString()}
@@ -1689,28 +1694,28 @@ export default function App({ user }) {
                   variant="danger"
                 />
               </div>
-            </div>
+            </section>
 
             {/* House Information Section */}
-            <div className="px-8 pb-4">
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">House Information</h3>
+            <section className="px-8 pb-4" role="region" aria-labelledby="house-info">
+              <article className="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 id="house-info" className="text-lg font-semibold text-gray-900 mb-4">House Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* House Address */}
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
-                      <MapPin size={16} className="text-gray-500" />
+                      <MapPin size={16} className="text-gray-500" aria-hidden="true" />
                       <h4 className="font-medium text-gray-700">Address</h4>
                     </div>
-                    <p className="text-gray-600 pl-6">
+                    <address className="text-gray-600 pl-6 not-italic">
                       {householdSettings.address || 'No address set'}
-                    </p>
+                    </address>
                   </div>
                   
                   {/* House Rules */}
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
-                      <FileText size={16} className="text-gray-500" />
+                      <FileText size={16} className="text-gray-500" aria-hidden="true" />
                       <h4 className="font-medium text-gray-700">House Rules</h4>
                     </div>
                     <div className="text-gray-600 pl-6">
@@ -1724,8 +1729,8 @@ export default function App({ user }) {
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              </article>
+            </section>
 
             {/* Task Creation Dialog for Dashboard */}
             <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
@@ -1858,35 +1863,36 @@ export default function App({ user }) {
               </DialogContent>
             </Dialog>
 
-            {/* Bottom Section with Tasks and Right Sidebar */}
-            <div className="flex flex-1">
+            {/* Main Dashboard Content Area */}
+            <div className="flex flex-1" role="region" aria-label="Dashboard main content">
               {/* Tasks Section */}
-                <div className="flex-1 px-8 pb-8">
-                  <div className="bg-white rounded-lg border border-gray-200">
-                    <div className="p-6 border-b border-gray-200">
-                      <Tabs defaultValue="all" className="w-full">
-                        <div className="flex justify-between items-center mb-4">
-                          <h2 className="text-lg font-semibold text-gray-900">Upcoming Tasks</h2>
-                          <div className="flex items-center space-x-4">
-                            {/* Dropdown for 'everyone'/'me' */}
-                            <Select value={upcomingTasksView}
-                              onValueChange={value => setUpcomingTasksView(value)}
-                            >
-                              <SelectTrigger className="w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="everyone">Everyone</SelectItem>
-                                <SelectItem value="me">Me</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <TabsList className="grid w-48 grid-cols-3">
-                              <TabsTrigger value="all">All</TabsTrigger>
-                              <TabsTrigger value="today">Today</TabsTrigger>
-                              <TabsTrigger value="overdue">Overdue</TabsTrigger>
-                            </TabsList>
-                          </div>
+              <section className="flex-1 px-8 pb-8" role="region" aria-labelledby="upcoming-tasks">
+                <article className="bg-white rounded-lg border border-gray-200">
+                  <header className="p-6 border-b border-gray-200">
+                    <Tabs defaultValue="all" className="w-full">
+                      <div className="flex justify-between items-center mb-4">
+                        <h2 id="upcoming-tasks" className="text-lg font-semibold text-gray-900">Upcoming Tasks</h2>
+                        <div className="flex items-center space-x-4" role="toolbar" aria-label="Task filtering options">
+                          {/* Dropdown for 'everyone'/'me' */}
+                          <Select value={upcomingTasksView}
+                            onValueChange={value => setUpcomingTasksView(value)}
+                            aria-label="Filter tasks by person"
+                          >
+                            <SelectTrigger className="w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="everyone">Everyone</SelectItem>
+                              <SelectItem value="me">Me</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <TabsList className="grid w-48 grid-cols-3" role="tablist" aria-label="Task status filter">
+                            <TabsTrigger value="all" role="tab">All</TabsTrigger>
+                            <TabsTrigger value="today" role="tab">Today</TabsTrigger>
+                            <TabsTrigger value="overdue" role="tab">Overdue</TabsTrigger>
+                          </TabsList>
                         </div>
+                      </div>
                         {/* Helper to get filtered tasks based on dropdown and tab */}
                         {['all', 'today', 'overdue'].map(tab => (
                           <TabsContent key={tab} value={tab} className="mt-6">
@@ -1949,11 +1955,11 @@ export default function App({ user }) {
                           </TabsContent>
                         ))}
                       </Tabs>
-                    </div>
-                  </div>
+                  </header>
+                </article>
 
                 {/* Today's Schedule Overview */}
-                <div className="bg-white rounded-lg border border-gray-200 mt-6">
+                <article className="bg-white rounded-lg border border-gray-200 mt-6">
                   <div className="p-6">
                     <div className="flex justify-between items-center mb-4">
                       <h2 className="text-lg font-semibold text-gray-900">Today's Schedule</h2>
@@ -2086,18 +2092,19 @@ export default function App({ user }) {
                       })()}
                     </div>
                   </div>
-                </div>
-              </div>
+                </article>
+              </section>
 
-              {/* Right Sidebar */}
-              <div className="w-80 p-6 space-y-6">
-                {/* Quick Actions */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
-                  <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
-                  <div className="space-y-3">
+              {/* Dashboard Sidebar */}
+              <aside className="w-80 p-6 space-y-6" role="complementary" aria-label="Dashboard sidebar">
+                {/* Quick Actions Section */}
+                <section className="bg-white rounded-lg border border-gray-200 p-6" role="region" aria-labelledby="quick-actions">
+                  <h3 id="quick-actions" className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                  <nav className="space-y-3" role="navigation" aria-label="Quick action buttons">
                     <button 
                       onClick={() => setIsTaskFormOpen(true)}
                       className="w-full text-left"
+                      aria-label="Create new task"
                     >
                       <QuickAction
                         icon={<Plus size={16} className="text-white" />}
@@ -2109,6 +2116,7 @@ export default function App({ user }) {
                     <button 
                       onClick={() => setCurrentPage('Schedule')}
                       className="w-full text-left"
+                      aria-label="View schedule"
                     >
                       <QuickAction
                         icon={<CalendarDays size={16} className="text-white" />}
@@ -2120,6 +2128,7 @@ export default function App({ user }) {
                     <button 
                       onClick={() => setCurrentPage('Bills')}
                       className="w-full text-left"
+                      aria-label="Manage bills"
                     >
                       <QuickAction
                         icon={<CreditCard size={16} className="text-white" />}
@@ -2131,6 +2140,7 @@ export default function App({ user }) {
                     <button 
                       onClick={() => setIsInviteHousemateOpen(true)}
                       className="w-full text-left"
+                      aria-label="Invite new housemate"
                     >
                       <QuickAction
                         icon={<UserPlus size={16} className="text-white" />}
@@ -2139,14 +2149,14 @@ export default function App({ user }) {
                         iconBg="bg-blue-500"
                       />
                     </button>
-                  </div>
-                </div>
+                  </nav>
+                </section>
 
-                {/* Recent Activity */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
-                  <h3 className="font-semibold text-gray-900 mb-4">Recent Activity</h3>
+                {/* Recent Activity Section */}
+                <section className="bg-white rounded-lg border border-gray-200 p-6" role="region" aria-labelledby="recent-activity" aria-live="polite">
+                  <h3 id="recent-activity" className="font-semibold text-gray-900 mb-4">Recent Activity</h3>
                   {loadingActivities ? (
-                    <div className="space-y-1">
+                    <div className="space-y-1" aria-label="Loading recent activities">
                       <div className="animate-pulse">
                         <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                           <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
@@ -2158,7 +2168,7 @@ export default function App({ user }) {
                       </div>
                     </div>
                   ) : recentActivities.length > 0 ? (
-                    <div className="space-y-1">
+                    <div className="space-y-1" role="list" aria-label="Recent activities">
                       {recentActivities.map((activity) => (
                         <ActivityItem
                           key={activity.id}
@@ -2171,20 +2181,20 @@ export default function App({ user }) {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8 text-gray-500" role="status">
                       <p>No recent activity yet</p>
                       <p className="text-sm mt-1">Activity will appear here as housemates join and interact</p>
                     </div>
                   )}
-                </div>
+                </section>
 
-                {/* Housemates */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
-                  <h3 className="font-semibold text-gray-900 mb-4">Housemates</h3>
+                {/* Housemates Section */}
+                <section className="bg-white rounded-lg border border-gray-200 p-6" role="region" aria-labelledby="housemates-overview">
+                  <h3 id="housemates-overview" className="font-semibold text-gray-900 mb-4">Housemates</h3>
                   {loadingHousemates ? (
-                    <div className="text-center py-4 text-gray-500">Loading housemates...</div>
+                    <div className="text-center py-4 text-gray-500" role="status" aria-live="polite">Loading housemates...</div>
                   ) : housemates.length > 0 ? (
-                    <div className="space-y-3">
+                    <div className="space-y-3" role="list" aria-label="Housemates list">
                       {housemates.slice(0, 3).map((housemate) => (
                         <HousemateItem
                           key={housemate.id}
@@ -2200,6 +2210,7 @@ export default function App({ user }) {
                           <button 
                             onClick={() => setCurrentPage('Housemates')}
                             className="text-sm text-blue-600 hover:text-blue-800"
+                            aria-label={`View all ${housemates.length} housemates`}
                           >
                             View all {housemates.length} housemates →
                           </button>
@@ -2207,26 +2218,26 @@ export default function App({ user }) {
                       )}
                     </div>
                   ) : (
-                    <div className="text-center py-4 text-gray-500">
+                    <div className="text-center py-4 text-gray-500" role="status">
                       <p>No housemates found</p>
                     </div>
                   )}
-                </div>
-              </div>
+                </section>
+              </aside>
             </div>
           </>
         )}
 
         {currentPage === 'Tasks' && (
-          <div className="flex-1 p-8">
-            <div className="bg-white rounded-lg border border-gray-200">
-              <div className="p-6">
+          <section className="flex-1 p-8" role="region" aria-labelledby="tasks-page">
+            <article className="bg-white rounded-lg border border-gray-200">
+              <header className="p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold text-gray-900">All Tasks</h2>
+                  <h2 id="tasks-page" className="text-xl font-semibold text-gray-900">All Tasks</h2>
                   <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
                     <DialogTrigger asChild>
-                      <Button className="bg-purple-600 hover:bg-purple-700">
-                        <Plus size={16} className="mr-2" />
+                      <Button className="bg-purple-600 hover:bg-purple-700" aria-label="Create new task">
+                        <Plus size={16} className="mr-2" aria-hidden="true" />
                         Create New Task
                       </Button>
                     </DialogTrigger>
@@ -2458,20 +2469,20 @@ export default function App({ user }) {
                     </div>
                   </TabsContent>
                 </Tabs>
-              </div>
-            </div>
-          </div>
+              </header>
+            </article>
+          </section>
         )}
 
         {currentPage === 'Bills' && (
-          <div className="flex-1 p-8">
+          <section className="flex-1 p-8" role="region" aria-labelledby="bills-page">
             <div className="space-y-6">
-              {/* Header with Create Bill Button */}
-              <div className="flex justify-between items-center">
+              {/* Bills Page Header */}
+              <header className="flex justify-between items-center">
                 <Dialog open={isBillFormOpen} onOpenChange={setIsBillFormOpen}>
                   <DialogTrigger asChild>
-                    <Button className="bg-purple-600 hover:bg-purple-700">
-                      <Plus size={16} className="mr-2" />
+                    <Button className="bg-purple-600 hover:bg-purple-700" aria-label="Add new bill">
+                      <Plus size={16} className="mr-2" aria-hidden="true" />
                       Add New Bill
                     </Button>
                   </DialogTrigger>
@@ -2632,7 +2643,7 @@ export default function App({ user }) {
                     </div>
                   </DialogContent>
                 </Dialog>
-              </div>
+              </header>
 
               {/* Bills Filter Tabs */}
               <Tabs defaultValue="all" className="w-full">
@@ -2836,18 +2847,18 @@ export default function App({ user }) {
                 </DialogContent>
               </Dialog>
             </div>
-          </div>
+          </section>
         )}
 
         {currentPage === 'Schedule' && (
-          <div className="flex-1 flex">
-            {/* Sidebar */}
-            <div className="w-80 bg-white border-r border-gray-200 p-6">
+          <div className="flex-1 flex" role="region" aria-labelledby="schedule-page">
+            {/* Schedule Sidebar */}
+            <aside className="w-80 bg-white border-r border-gray-200 p-6" role="complementary" aria-label="Schedule sidebar">
               <div className="space-y-6">
-                {/* Quick Actions */}
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
-                  <div className="space-y-3">
+                {/* Schedule Quick Actions */}
+                <section role="region" aria-labelledby="schedule-quick-actions">
+                  <h3 id="schedule-quick-actions" className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                  <nav className="space-y-3" role="navigation" aria-label="Schedule quick actions">
                     <Dialog open={isAddEventOpen} onOpenChange={setIsAddEventOpen}>
                       <DialogTrigger asChild>
                         <Button className="w-full bg-purple-600 hover:bg-purple-700">
@@ -2941,12 +2952,12 @@ export default function App({ user }) {
                       <Plus size={16} className="mr-2" />
                       Add Task
                     </Button>
-                  </div>
-                </div>
+                  </nav>
+                </section>
 
                 {/* Filters */}
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-4">Filters</h3>
+                <section role="region" aria-labelledby="schedule-filters">
+                  <h3 id="schedule-filters" className="font-semibold text-gray-900 mb-4">Filters</h3>
                   <div className="space-y-3">
                     <button
                       onClick={() => toggleFilter('tasks')}
@@ -2987,11 +2998,11 @@ export default function App({ user }) {
                       <Calendar size={16} className={scheduleFilters.events ? 'text-purple-600' : 'text-gray-400'} />
                     </button>
                   </div>
-                </div>
+                </section>
 
                 {/* Legend */}
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-4">Calendar Legend</h3>
+                <section role="region" aria-labelledby="schedule-legend">
+                  <h3 id="schedule-legend" className="font-semibold text-gray-900 mb-4">Calendar Legend</h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center space-x-3 text-gray-600">
                       <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
@@ -3010,17 +3021,17 @@ export default function App({ user }) {
                       <span>Overdue items</span>
                     </div>
                   </div>
-                </div>
+                </section>
               </div>
-            </div>
+            </aside>
 
-            {/* Main Content */}
-            <div className="flex-1 p-8">
+            {/* Schedule Main Content */}
+            <section className="flex-1 p-8" role="region" aria-labelledby="schedule-main">
               <div className="space-y-6">
-                {/* Header with View Toggle */}
-                <div className="flex justify-between items-start">
+                {/* Schedule Header with View Toggle */}
+                <header className="flex justify-between items-start">
                   <div>
-                    <h2 className="text-xl font-semibold text-gray-900">
+                    <h2 id="schedule-main" className="text-xl font-semibold text-gray-900">
                       {scheduleView === 'month' && selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                       {scheduleView === 'week' && `Week of ${selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
                       {scheduleView === 'list' && 'Upcoming Items'}
@@ -3104,7 +3115,7 @@ export default function App({ user }) {
                       </button>
                     </div>
                   </div>
-                </div>
+                </header>
 
                 {/* Calendar Content */}
                 <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -3533,22 +3544,22 @@ export default function App({ user }) {
                   </div>
                 </DialogContent>
               </Dialog>
-            </div>
+            </section>
           </div>
         )}
 
         {currentPage === 'Housemates' && (
-          <div className="flex-1 p-8">
+          <section className="flex-1 p-8" role="region" aria-labelledby="housemates-page">
             <div className="space-y-6">
-              {/* Header */}
-              <div className="flex justify-between items-start">
+              {/* Housemates Page Header */}
+              <header className="flex justify-between items-start">
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">Housemates</h2>
+                  <h2 id="housemates-page" className="text-xl font-semibold text-gray-900">Housemates</h2>
                   <p className="text-gray-500 mt-1">Manage your household members and their information</p>
                 </div>
-                <div className="flex space-x-3">
-                  <Button variant="outline" onClick={() => setIsInviteHousemateOpen(true)}>
-                    <Plus size={16} className="mr-2" />
+                <nav className="flex space-x-3" role="navigation" aria-label="Housemate management actions">
+                  <Button variant="outline" onClick={() => setIsInviteHousemateOpen(true)} aria-label="Invite new housemate">
+                    <Plus size={16} className="mr-2" aria-hidden="true" />
                     Invite Housemate
                   </Button>
                   
@@ -3803,8 +3814,8 @@ export default function App({ user }) {
                       </div>
                     </DialogContent>
                   </Dialog>
-                </div>
-              </div>
+                </nav>
+              </header>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {loadingHousemates ? (
@@ -4284,7 +4295,7 @@ export default function App({ user }) {
                 </div>
               </DialogContent>
             </Dialog>
-          </div>
+          </section>
         )}
 
         {currentPage === 'Settings' && (
@@ -4359,17 +4370,16 @@ export default function App({ user }) {
         )}
 
         {currentPage !== 'Dashboard' && currentPage !== 'Tasks' && currentPage !== 'Bills' && currentPage !== 'Schedule' && currentPage !== 'Housemates' && currentPage !== 'Settings' && (
-          <div className="flex-1 p-8">
+          <section className="flex-1 p-8" role="region" aria-label="Page under construction">
             <div className="bg-white rounded-lg border border-gray-200 p-8">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">{currentPage}</h2>
               <p className="text-gray-500">This page is under construction.</p>
             </div>
-          </div>
+          </section>
         )}
-      </div>
-      
-      {/* Global Modals - Always Available */}
-      <Dialog open={isInviteHousemateOpen} onOpenChange={setIsInviteHousemateOpen}>
+        
+        {/* Global Modals - Always Available */}
+        <Dialog open={isInviteHousemateOpen} onOpenChange={setIsInviteHousemateOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Add New Housemate</DialogTitle>
@@ -4504,6 +4514,7 @@ export default function App({ user }) {
           </div>
         </DialogContent>
       </Dialog>
+      </main>
 
     </div>
   );
