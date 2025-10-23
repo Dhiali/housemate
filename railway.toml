@@ -1,0 +1,12 @@
+# Railway Configuration - Backend Directory Deployment
+[build]
+  builder = "nixpacks"
+  buildCommand = "cd backend && npm install"
+
+[deploy]
+  startCommand = "cd backend && npm start"
+  restartPolicyType = "on_failure"
+  restartPolicyMaxRetries = 3
+
+[environments.production]
+  variables = { NODE_ENV = "production" }
