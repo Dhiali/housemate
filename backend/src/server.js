@@ -16,7 +16,14 @@ const app = express();
 // Configure CORS with environment variables
 const corsOrigins = process.env.CORS_ORIGINS 
   ? process.env.CORS_ORIGINS.split(',')
-  : ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175"];
+  : [
+      "http://localhost:5173", 
+      "http://localhost:5174", 
+      "http://localhost:5175",
+      "https://housemate.website",
+      "https://www.housemate.website",
+      "https://housemate-2w0s1mema-dees-projects-67461cad.vercel.app"
+    ];
 
 app.use(cors({ 
   origin: corsOrigins,
