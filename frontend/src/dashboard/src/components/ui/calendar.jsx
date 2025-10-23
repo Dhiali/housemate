@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { DayPicker } from "react-day-picker";
+// import { DayPicker } from "react-day-picker";
 
 import { cn } from "./utils";
 import { buttonVariants } from "./button";
@@ -14,7 +14,8 @@ function Calendar({
   ...props
 }) {
   return (
-    <DayPicker
+    <div className="calendar-placeholder">Calendar temporarily disabled</div>
+    /* <DayPicker
       showOutsideDays={showOutsideDays}
       className={cn("p-3", className)}
       classNames={{
