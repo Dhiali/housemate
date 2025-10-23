@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" style="background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#gradient)"/>
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Main House Icon -->
+  <g transform="translate(100, 150)">
+    <path d="M60 10l50 45h-15v45h-30v-30h-10v30H25v-45H10l50-45z" fill="#ffffff" opacity="0.9"/>
+    <!-- Windows -->
+    <rect x="30" y="60" width="12" height="12" fill="#2563eb"/>
+    <rect x="58" y="60" width="12" height="12" fill="#2563eb"/>
+    <!-- Door -->
+    <rect x="47" y="70" width="16" height="30" fill="#2563eb"/>
+  </g>
+  
+  <!-- Dollar Signs -->
+  <g transform="translate(200, 180)" fill="#10b981" opacity="0.8">
+    <circle cx="0" cy="0" r="20"/>
+    <text x="0" y="8" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="#ffffff">$</text>
+  </g>
+  
+  <g transform="translate(250, 220)" fill="#f59e0b" opacity="0.8">
+    <circle cx="0" cy="0" r="16"/>
+    <text x="0" y="6" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="#ffffff">$</text>
+  </g>
+  
+  <g transform="translate(280, 160)" fill="#ef4444" opacity="0.8">
+    <circle cx="0" cy="0" r="14"/>
+    <text x="0" y="5" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#ffffff">$</text>
+  </g>
+  
+  <!-- Main Title -->
+  <text x="450" y="220" font-family="Arial, sans-serif" font-size="72" font-weight="bold" fill="#ffffff">
+    Housemate
+  </text>
+  
+  <!-- Subtitle -->
+  <text x="450" y="280" font-family="Arial, sans-serif" font-size="36" fill="#e2e8f0">
+    Split Bills &amp; Manage Shared Living
+  </text>
+  
+  <!-- Features -->
+  <g transform="translate(450, 320)">
+    <text x="0" y="30" font-family="Arial, sans-serif" font-size="24" fill="#cbd5e1">✓ Fair bill splitting</text>
+    <text x="0" y="65" font-family="Arial, sans-serif" font-size="24" fill="#cbd5e1">✓ Expense tracking</text>
+    <text x="0" y="100" font-family="Arial, sans-serif" font-size="24" fill="#cbd5e1">✓ Household task management</text>
+  </g>
+  
+  <!-- URL -->
+  <text x="450" y="570" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#60a5fa">
+    housemate.website
+  </text>
+</svg>

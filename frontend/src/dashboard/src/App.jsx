@@ -95,7 +95,7 @@ export default function App({ user }) {
   };
 
   const seoConfig = getSEOConfigForPage();
-  useSEO(seoConfig.title, seoConfig.description, seoConfig.keywords);
+  useSEO(seoConfig.title, seoConfig.description, seoConfig.keywords, seoConfig.image, seoConfig.imageAlt);
   const [tasks, setTasks] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
 

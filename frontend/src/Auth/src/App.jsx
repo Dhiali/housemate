@@ -47,7 +47,7 @@ export default function App() {
   };
 
   const seoConfig = getSEOConfig();
-  useSEO(seoConfig.title, seoConfig.description, seoConfig.keywords);
+  useSEO(seoConfig.title, seoConfig.description, seoConfig.keywords, seoConfig.image, seoConfig.imageAlt);
   const handleTabSwitch = (view) => {
     setCurrentView(view);
   };
