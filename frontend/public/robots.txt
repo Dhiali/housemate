@@ -1,12 +1,43 @@
+# Robots.txt for Housemate App
+# https://housemate.website
+
+# Allow all search engines to crawl the site
 User-agent: *
 Allow: /
 
-# Sitemap location
-Sitemap: https://housemate.website/sitemap.xml
+# Explicitly allow important pages
+Allow: /signin
+Allow: /signup
+Allow: /dashboard
+Allow: /static/
+Allow: /assets/
 
-# Crawl delay (optional)
+# Block sensitive or private areas
+Disallow: /api/
+Disallow: /admin/
+Disallow: /_next/
+Disallow: /node_modules/
+Disallow: /.env*
+Disallow: /src/
+
+# Block specific file types that shouldn't be indexed
+Disallow: *.json$
+Disallow: *.js.map$
+Disallow: *.css.map$
+
+# Allow access to important resources
+Allow: /favicon.ico
+Allow: /og-image.svg
+Allow: /robots.txt
+Allow: /sitemap.xml
+
+# Crawl delay for polite crawling (1 second)
 Crawl-delay: 1
 
-# Block any sensitive areas (if any)
-# Disallow: /admin/
-# Disallow: /api/
+# Sitemap locations
+Sitemap: https://housemate.website/sitemap.xml
+Sitemap: https://housemate.website/sitemap-index.xml
+
+# Additional sitemaps (if we add them later)
+# Sitemap: https://housemate.website/sitemap-pages.xml
+# Sitemap: https://housemate.website/sitemap-features.xml
