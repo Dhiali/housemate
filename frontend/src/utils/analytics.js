@@ -5,14 +5,6 @@
 
 // Configuration - Replace with your actual measurement ID
 const GA_MEASUREMENT_ID = 'G-DK58VEPXW6'; // Replace with your actual GA4 ID (G-XXXXXXXXXX)
-
-// Google Ads Configuration - Replace with your actual conversion ID and labels
-const GOOGLE_ADS_CONVERSION_ID = 'AW-XXXXXXXXX'; // Replace with your Google Ads conversion ID
-const GOOGLE_ADS_CONVERSION_LABELS = {
-  SIGNUP: 'REPLACE_WITH_SIGNUP_LABEL', // Replace with your sign-up conversion label
-  HOUSE_CREATION: 'REPLACE_WITH_HOUSE_LABEL', // Replace with house creation conversion label
-  PREMIUM_SIGNUP: 'REPLACE_WITH_PREMIUM_LABEL', // Replace with premium signup conversion label (future)
-};
 const ANALYTICS_CONFIG = {
   // Privacy settings
   anonymize_ip: true,
@@ -355,91 +347,6 @@ export const setUserProperties = (properties) => {
   });
   
   console.log('👤 User properties set:', properties);
-};
-
-/**
- * Google Ads Conversion Tracking
- * Track conversions for Google Ads campaigns with proper value attribution
- */
-export const trackGoogleAdsConversion = (conversionLabel, value = 1.0, currency = 'USD') => {
-  if (!analyticsEnabled || !window.gtag || GOOGLE_ADS_CONVERSION_ID === 'AW-XXXXXXXXX') {
-    console.log('🎯 Google Ads conversion queued (not configured):', conversionLabel, value);
-    return;
-  }
-
-  const conversionData = {
-    send_to: `${GOOGLE_ADS_CONVERSION_ID}/${conversionLabel}`,
-    value: value,
-    currency: currency,
-    transaction_id: Date.now().toString() // Unique transaction ID
-  };
-
-  gtag('event', 'conversion', conversionData);
-  
-  console.log('🎯 Google Ads conversion tracked:', {
-    label: conversionLabel,
-    value: value,
-    currency: currency,
-    conversion_id: GOOGLE_ADS_CONVERSION_ID
-  });
-};
-
-/**
- * Google Ads conversion tracking for specific user actions
- */
-export const trackGoogleAds = {
-  // Track user sign-up conversions
-  signup: (userValue = 5.0) => {
-    if (GOOGLE_ADS_CONVERSION_LABELS.SIGNUP !== 'REPLACE_WITH_SIGNUP_LABEL') {
-      trackGoogleAdsConversion(GOOGLE_ADS_CONVERSION_LABELS.SIGNUP, userValue);
-      
-      // Also track as enhanced conversion for better attribution
-      trackEvent('google_ads_conversion', {
-        event_category: 'conversion',
-        conversion_type: 'signup',
-        conversion_value: userValue
-      });
-    }
-  },
-
-  // Track house/household creation - higher value action
-  houseCreation: (userValue = 15.0) => {
-    if (GOOGLE_ADS_CONVERSION_LABELS.HOUSE_CREATION !== 'REPLACE_WITH_HOUSE_LABEL') {
-      trackGoogleAdsConversion(GOOGLE_ADS_CONVERSION_LABELS.HOUSE_CREATION, userValue);
-      
-      trackEvent('google_ads_conversion', {
-        event_category: 'conversion',
-        conversion_type: 'house_creation',
-        conversion_value: userValue
-      });
-    }
-  },
-
-  // Track premium subscription conversions (future feature)
-  premiumSignup: (subscriptionValue = 50.0) => {
-    if (GOOGLE_ADS_CONVERSION_LABELS.PREMIUM_SIGNUP !== 'REPLACE_WITH_PREMIUM_LABEL') {
-      trackGoogleAdsConversion(GOOGLE_ADS_CONVERSION_LABELS.PREMIUM_SIGNUP, subscriptionValue);
-      
-      trackEvent('google_ads_conversion', {
-        event_category: 'conversion',
-        conversion_type: 'premium_signup',
-        conversion_value: subscriptionValue
-      });
-    }
-  },
-
-  // Track custom conversion with dynamic label and value
-  customConversion: (conversionLabel, value, description = '') => {
-    trackGoogleAdsConversion(conversionLabel, value);
-    
-    trackEvent('google_ads_conversion', {
-      event_category: 'conversion',
-      conversion_type: 'custom',
-      conversion_label: conversionLabel,
-      conversion_value: value,
-      conversion_description: description
-    });
-  }
 };
 
 /**
