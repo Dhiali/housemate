@@ -45,7 +45,7 @@ import {
   UserPlus
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { getTasks, addTask, updateTask, getHouse, getHousemates, getUserStatistics, getUserCompletedTasks, getUserPendingTasks, getUserContributedBills, getBills, addBill, updateBill, deleteBill, payBill } from '../../apiHelpers';
+import { getTasks, addTask, updateTask, getHouse, getHouseStatistics, getHousemates, getUserStatistics, getUserCompletedTasks, getUserPendingTasks, getUserContributedBills, getBills, addBill, updateBill, deleteBill, payBill } from '../../apiHelpers';
 import { updateUserBio, updateUserPhone } from '../../apiHelpers';
 import { Button } from './components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
@@ -74,6 +74,15 @@ export default function App({ user }) {
   const [upcomingTasksView, setUpcomingTasksView] = useState('everyone');
   const [tasks, setTasks] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
+
+  // Dashboard statistics state
+  const [dashboardStats, setDashboardStats] = useState({
+    totalTasks: 0,
+    completedTasks: 0,
+    pendingTasks: 0,
+    overdueTasks: 0,
+    completionRate: 0
+  });
 
   // Fetch house info for signed-in user
   const [householdSettings, setHouseholdSettings] = useState({
@@ -129,9 +138,20 @@ export default function App({ user }) {
         };
       });
       setTasks(mapped);
+      
+      // Calculate and update dashboard statistics
+      const stats = calculateDashboardStats(mapped);
+      setDashboardStats(stats);
     } catch (error) {
       console.error('Error fetching tasks:', error);
       setTasks([]);
+      setDashboardStats({
+        totalTasks: 0,
+        completedTasks: 0,
+        pendingTasks: 0,
+        overdueTasks: 0,
+        completionRate: 0
+      });
     } finally {
       setLoadingTasks(false);
     }
@@ -158,7 +178,7 @@ export default function App({ user }) {
       // Update task status in database
       await updateTask(taskId, { status: backendStatus });
       
-      // Refresh tasks to get updated data
+      // Refresh tasks to get updated data (this will also recalculate stats)
       fetchTasks();
       
       // Refresh housemate statistics
@@ -303,6 +323,74 @@ export default function App({ user }) {
       setHousemates(updatedHousemates);
     } catch (error) {
       console.error('Error updating housemate statistics:', error);
+    }
+  };
+
+  // Function to calculate dashboard statistics from tasks
+  const calculateDashboardStats = (tasksData) => {
+    if (!tasksData || !Array.isArray(tasksData)) {
+      return {
+        totalTasks: 0,
+        completedTasks: 0,
+        pendingTasks: 0,
+        overdueTasks: 0,
+        completionRate: 0
+      };
+    }
+
+    const now = new Date();
+    const totalTasks = tasksData.length;
+    const completedTasks = tasksData.filter(task => 
+      task.status?.toLowerCase() === 'completed'
+    ).length;
+    
+    const pendingTasks = tasksData.filter(task => 
+      task.status?.toLowerCase() === 'open' || 
+      task.status?.toLowerCase() === 'pending' ||
+      task.status?.toLowerCase() === 'in_progress'
+    ).length;
+    
+    const overdueTasks = tasksData.filter(task => {
+      if (!task.due_date || task.status?.toLowerCase() === 'completed') {
+        return false;
+      }
+      const dueDate = new Date(task.due_date);
+      return dueDate < now;
+    }).length;
+    
+    const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    
+    return {
+      totalTasks,
+      completedTasks,
+      pendingTasks,
+      overdueTasks,
+      completionRate
+    };
+  };
+
+  // Function to fetch house statistics from backend (alternative to frontend calculations)
+  const fetchHouseStatistics = async () => {
+    if (!user?.house_id) return;
+    
+    try {
+      const response = await getHouseStatistics(user.house_id);
+      const stats = response.data.tasks;
+      
+      setDashboardStats({
+        totalTasks: stats.total,
+        completedTasks: stats.completed,
+        pendingTasks: stats.pending,
+        overdueTasks: stats.overdue,
+        completionRate: stats.completionRate
+      });
+      
+      console.log('House statistics from backend:', response.data);
+    } catch (error) {
+      console.error('Error fetching house statistics:', error);
+      // Fall back to frontend calculation if backend fails
+      const stats = calculateDashboardStats(tasks);
+      setDashboardStats(stats);
     }
   };
 
@@ -1550,29 +1638,29 @@ export default function App({ user }) {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatsCard
                   title="Total Tasks"
-                  amount="12"
-                  subtitle="This week"
+                  amount={dashboardStats.totalTasks.toString()}
+                  subtitle="All tasks"
                   icon={<CheckSquare size={20} />}
                   variant="default"
                 />
                 <StatsCard
                   title="Completed"
-                  amount="8"
-                  subtitle="67% completion rate"
+                  amount={dashboardStats.completedTasks.toString()}
+                  subtitle={`${dashboardStats.completionRate}% completion rate`}
                   icon={<CheckCircle size={20} />}
                   variant="success"
                 />
                 <StatsCard
                   title="Pending"
-                  amount="3"
-                  subtitle="3 tasks due today"
+                  amount={dashboardStats.pendingTasks.toString()}
+                  subtitle={`${dashboardStats.pendingTasks} tasks in progress`}
                   icon={<Clock size={20} />}
                   variant="warning"
                 />
                 <StatsCard
                   title="Overdue"
-                  amount="1"
-                  subtitle="1 task needs attention"
+                  amount={dashboardStats.overdueTasks.toString()}
+                  subtitle={dashboardStats.overdueTasks > 0 ? `${dashboardStats.overdueTasks} ${dashboardStats.overdueTasks === 1 ? 'task needs' : 'tasks need'} attention` : 'All tasks on time'}
                   icon={<AlertTriangle size={20} />}
                   variant="danger"
                 />
@@ -2069,29 +2157,36 @@ export default function App({ user }) {
                 {/* Housemates */}
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
                   <h3 className="font-semibold text-gray-900 mb-4">Housemates</h3>
-                  <div className="space-y-3">
-                    <HousemateItem
-                      name="Sarah M."
-                      initials="SM"
-                      tasks="3 tasks completed"
-                      statusColor="bg-green-500"
-                      avatarBg="bg-blue-500"
-                    />
-                    <HousemateItem
-                      name="Mike R."
-                      initials="MR"
-                      tasks="2 tasks pending"
-                      statusColor="bg-yellow-500"
-                      avatarBg="bg-orange-500"
-                    />
-                    <HousemateItem
-                      name="Alex K."
-                      initials="AK"
-                      tasks="1 task overdue"
-                      statusColor="bg-red-500"
-                      avatarBg="bg-green-500"
-                    />
-                  </div>
+                  {loadingHousemates ? (
+                    <div className="text-center py-4 text-gray-500">Loading housemates...</div>
+                  ) : housemates.length > 0 ? (
+                    <div className="space-y-3">
+                      {housemates.slice(0, 3).map((housemate) => (
+                        <HousemateItem
+                          key={housemate.id}
+                          name={housemate.name}
+                          initials={housemate.initials}
+                          tasks={`${housemate.tasksCompleted} tasks completed`}
+                          statusColor={housemate.tasksAssigned > 0 ? "bg-yellow-500" : "bg-green-500"}
+                          avatarBg={housemate.avatarBg}
+                        />
+                      ))}
+                      {housemates.length > 3 && (
+                        <div className="text-center pt-2">
+                          <button 
+                            onClick={() => setCurrentPage('Housemates')}
+                            className="text-sm text-blue-600 hover:text-blue-800"
+                          >
+                            View all {housemates.length} housemates →
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 text-gray-500">
+                      <p>No housemates found</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

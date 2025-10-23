@@ -17,12 +17,13 @@ export const register = (user) => API.post('/register', user);
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:3000",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000",
 });
 
 // Houses
 export const getHouses = () => API.get("/houses");
 export const getHouse = (id) => API.get(`/houses/${id}`);
+export const getHouseStatistics = (houseId) => API.get(`/houses/${houseId}/statistics`);
 export const addHouse = (house) => API.post("/houses", house);
 export const updateHouse = (id, data) => API.put(`/houses/${id}`, data);
 export const deleteHouse = (id) => API.delete(`/houses/${id}`);

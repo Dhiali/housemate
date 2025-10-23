@@ -5,11 +5,21 @@ import jwt from 'jsonwebtoken';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
+import dotenv from 'dotenv';
 import upload from './avatarUpload.js';
 
+// Load environment variables
+dotenv.config();
+
 const app = express();
+
+// Configure CORS with environment variables
+const corsOrigins = process.env.CORS_ORIGINS 
+  ? process.env.CORS_ORIGINS.split(',')
+  : ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175"];
+
 app.use(cors({ 
-  origin: ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175"],
+  origin: corsOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -220,6 +230,88 @@ app.delete('/houses/:id', (req, res) => {
     res.json({ message: "House deleted!" });
   });
 });
+
+// House statistics endpoint
+app.get('/houses/:houseId/statistics', (req, res) => {
+  const { houseId } = req.params;
+  console.log('Fetching statistics for house_id:', houseId);
+  
+  const queries = {
+    // Tasks statistics
+    totalTasks: "SELECT COUNT(*) as count FROM tasks WHERE house_id = ?",
+    completedTasks: "SELECT COUNT(*) as count FROM tasks WHERE house_id = ? AND status = 'completed'",
+    pendingTasks: "SELECT COUNT(*) as count FROM tasks WHERE house_id = ? AND status IN ('open', 'pending', 'in_progress')",
+    overdueTasks: `
+      SELECT COUNT(*) as count FROM tasks 
+      WHERE house_id = ? 
+      AND status != 'completed' 
+      AND due_date < CURDATE()
+    `,
+    // Bills statistics
+    totalBills: "SELECT COUNT(*) as count FROM bills WHERE house_id = ?",
+    unpaidBills: "SELECT COUNT(*) as count FROM bills WHERE house_id = ? AND status = 'unpaid'",
+    totalBillsAmount: "SELECT COALESCE(SUM(amount), 0) as total FROM bills WHERE house_id = ?",
+    unpaidBillsAmount: "SELECT COALESCE(SUM(amount), 0) as total FROM bills WHERE house_id = ? AND status = 'unpaid'",
+    // Users statistics
+    totalHousemates: "SELECT COUNT(*) as count FROM users WHERE house_id = ?",
+    activeHousemates: "SELECT COUNT(*) as count FROM users WHERE house_id = ? AND status = 'active'"
+  };
+
+  const results = {};
+  const promises = [];
+
+  // Execute all queries
+  for (const [key, query] of Object.entries(queries)) {
+    promises.push(
+      new Promise((resolve, reject) => {
+        db.query(query, [houseId], (err, queryResults) => {
+          if (err) {
+            console.error(`Error in ${key} query:`, err);
+            reject(err);
+          } else {
+            results[key] = queryResults[0].count !== undefined ? queryResults[0].count : queryResults[0].total;
+            resolve();
+          }
+        });
+      })
+    );
+  }
+
+  Promise.all(promises)
+    .then(() => {
+      // Calculate additional metrics
+      const completionRate = results.totalTasks > 0 ? 
+        Math.round((results.completedTasks / results.totalTasks) * 100) : 0;
+      
+      const response = {
+        tasks: {
+          total: results.totalTasks,
+          completed: results.completedTasks,
+          pending: results.pendingTasks,
+          overdue: results.overdueTasks,
+          completionRate: completionRate
+        },
+        bills: {
+          total: results.totalBills,
+          unpaid: results.unpaidBills,
+          totalAmount: parseFloat(results.totalBillsAmount || 0),
+          unpaidAmount: parseFloat(results.unpaidBillsAmount || 0)
+        },
+        housemates: {
+          total: results.totalHousemates,
+          active: results.activeHousemates
+        }
+      };
+      
+      console.log('House statistics:', response);
+      res.json({ data: response });
+    })
+    .catch(error => {
+      console.error('Error fetching house statistics:', error);
+      res.status(500).json({ error: 'Failed to fetch house statistics' });
+    });
+});
+
 // Bills endpoints
 
 // Get all bills for a house with sharing information
@@ -1400,4 +1492,26 @@ app.put('/users/:id/privacy', (req, res) => {
   }
 });
 
-app.listen(3000, () => console.log("🚀 Server running on http://localhost:3000"));
+// Health check endpoint for deployment platforms
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Housemate API is running!', 
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0'
+  });
+});
+
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    database: 'connected',
+    timestamp: new Date().toISOString()
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
+});
