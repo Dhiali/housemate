@@ -45,7 +45,7 @@ import {
   UserPlus
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { getTasks, addTask, getHouse, getHousemates, getUserStatistics, getUserCompletedTasks, getUserPendingTasks, getUserContributedBills } from '../../apiHelpers';
+import { getTasks, addTask, updateTask, getHouse, getHousemates, getUserStatistics, getUserCompletedTasks, getUserPendingTasks, getUserContributedBills } from '../../apiHelpers';
 import { updateUserBio, updateUserPhone } from '../../apiHelpers';
 import { Button } from './components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
@@ -109,7 +109,22 @@ export default function App({ user }) {
           dueDate: task.due_date ? `Due ${new Date(task.due_date).toLocaleDateString()}` : 'No due date',
           assignedTo: task.assigned_to_name ? `${task.assigned_to_name} ${task.assigned_to_surname || ''}`.trim() : 'Unknown',
           priority: task.priority ? task.priority.toUpperCase() + ' PRIORITY' : 'MEDIUM PRIORITY',
-          status: task.status === 'completed' ? 'Completed' : task.status === 'in_progress' ? 'In Progress' : 'Pending',
+          status: (() => {
+            switch (task.status?.toLowerCase()) {
+              case 'completed':
+                return 'Completed';
+              case 'in_progress':
+              case 'in progress':
+                return 'In Progress';
+              case 'pending':
+              case 'open':
+                return 'Pending';
+              case 'overdue':
+                return 'Overdue';
+              default:
+                return 'Pending';
+            }
+          })(),
         };
       });
       setTasks(mapped);
@@ -118,6 +133,122 @@ export default function App({ user }) {
       setTasks([]);
     } finally {
       setLoadingTasks(false);
+    }
+  };
+
+  const handleTaskStatusChange = async (taskId, newStatus) => {
+    try {
+      // Convert frontend status format to backend format
+      const backendStatus = (() => {
+        switch (newStatus) {
+          case 'Completed':
+            return 'completed';
+          case 'In Progress':
+            return 'in_progress';
+          case 'Pending':
+            return 'open';  // Backend uses 'open' for pending tasks
+          case 'Overdue':
+            return 'overdue';
+          default:
+            return 'open';
+        }
+      })();
+      
+      // Update task status in database
+      await updateTask(taskId, { status: backendStatus });
+      
+      // Refresh tasks to get updated data
+      fetchTasks();
+      
+      // Refresh housemate statistics
+      if (user?.house_id) {
+        fetchHousemateStatistics();
+      }
+    } catch (error) {
+      console.error('Error updating task status:', error);
+    }
+  };
+
+  // Task filtering helper functions
+  const isToday = (dateString) => {
+    if (!dateString) return false;
+    const today = new Date();
+    const taskDate = new Date(dateString);
+    return (
+      taskDate.getDate() === today.getDate() &&
+      taskDate.getMonth() === today.getMonth() &&
+      taskDate.getFullYear() === today.getFullYear()
+    );
+  };
+
+  const isOverdue = (dateString, status) => {
+    if (!dateString || status === 'completed' || status === 'Completed') return false;
+    const now = new Date();
+    const taskDate = new Date(dateString);
+    
+    // Calculate the difference in milliseconds
+    const diffInMs = now.getTime() - taskDate.getTime();
+    const diffInHours = diffInMs / (1000 * 60 * 60);
+    
+    // Task is overdue if it's 24+ hours past due date
+    return diffInHours >= 24;
+  };
+
+  const getOverdueDays = (dateString) => {
+    if (!dateString) return 0;
+    const now = new Date();
+    const taskDate = new Date(dateString);
+    
+    const diffInMs = now.getTime() - taskDate.getTime();
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    
+    return Math.max(0, diffInDays);
+  };
+
+  const enhanceTaskWithOverdueInfo = (task) => {
+    const enhanced = { ...task };
+    
+    // Update status based on task state
+    if (task.status === 'Completed') {
+      enhanced.status = 'Completed';
+      enhanced.isOverdue = false;
+      enhanced.overdueDays = 0;
+    } else if (isOverdue(task.due_date, task.status)) {
+      const overdueDays = getOverdueDays(task.due_date);
+      enhanced.status = 'Overdue';
+      enhanced.isOverdue = true;
+      enhanced.overdueDays = overdueDays;
+    } else {
+      // Keep original status (Pending, In Progress, etc.)
+      enhanced.isOverdue = false;
+      enhanced.overdueDays = 0;
+    }
+    
+    return enhanced;
+  };
+
+  const filterTasksByType = (filterType) => {
+    const today = new Date();
+    
+    switch (filterType) {
+      case 'all':
+        return tasks.filter(task => task.status !== 'Completed');
+      
+      case 'today':
+        return tasks.filter(task => 
+          task.status !== 'Completed' && task.due_date && isToday(task.due_date)
+        );
+      
+      case 'overdue':
+        return tasks.filter(task => 
+          task.status !== 'Completed' && task.due_date && isOverdue(task.due_date, task.status)
+        );
+      
+      case 'past':
+        return tasks.filter(task => task.status === 'Completed');
+      
+      default:
+        return tasks;
     }
   };
 
@@ -960,7 +1091,7 @@ export default function App({ user }) {
     return date.toISOString().split('T')[0];
   };
 
-  const isToday = (date) => {
+  const isTodayCalendar = (date) => {
     const today = new Date();
     return formatDate(date) === formatDate(today);
   };
@@ -2039,34 +2170,101 @@ export default function App({ user }) {
                   
                   <TabsContent value="all" className="mt-6">
                     <div className="space-y-4">
-                      {tasks.map((task, index) => (
-                        <TaskItem key={index} {...task} />
-                      ))}
+                      {loadingTasks ? (
+                        <div className="text-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                          <p className="text-gray-500 mt-2">Loading tasks...</p>
+                        </div>
+                      ) : filterTasksByType('all').length > 0 ? (
+                        filterTasksByType('all').map((task, index) => (
+                          <TaskItem 
+                            key={task.id || index} 
+                            {...enhanceTaskWithOverdueInfo(task)} 
+                            onStatusChange={(newStatus) => handleTaskStatusChange(task.id, newStatus)}
+                          />
+                        ))
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          <CheckSquare size={48} className="mx-auto mb-4 text-gray-300" />
+                          <p>No active tasks</p>
+                          <p className="text-sm mt-1">Create a new task to get started</p>
+                        </div>
+                      )}
                     </div>
                   </TabsContent>
                   
                   <TabsContent value="today" className="mt-6">
                     <div className="space-y-4">
-                      {tasks.filter(task => task.dueDate.includes('Today')).map((task, index) => (
-                        <TaskItem key={index} {...task} />
-                      ))}
+                      {loadingTasks ? (
+                        <div className="text-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                          <p className="text-gray-500 mt-2">Loading tasks...</p>
+                        </div>
+                      ) : filterTasksByType('today').length > 0 ? (
+                        filterTasksByType('today').map((task, index) => (
+                          <TaskItem 
+                            key={task.id || index} 
+                            {...enhanceTaskWithOverdueInfo(task)} 
+                            onStatusChange={(newStatus) => handleTaskStatusChange(task.id, newStatus)}
+                          />
+                        ))
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          <Calendar size={48} className="mx-auto mb-4 text-gray-300" />
+                          <p>No tasks due today</p>
+                          <p className="text-sm mt-1">Great job staying on top of your tasks!</p>
+                        </div>
+                      )}
                     </div>
                   </TabsContent>
                   
                   <TabsContent value="overdue" className="mt-6">
                     <div className="space-y-4">
-                      {tasks.filter(task => task.status === 'Overdue').map((task, index) => (
-                        <TaskItem key={index} {...task} />
-                      ))}
+                      {loadingTasks ? (
+                        <div className="text-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                          <p className="text-gray-500 mt-2">Loading tasks...</p>
+                        </div>
+                      ) : filterTasksByType('overdue').length > 0 ? (
+                        filterTasksByType('overdue').map((task, index) => (
+                          <TaskItem 
+                            key={task.id || index} 
+                            {...enhanceTaskWithOverdueInfo(task)} 
+                            onStatusChange={(newStatus) => handleTaskStatusChange(task.id, newStatus)}
+                          />
+                        ))
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          <AlertTriangle size={48} className="mx-auto mb-4 text-gray-300" />
+                          <p>No overdue tasks</p>
+                          <p className="text-sm mt-1">Excellent! You're up to date</p>
+                        </div>
+                      )}
                     </div>
                   </TabsContent>
                   
                   <TabsContent value="past" className="mt-6">
                     <div className="space-y-4">
-                      <div className="text-center py-8 text-gray-500">
-                        <CheckCircle size={48} className="mx-auto mb-4 text-gray-300" />
-                        <p>No completed tasks yet</p>
-                      </div>
+                      {loadingTasks ? (
+                        <div className="text-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                          <p className="text-gray-500 mt-2">Loading tasks...</p>
+                        </div>
+                      ) : filterTasksByType('past').length > 0 ? (
+                        filterTasksByType('past').map((task, index) => (
+                          <TaskItem 
+                            key={task.id || index} 
+                            {...enhanceTaskWithOverdueInfo(task)} 
+                            onStatusChange={(newStatus) => handleTaskStatusChange(task.id, newStatus)}
+                          />
+                        ))
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          <CheckCircle size={48} className="mx-auto mb-4 text-gray-300" />
+                          <p>No completed tasks yet</p>
+                          <p className="text-sm mt-1">Completed tasks will appear here</p>
+                        </div>
+                      )}
                     </div>
                   </TabsContent>
                 </Tabs>
@@ -2580,11 +2778,11 @@ export default function App({ user }) {
                               key={day.getTime()}
                               className={`h-32 border-r border-b border-gray-100 p-2 ${
                                 isCurrentMonth ? 'bg-white' : 'bg-gray-50'
-                              } ${isToday(day) ? 'bg-blue-50' : ''}`}
+                              } ${isTodayCalendar(day) ? 'bg-blue-50' : ''}`}
                             >
                               <div className={`text-sm font-medium mb-2 ${
                                 isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
-                              } ${isToday(day) ? 'text-blue-600' : ''}`}>
+                              } ${isTodayCalendar(day) ? 'text-blue-600' : ''}`}>
                                 {day.getDate()}
                               </div>
                               
@@ -2628,7 +2826,7 @@ export default function App({ user }) {
                               {day.toLocaleDateString('en-US', { weekday: 'short' })}
                             </div>
                             <div className={`text-lg font-semibold mt-1 ${
-                              isToday(day) ? 'text-blue-600' : 'text-gray-900'
+                              isTodayCalendar(day) ? 'text-blue-600' : 'text-gray-900'
                             }`}>
                               {day.getDate()}
                             </div>
@@ -2645,7 +2843,7 @@ export default function App({ user }) {
                             <div
                               key={day.getTime()}
                               className={`border-r border-gray-100 p-3 ${
-                                isToday(day) ? 'bg-blue-50' : 'bg-white'
+                                isTodayCalendar(day) ? 'bg-blue-50' : 'bg-white'
                               }`}
                             >
                               <div className="space-y-2">

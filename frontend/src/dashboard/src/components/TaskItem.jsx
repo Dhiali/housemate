@@ -13,7 +13,9 @@ export function TaskItem({
   priority,
   avatarInitials,
   avatar,
-  onStatusChange
+  onStatusChange,
+  isOverdue = false,
+  overdueDays = 0
 }) {
   const getStatusColor = (status) => {
     switch (status) {
@@ -23,6 +25,8 @@ export function TaskItem({
         return 'bg-yellow-100 text-yellow-700 border-yellow-200';
       case 'Overdue':
         return 'bg-red-100 text-red-700 border-red-200';
+      case 'Completed':
+        return 'bg-green-100 text-green-700 border-green-200';
       default:
         return 'bg-gray-100 text-gray-700 border-gray-200';
     }
@@ -58,7 +62,18 @@ export function TaskItem({
               >
                 {status}
               </Badge>
-              <span className="text-xs text-gray-500">{dueDate}</span>
+              {isOverdue ? (
+                <span className="text-xs">
+                  <span className="text-gray-500">{dueDate}</span>
+                  {overdueDays > 0 && (
+                    <span className="text-red-600 font-bold ml-1">
+                      - {overdueDays} day{overdueDays !== 1 ? 's' : ''} overdue
+                    </span>
+                  )}
+                </span>
+              ) : (
+                <span className="text-xs text-gray-500">{dueDate}</span>
+              )}
               <Badge 
                 className={`text-xs px-2 py-1 ${getPriorityColor(priority)}`}
               >
@@ -84,12 +99,15 @@ export function TaskItem({
           }`}></div>
           {/* Status dropdown for admin */}
           <div className="w-24 mt-2">
-            <Select value={status} onValueChange={value => onStatusChange && onStatusChange(value)}>
+            <Select 
+              value={status} 
+              onValueChange={value => onStatusChange && onStatusChange(value)}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Pending">Open</SelectItem>
+                <SelectItem value="Pending">Pending</SelectItem>
                 <SelectItem value="In Progress">In Progress</SelectItem>
                 <SelectItem value="Completed">Completed</SelectItem>
               </SelectContent>
