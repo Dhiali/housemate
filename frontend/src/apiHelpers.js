@@ -59,11 +59,12 @@ export const deleteTask = (id) => API.delete(`/tasks/${id}`);
 export const getTaskHistory = (id) => API.get(`/tasks/${id}/history`);
 
 // Bills
-export const getBills = () => API.get("/bills");
+export const getBills = (house_id) => API.get(`/bills?house_id=${house_id}`);
 export const getBill = (id) => API.get(`/bills/${id}`);
 export const addBill = (bill) => API.post("/bills", bill);
 export const updateBill = (id, data) => API.put(`/bills/${id}`, data);
-export const deleteBill = (id) => API.delete(`/bills/${id}`);
+export const deleteBill = (id, deleted_by) => API.delete(`/bills/${id}`, { data: { deleted_by } });
+export const payBill = (id, payment_data) => API.put(`/bills/${id}/pay`, payment_data);
 
 // Schedule
 export const getSchedule = () => API.get("/schedule");

@@ -45,7 +45,7 @@ import {
   UserPlus
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { getTasks, addTask, updateTask, getHouse, getHousemates, getUserStatistics, getUserCompletedTasks, getUserPendingTasks, getUserContributedBills } from '../../apiHelpers';
+import { getTasks, addTask, updateTask, getHouse, getHousemates, getUserStatistics, getUserCompletedTasks, getUserPendingTasks, getUserContributedBills, getBills, addBill, updateBill, deleteBill, payBill, getSchedule, addSchedule, deleteSchedule } from '../../apiHelpers';
 import { updateUserBio, updateUserPhone } from '../../apiHelpers';
 import { Button } from './components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
@@ -57,6 +57,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from './components/ui/badge';
 import { Switch } from './components/ui/switch';
 import { Separator } from './components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from './components/ui/avatar';
 import { StatsCard } from './components/StatsCard';
 import { TaskItem } from './components/TaskItem';
 import { QuickAction } from './components/QuickAction';
@@ -80,8 +81,8 @@ export default function App({ user }) {
     avatar: '',
     address: '123 Maple Street, Downtown, City 12345',
     houseRules: 'Keep common areas clean\nNo shoes in bedrooms\nQuiet hours: 10 PM - 7 AM\nTake turns with dishes\nGuests must be approved by all housemates',
-    currency: 'USD',
-    currencySymbol: '$',
+    currency: 'ZAR',
+    currencySymbol: 'R',
     defaultSplitMethod: 'equal',
     taskAutoAssign: false,
     billReminderDays: 3
@@ -162,7 +163,7 @@ export default function App({ user }) {
       
       // Refresh housemate statistics
       if (user?.house_id) {
-        fetchHousemateStatistics();
+        fetchHousemateStatistics(housemates);
       }
     } catch (error) {
       console.error('Error updating task status:', error);
@@ -252,8 +253,35 @@ export default function App({ user }) {
     }
   };
 
+  // Function to filter bills by type
+  const filterBillsByType = (filterType) => {
+    const today = new Date();
+    
+    switch (filterType) {
+      case 'all':
+        return bills;
+      
+      case 'overdue':
+        return bills.filter(bill => bill.isOverdue);
+      
+      case 'in-progress':
+        return bills.filter(bill => bill.status === 'Partially Paid' || bill.status === 'Pending');
+      
+      case 'past':
+        return bills.filter(bill => bill.status === 'Paid');
+      
+      default:
+        return bills;
+    }
+  };
+
   // Function to fetch statistics for housemates
   const fetchHousemateStatistics = async (housematesData) => {
+    if (!housematesData || !Array.isArray(housematesData)) {
+      console.log('No housemates data provided for statistics update');
+      return;
+    }
+    
     try {
       const updatedHousemates = await Promise.all(
         housematesData.map(async (housemate) => {
@@ -278,9 +306,11 @@ export default function App({ user }) {
     }
   };
 
-  // Fetch tasks when user has house_id
+  // Fetch tasks and bills when user has house_id
   useEffect(() => {
     fetchTasks();
+    fetchBills();
+    fetchScheduleEvents();
   }, [user?.house_id]);
 
   useEffect(() => {
@@ -423,69 +453,148 @@ export default function App({ user }) {
       }
     }
   };
-  
-  const [bills, setBills] = useState([
-    {
-      id: 1,
-      icon: <Zap size={20} className="text-yellow-600" />,
-      title: 'Electricity Bill',
-      description: 'Monthly electricity usage',
-      amount: 180.50,
-      perPerson: 45.13,
-      paid: 0,
-  status: 'Pending',
-      dueDate: '2024-12-15',
-      isOverdue: true
-    },
-    {
-      id: 2,
-      icon: <Wifi size={20} className="text-blue-600" />,
-      title: 'Internet Bill',
-      description: 'High-speed internet service',
-      amount: 89.99,
-      perPerson: 22.50,
-      paid: 44.99,
-  status: 'Partially Paid',
-      dueDate: '2024-12-20',
-      isOverdue: true
-    },
-    {
-      id: 3,
-      icon: <ShoppingBag size={20} className="text-green-600" />,
-      title: 'Grocery Shopping',
-      description: 'Weekly grocery run - Whole Foods',
-      amount: 156.78,
-      perPerson: 39.20,
-      paid: 156.78,
-  status: 'Overdue',
-      dueDate: '2024-12-12',
-      isOverdue: true
-    },
-    {
-      id: 4,
-      icon: <Droplets size={20} className="text-blue-500" />,
-      title: 'Water Bill',
-      description: 'Monthly water and sewage',
-      amount: 67.25,
-      perPerson: 16.81,
-      paid: 67.25,
-  status: 'Paid',
-      dueDate: '2024-12-25',
-      isOverdue: false
-    },
-    {
-      id: 5,
-      icon: <Sparkles size={20} className="text-purple-600" />,
-      title: 'House Cleaning Service',
-      description: 'Bi-weekly deep cleaning',
-      amount: 120.00,
-      perPerson: 30.00,
-      paid: 0,
-  status: 'Pending',
-      dueDate: '2024-12-18',
-      isOverdue: true
+
+  const [bills, setBills] = useState([]);
+  const [loadingBills, setLoadingBills] = useState(false);
+
+  // Fetch bills from database
+  const fetchBills = async () => {
+    if (!user?.house_id) {
+      console.log('No house_id available for fetching bills');
+      return;
     }
-  ]);
+    
+    try {
+      setLoadingBills(true);
+      const res = await getBills(user.house_id);
+      console.log('Bills API response:', res.data);
+      
+      // Map backend data to frontend format
+      const mapped = res.data.map(bill => {
+        // Find the category data, handle empty/null categories
+        let categoryData;
+        if (bill.category && bill.category !== '') {
+          categoryData = billCategories.find(cat => cat.id === bill.category);
+        }
+        // Default to utilities if no category found
+        if (!categoryData) {
+          categoryData = billCategories.find(cat => cat.id === 'utilities') || billCategories[0];
+        }
+        
+        // Calculate per person amount and payment tracking
+        const totalShares = bill.total_shares || 0;
+        const paidShares = bill.paid_shares || 0;
+        const totalPaidAmount = parseFloat(bill.total_paid_amount) || 0;
+        const billAmount = parseFloat(bill.amount) || 0;
+        
+        // Use the per_person_amount from the backend, with fallback calculation
+        let perPerson = parseFloat(bill.per_person_amount) || 0;
+        
+        // If per_person_amount is 0 or not available, calculate it manually
+        if (perPerson === 0 && totalShares > 0 && billAmount > 0) {
+          perPerson = billAmount / totalShares;
+        } else if (perPerson === 0 && totalShares === 0 && billAmount > 0) {
+          // Personal bill (no shares)
+          perPerson = billAmount;
+        }
+        
+        // Determine status based on payment data and due dates
+        let status = 'Pending';
+        const dueDate = bill.due_date ? new Date(bill.due_date) : null;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Reset time for accurate date comparison
+        
+        if (totalShares > 0) {
+          const paymentPercentage = billAmount > 0 ? totalPaidAmount / billAmount : 0;
+          if (paymentPercentage >= 1.0) {
+            status = 'Paid';
+          } else if (paymentPercentage > 0) {
+            status = 'Partially Paid';
+          } else if (dueDate && dueDate < today) {
+            status = 'Overdue';
+          } else {
+            status = 'Pending';
+          }
+        } else {
+          // No shares means it's a personal bill
+          if (dueDate && dueDate < today) {
+            status = 'Overdue';
+          } else {
+            status = 'Pending';
+          }
+        }
+        
+        return {
+          ...bill,
+          icon: categoryData.icon,
+          categoryName: categoryData.name,
+          dueDate: bill.due_date ? new Date(bill.due_date).toLocaleDateString() : 'No due date',
+          perPerson: perPerson.toFixed(2),
+          paid: totalPaidAmount.toFixed(2),
+          status: status,
+          isOverdue: status === 'Overdue',
+          paymentProgress: totalShares > 0 && billAmount > 0 ? Math.round((totalPaidAmount / billAmount) * 100) : 0,
+          createdBy: bill.created_by_name ? `${bill.created_by_name} ${bill.created_by_surname || ''}`.trim() : 'Unknown',
+          contributors: bill.contributors || null
+        };
+      });
+      
+      setBills(mapped);
+    } catch (error) {
+      console.error('Error fetching bills:', error);
+      setBills([]);
+    } finally {
+      setLoadingBills(false);
+    }
+  };
+
+  // Handle bill form submission
+  const handleSubmitBill = async () => {
+    if (!billFormData.title || !billFormData.amount || !user?.id || !user?.house_id) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      const billData = {
+        title: billFormData.title,
+        description: billFormData.description,
+        amount: parseFloat(billFormData.amount),
+        category: billFormData.category,
+        house_id: user.house_id,
+        created_by: user.id,
+        due_date: billFormData.dueDate || null,
+        shared_with: selectedHousemates.length > 0 ? selectedHousemates.map(h => h.id) : []
+      };
+
+      await addBill(billData);
+      
+      // Reset form and close modal
+      setBillFormData({
+        category: 'utilities', // Default to utilities category
+        title: '',
+        description: '',
+        amount: '',
+        dueDate: '',
+        createdBy: 'You',
+        splitMethod: 'equal',
+        customSplits: {}
+      });
+      setSelectedHousemates([]);
+      setIsBillFormOpen(false);
+      
+      // Refresh bills and statistics
+      fetchBills();
+      if (user?.house_id) {
+        fetchHousemateStatistics(housemates);
+      }
+      
+      console.log('Bill created successfully');
+    } catch (error) {
+      console.error('Error creating bill:', error);
+      alert('Error creating bill. Please try again.');
+    }
+  };
   
   const houseEvents = [
     {
@@ -523,7 +632,7 @@ export default function App({ user }) {
   
   const [isBillFormOpen, setIsBillFormOpen] = useState(false);
   const [billFormData, setBillFormData] = useState({
-    category: '',
+    category: 'utilities', // Default to utilities category
     title: '',
     description: '',
     amount: '',
@@ -535,6 +644,7 @@ export default function App({ user }) {
   
   const [isPaymentFormOpen, setIsPaymentFormOpen] = useState(false);
   const [selectedBillId, setSelectedBillId] = useState(null);
+  const [selectedHousemates, setSelectedHousemates] = useState([]);
   const [paymentFormData, setPaymentFormData] = useState({
     amount: '',
     paymentMethod: '',
@@ -579,6 +689,10 @@ export default function App({ user }) {
   const [loadingHousemates, setLoadingHousemates] = useState(false);
   const [recentActivities, setRecentActivities] = useState([]);
   const [loadingActivities, setLoadingActivities] = useState(false);
+  
+  // Schedule/Calendar state
+  const [scheduleEvents, setScheduleEvents] = useState([]);
+  const [loadingSchedule, setLoadingSchedule] = useState(false);
   const [inviteFormData, setInviteFormData] = useState({
     firstName: '',
     lastName: '',
@@ -816,61 +930,14 @@ export default function App({ user }) {
     }
   };
 
-  const handleSubmitBill = () => {
-    if (!billFormData.category || !billFormData.title || !billFormData.amount || !billFormData.dueDate) {
-      return;
-    }
 
-    const categoryData = billCategories.find(cat => cat.id === billFormData.category);
-    const amount = parseFloat(billFormData.amount);
-    let perPerson = 0;
-    
-    if (billFormData.splitMethod === 'equal') {
-      perPerson = amount / housemates.length;
-    } else {
-      // For custom split, we'll use equal for now but could be customized
-      perPerson = amount / housemates.length;
-    }
-
-    const newBill = {
-      id: bills.length + 1,
-      icon: categoryData?.icon || <FileText size={20} className="text-gray-600" />,
-      title: billFormData.title,
-      description: billFormData.description || 'No description provided',
-      amount: amount,
-      perPerson: perPerson,
-      paid: 0,
-  status: 'Pending',
-      dueDate: billFormData.dueDate,
-      isOverdue: new Date(billFormData.dueDate) < new Date()
-    };
-
-    setBills(prevBills => [...prevBills, newBill]);
-    
-    // Reset form
-    setBillFormData({
-      category: '',
-      title: '',
-      description: '',
-      amount: '',
-      dueDate: '',
-      createdBy: 'You',
-      splitMethod: 'equal',
-      customSplits: {}
-    });
-    
-    setIsBillFormOpen(false);
-    
-    // Refresh housemates data to update bill contributions
-    refreshHousemates();
-  };
 
   const handleRecordPayment = (billId) => {
     const bill = bills.find(b => b.id === billId);
     if (bill) {
       setSelectedBillId(billId);
       setPaymentFormData({
-        amount: (bill.amount - bill.paid).toFixed(2), // Default to remaining balance
+        amount: bill.perPerson || '0.00', // Default to per person amount
         paymentMethod: '',
         datePaid: new Date().toISOString().split('T')[0],
         notes: ''
@@ -879,43 +946,41 @@ export default function App({ user }) {
     }
   };
 
-  const handleSubmitPayment = () => {
-    if (!selectedBillId || !paymentFormData.amount || !paymentFormData.paymentMethod) {
+  const handleSubmitPayment = async () => {
+    if (!selectedBillId || !paymentFormData.amount || !paymentFormData.paymentMethod || !user?.id) {
+      alert('Please fill in all required fields');
       return;
     }
 
-    const paymentAmount = parseFloat(paymentFormData.amount);
-    
-    setBills(prevBills => 
-      prevBills.map(bill => {
-        if (bill.id === selectedBillId) {
-          const newPaidAmount = bill.paid + paymentAmount;
-          const isFullyPaid = newPaidAmount >= bill.amount;
-          
-          return {
-            ...bill,
-            paid: Math.min(newPaidAmount, bill.amount), // Don't exceed total amount
-       status: isFullyPaid ? 'Paid' :
-         newPaidAmount > 0 ? 'Partially Paid' :
-                   bill.status
-          };
-        }
-        return bill;
-      })
-    );
+    try {
+      const paymentData = {
+        user_id: user.id,
+        amount_paid: parseFloat(paymentFormData.amount)
+      };
 
-    // Reset form
-    setPaymentFormData({
-      amount: '',
-      paymentMethod: '',
-      datePaid: new Date().toISOString().split('T')[0],
-      notes: ''
-    });
-    setSelectedBillId(null);
-    setIsPaymentFormOpen(false);
-    
-    // Refresh housemates data to update bill contributions
-    refreshHousemates();
+      await payBill(selectedBillId, paymentData);
+      
+      // Reset form and close modal
+      setPaymentFormData({
+        amount: '',
+        paymentMethod: '',
+        datePaid: new Date().toISOString().split('T')[0],
+        notes: ''
+      });
+      setSelectedBillId(null);
+      setIsPaymentFormOpen(false);
+      
+      // Refresh bills and statistics
+      fetchBills();
+      if (user?.house_id) {
+        fetchHousemateStatistics(housemates);
+      }
+      
+      console.log('Payment recorded successfully');
+    } catch (error) {
+      console.error('Error recording payment:', error);
+      alert('Error recording payment. Please try again.');
+    }
   };
 
   // Helper functions for schedule
@@ -978,9 +1043,9 @@ export default function App({ user }) {
       });
     }
     
-    // Add house events if filter is enabled
+    // Add schedule events if filter is enabled
     if (scheduleFilters.events) {
-      houseEvents.forEach(event => {
+      scheduleEvents.forEach(event => {
         items.push({
           id: `event-${event.id}`,
           title: event.title,
@@ -1015,36 +1080,79 @@ export default function App({ user }) {
     setIsEventDetailOpen(true);
   };
 
-  const handleAddEvent = () => {
-    if (!eventFormData.title || !eventFormData.date) {
+  // Function to fetch schedule events (tasks, bills, events)
+  const fetchScheduleEvents = async () => {
+    if (!user?.house_id) {
       return;
     }
 
-    const newEvent = {
-      id: houseEvents.length + 1,
-      title: eventFormData.title,
-      description: eventFormData.description,
-      date: eventFormData.date,
-      time: eventFormData.time,
-  type: eventFormData.type,
-      attendees: eventFormData.attendees,
-      color: 'purple'
-    };
+    setLoadingSchedule(true);
+    try {
+      const response = await getSchedule({ house_id: user.house_id });
+      setScheduleEvents(response.data || []);
+    } catch (error) {
+      console.error('Error fetching schedule events:', error);
+      setScheduleEvents([]);
+    } finally {
+      setLoadingSchedule(false);
+    }
+  };
 
-    // In a real app, this would update the backend
-    console.log('Adding new event:', newEvent);
-    
-    // Reset form
-    setEventFormData({
-      title: '',
-      description: '',
-      date: '',
-      time: '',
-      type: 'meeting',
-      attendees: ['All']
-    });
-    
-    setIsAddEventOpen(false);
+  // Function to add new event
+  const handleAddEvent = async () => {
+    if (!eventFormData.title || !eventFormData.date || !user?.id || !user?.house_id) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      const eventData = {
+        house_id: user.house_id,
+        title: eventFormData.title,
+        description: eventFormData.description,
+        event_date: eventFormData.date,
+        event_time: eventFormData.time,
+        event_type: eventFormData.type,
+        created_by: user.id
+      };
+
+      await addSchedule(eventData);
+      
+      // Reset form
+      setEventFormData({
+        title: '',
+        description: '',
+        date: '',
+        time: '',
+        type: 'meeting',
+        attendees: ['All']
+      });
+      
+      setIsAddEventOpen(false);
+      
+      // Refresh schedule events
+      fetchScheduleEvents();
+      
+      console.log('Event created successfully');
+    } catch (error) {
+      console.error('Error creating event:', error);
+      alert('Error creating event. Please try again.');
+    }
+  };
+
+  // Function to delete an event
+  const handleDeleteEvent = async (eventId) => {
+    if (!eventId) return;
+
+    try {
+      await deleteSchedule(eventId);
+      fetchScheduleEvents(); // Refresh the schedule
+      setIsEventDetailOpen(false); // Close the detail dialog
+      console.log('Event deleted successfully');
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      alert('Error deleting event. Please try again.');
+    }
   };
 
   // Calendar helper functions
@@ -2278,10 +2386,6 @@ export default function App({ user }) {
             <div className="space-y-6">
               {/* Header with Create Bill Button */}
               <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900">Bills & Payments</h2>
-                  <p className="text-gray-500 mt-1">Track and manage shared household expenses</p>
-                </div>
                 <Dialog open={isBillFormOpen} onOpenChange={setIsBillFormOpen}>
                   <DialogTrigger asChild>
                     <Button className="bg-purple-600 hover:bg-purple-700">
@@ -2333,7 +2437,7 @@ export default function App({ user }) {
                       </div>
                       
                       <div>
-                        <Label htmlFor="bill-amount">Total Amount ($)</Label>
+                        <Label htmlFor="bill-amount">Total Amount (R)</Label>
                         <Input
                           id="bill-amount"
                           type="number"
@@ -2377,6 +2481,62 @@ export default function App({ user }) {
                           </SelectContent>
                         </Select>
                         </div>
+                        
+                        <div className="col-span-2">
+                          <Label className="mb-3 block">Share Bill With</Label>
+                          <div className="space-y-2 max-h-40 overflow-y-auto">
+                            {housemates.map((housemate) => (
+                              <div key={housemate.id} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50">
+                                <input
+                                  type="checkbox"
+                                  id={`housemate-${housemate.id}`}
+                                  checked={selectedHousemates.some(h => h.id === housemate.id)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedHousemates(prev => [...prev, housemate]);
+                                    } else {
+                                      setSelectedHousemates(prev => prev.filter(h => h.id !== housemate.id));
+                                    }
+                                  }}
+                                  className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                                />
+                                <Avatar className="h-8 w-8">
+                                  {housemate.avatar ? (
+                                    <AvatarImage src={housemate.avatar} alt={`${housemate.first_name}'s profile`} />
+                                  ) : null}
+                                  <AvatarFallback className="text-xs">
+                                    {housemate.avatarInitials}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {housemate.first_name} {housemate.last_name}
+                                  </p>
+                                  <p className="text-xs text-gray-500">{housemate.email}</p>
+                                </div>
+                                {selectedHousemates.some(h => h.id === housemate.id) && (
+                                  <div className="text-xs text-purple-600 font-medium">
+                                    R{billFormData.amount && selectedHousemates.length > 0 ? 
+                                      (parseFloat(billFormData.amount || 0) / selectedHousemates.length).toFixed(2) : 
+                                      '0.00'}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                          {selectedHousemates.length > 0 && (
+                            <div className="mt-3 p-3 bg-purple-50 rounded-lg">
+                              <p className="text-sm text-purple-800">
+                                <strong>Selected:</strong> {selectedHousemates.length} housemate{selectedHousemates.length !== 1 ? 's' : ''}
+                              </p>
+                              <p className="text-sm text-purple-600 mt-1">
+                                Each person owes: R{billFormData.amount ? 
+                                  (parseFloat(billFormData.amount || 0) / selectedHousemates.length).toFixed(2) : 
+                                  '0.00'}
+                              </p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                     
@@ -2392,20 +2552,135 @@ export default function App({ user }) {
                 </Dialog>
               </div>
 
-              {/* Bills List */}
-              <div className="bg-white rounded-lg border border-gray-200">
-                <div className="p-6">
-                  <div className="space-y-4">
-                    {bills.map((bill) => (
-                      <BillItem
-                        key={bill.id}
-                        {...bill}
-                        onRecordPayment={() => handleRecordPayment(bill.id)}
-                      />
-                    ))}
+              {/* Bills Filter Tabs */}
+              <Tabs defaultValue="all" className="w-full">
+                <TabsList className="grid w-80 grid-cols-4">
+                  <TabsTrigger value="all">All</TabsTrigger>
+                  <TabsTrigger value="in-progress">In Progress</TabsTrigger>
+                  <TabsTrigger value="overdue">Overdue</TabsTrigger>
+                  <TabsTrigger value="past">Past</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="all" className="mt-6">
+                  {/* Bills List */}
+                  <div className="bg-white rounded-lg border border-gray-200">
+                    <div className="p-6">
+                      <div className="space-y-4">
+                        {loadingBills ? (
+                          <div className="text-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                            <p className="text-gray-500 mt-2">Loading bills...</p>
+                          </div>
+                        ) : filterBillsByType('all').length > 0 ? (
+                          filterBillsByType('all').map((bill) => (
+                            <BillItem
+                              key={bill.id}
+                              {...bill}
+                              onRecordPayment={() => handleRecordPayment(bill.id)}
+                            />
+                          ))
+                        ) : (
+                          <div className="text-center py-8 text-gray-500">
+                            <CreditCard size={48} className="mx-auto mb-4 text-gray-300" />
+                            <p>No bills yet</p>
+                            <p className="text-sm mt-1">Create your first bill to get started</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                </TabsContent>
+
+                <TabsContent value="in-progress" className="mt-6">
+                  {/* In Progress Bills List */}
+                  <div className="bg-white rounded-lg border border-gray-200">
+                    <div className="p-6">
+                      <div className="space-y-4">
+                        {loadingBills ? (
+                          <div className="text-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                            <p className="text-gray-500 mt-2">Loading bills...</p>
+                          </div>
+                        ) : filterBillsByType('in-progress').length > 0 ? (
+                          filterBillsByType('in-progress').map((bill) => (
+                            <BillItem
+                              key={bill.id}
+                              {...bill}
+                              onRecordPayment={() => handleRecordPayment(bill.id)}
+                            />
+                          ))
+                        ) : (
+                          <div className="text-center py-8 text-gray-500">
+                            <CreditCard size={48} className="mx-auto mb-4 text-gray-300" />
+                            <p>No bills in progress</p>
+                            <p className="text-sm mt-1">Bills that are pending or partially paid will appear here</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="overdue" className="mt-6">
+                  {/* Overdue Bills List */}
+                  <div className="bg-white rounded-lg border border-gray-200">
+                    <div className="p-6">
+                      <div className="space-y-4">
+                        {loadingBills ? (
+                          <div className="text-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                            <p className="text-gray-500 mt-2">Loading bills...</p>
+                          </div>
+                        ) : filterBillsByType('overdue').length > 0 ? (
+                          filterBillsByType('overdue').map((bill) => (
+                            <BillItem
+                              key={bill.id}
+                              {...bill}
+                              onRecordPayment={() => handleRecordPayment(bill.id)}
+                            />
+                          ))
+                        ) : (
+                          <div className="text-center py-8 text-gray-500">
+                            <CreditCard size={48} className="mx-auto mb-4 text-gray-300" />
+                            <p>No overdue bills</p>
+                            <p className="text-sm mt-1">Great! All bills are up to date</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="past" className="mt-6">
+                  {/* Past Bills List */}
+                  <div className="bg-white rounded-lg border border-gray-200">
+                    <div className="p-6">
+                      <div className="space-y-4">
+                        {loadingBills ? (
+                          <div className="text-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                            <p className="text-gray-500 mt-2">Loading bills...</p>
+                          </div>
+                        ) : filterBillsByType('past').length > 0 ? (
+                          filterBillsByType('past').map((bill) => (
+                            <BillItem
+                              key={bill.id}
+                              {...bill}
+                              onRecordPayment={() => handleRecordPayment(bill.id)}
+                            />
+                          ))
+                        ) : (
+                          <div className="text-center py-8 text-gray-500">
+                            <CreditCard size={48} className="mx-auto mb-4 text-gray-300" />
+                            <p>No paid bills yet</p>
+                            <p className="text-sm mt-1">Paid bills will appear here</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
 
               {/* Payment Recording Modal */}
               <Dialog open={isPaymentFormOpen} onOpenChange={setIsPaymentFormOpen}>
@@ -2419,7 +2694,7 @@ export default function App({ user }) {
                   
                   <div className="space-y-4 py-4">
                     <div>
-                      <Label htmlFor="payment-amount">Payment Amount ($)</Label>
+                      <Label htmlFor="payment-amount">Payment Amount (R)</Label>
                       <Input
                         id="payment-amount"
                         type="number"
@@ -3170,6 +3445,15 @@ export default function App({ user }) {
                         Record Payment
                       </Button>
                     )}
+                    {selectedEvent?.type === 'event' && (
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={() => handleDeleteEvent(selectedEvent.id.split('-')[1])}
+                      >
+                        Delete Event
+                      </Button>
+                    )}
                     <Button variant="outline" onClick={() => setIsEventDetailOpen(false)}>
                       Close
                     </Button>
@@ -3704,7 +3988,7 @@ export default function App({ user }) {
                         >
                           <div className="text-2xl font-semibold text-blue-700">
                             {selectedHousemate.totalBillsPaid > 0 ? 
-                              `$${selectedHousemate.totalBillsPaid.toFixed(0)}` : 
+                              `R${selectedHousemate.totalBillsPaid.toFixed(0)}` : 
                               <span className="text-gray-400 text-lg">N/A</span>
                             }
                           </div>

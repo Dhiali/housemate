@@ -8,6 +8,7 @@ export function BillItem({
   id,
   icon,
   title,
+  categoryName,
   description,
   amount,
   perPerson,
@@ -15,17 +16,23 @@ export function BillItem({
   status,
   dueDate,
   isOverdue,
+  contributors,
   onRecordPayment
 }) {
-  const progress = (paid / amount) * 100;
-  const progressText = `R${paid.toFixed(2)} of R${amount.toFixed(2)} paid`;
+  // Convert to numbers to ensure .toFixed() works properly
+  const numAmount = parseFloat(amount) || 0;
+  const numPaid = parseFloat(paid) || 0;
+  const numPerPerson = parseFloat(perPerson) || 0;
+  
+  const progress = numAmount > 0 ? (numPaid / numAmount) * 100 : 0;
+  const progressText = `R${numPaid.toFixed(2)} of R${numAmount.toFixed(2)} paid`;
   const formattedDueDate = `Due ${new Date(dueDate).toLocaleDateString('en-US', { 
     month: 'short', 
     day: 'numeric', 
     year: 'numeric' 
   })}`;
-  const formattedAmount = `R${amount.toFixed(2)}`;
-  const formattedPerPerson = `R${perPerson.toFixed(2)} per person`;
+  const formattedAmount = `R${numAmount.toFixed(2)}`;
+  const formattedPerPerson = `R${numPerPerson.toFixed(2)} per person`;
   const getStatusColor = (status) => {
     switch (status) {
       case 'Paid':
@@ -62,17 +69,34 @@ export function BillItem({
             {icon}
           </div>
           <div className="flex-1">
-            <h3 className="font-medium text-gray-900 mb-1">{title}</h3>
-            <p className="text-sm text-gray-500 mb-3">{description}</p>
+            {/* Category name as main title */}
+            <h2 className="text-lg font-semibold text-gray-900 mb-1">{categoryName}</h2>
+            
+            {/* User-typed bill title */}
+            <h3 className="text-base font-medium text-gray-700 mb-2">{title}</h3>
+            
+            {/* Bill description */}
+            {description && (
+              <p className="text-sm text-gray-500 mb-3">{description}</p>
+            )}
+            
+            {/* Status and due date on same line */}
             <div className="flex items-center space-x-4 mb-3">
               <span className={`px-2 py-1 rounded-md text-xs border ${getStatusColor(status)}`}>
                 {status}
               </span>
               <span className="text-xs text-gray-500">{formattedDueDate}</span>
+              {contributors && (
+                <span className="text-xs text-blue-600">
+                  Contributors: {contributors}
+                </span>
+              )}
               {isOverdue && (
                 <span className="text-xs text-red-500 font-medium">OVERDUE</span>
               )}
             </div>
+            
+            {/* Payment tracker */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-500">{progressText}</span>

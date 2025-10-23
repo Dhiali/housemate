@@ -140,67 +140,537 @@ app.delete('/houses/:id', (req, res) => {
   });
 });
 // Bills endpoints
+
+// Get all bills for a house with sharing information
 app.get('/bills', (req, res) => {
-  db.query("SELECT * FROM bills", (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(results);
+  const { house_id } = req.query;
+  
+  let query = `
+    SELECT 
+      b.*,
+      u.first_name as created_by_name,
+      u.last_name as created_by_surname,
+      COALESCE((SELECT COUNT(*) FROM bill_share bs WHERE bs.bill_id = b.id), 0) as total_shares,
+      COALESCE((SELECT COUNT(*) FROM bill_share bs WHERE bs.bill_id = b.id AND bs.status = 'paid'), 0) as paid_shares,
+      COALESCE((SELECT SUM(bs.amount) FROM bill_share bs WHERE bs.bill_id = b.id), 0) as total_shared_amount,
+      COALESCE((SELECT SUM(bs.amount_paid) FROM bill_share bs WHERE bs.bill_id = b.id AND bs.status = 'paid'), 0) as total_paid_amount,
+      COALESCE((SELECT DISTINCT bs.amount FROM bill_share bs WHERE bs.bill_id = b.id LIMIT 1), 
+               CASE WHEN (SELECT COUNT(*) FROM bill_share bs WHERE bs.bill_id = b.id) > 0 
+                    THEN b.amount / (SELECT COUNT(*) FROM bill_share bs WHERE bs.bill_id = b.id)
+                    ELSE b.amount END) as per_person_amount,
+      (SELECT GROUP_CONCAT(CONCAT(uc.first_name, ' ', COALESCE(uc.last_name, '')) SEPARATOR ', ') 
+       FROM bill_share bs 
+       JOIN users uc ON bs.user_id = uc.id 
+       WHERE bs.bill_id = b.id) as contributors
+    FROM bills b
+    LEFT JOIN users u ON b.created_by = u.id
+  `;
+  
+  const values = [];
+  if (house_id) {
+    query += ' WHERE b.house_id = ?';
+    values.push(house_id);
+  }
+  
+  query += ' ORDER BY b.created_at DESC';
+  
+  db.query(query, values, (err, results) => {
+    if (err) {
+      console.error('Error fetching bills:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ data: results });
   });
 });
+
+// Get single bill with detailed sharing information
 app.get('/bills/:id', (req, res) => {
-  db.query("SELECT * FROM bills WHERE id = ?", [req.params.id], (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(results[0] || null);
+  const billId = req.params.id;
+  
+  // Get bill details
+  const billQuery = `
+    SELECT 
+      b.*,
+      u.first_name as created_by_name,
+      u.last_name as created_by_surname
+    FROM bills b
+    LEFT JOIN users u ON b.created_by = u.id
+    WHERE b.id = ?
+  `;
+  
+  db.query(billQuery, [billId], (err, billResults) => {
+    if (err) {
+      console.error('Error fetching bill:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    
+    if (billResults.length === 0) {
+      return res.status(404).json({ error: 'Bill not found' });
+    }
+    
+    // Get sharing details
+    const sharesQuery = `
+      SELECT 
+        bs.*,
+        u.first_name,
+        u.last_name,
+        u.email
+      FROM bill_share bs
+      LEFT JOIN users u ON bs.user_id = u.id
+      WHERE bs.bill_id = ?
+      ORDER BY u.first_name
+    `;
+    
+    db.query(sharesQuery, [billId], (err2, sharesResults) => {
+      if (err2) {
+        console.error('Error fetching bill shares:', err2);
+        return res.status(500).json({ error: err2.message });
+      }
+      
+      const bill = billResults[0];
+      bill.shares = sharesResults;
+      
+      res.json({ data: bill });
+    });
   });
 });
+
+// Create new bill with sharing
 app.post('/bills', (req, res) => {
-  const { title, amount, house_id, created_by, due_date } = req.body;
-  db.query("INSERT INTO bills (title, amount, house_id, created_by, due_date) VALUES (?, ?, ?, ?, ?)", [title, amount, house_id, created_by, due_date], (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: "Bill created!", id: results.insertId });
+  const { 
+    title, 
+    description,
+    amount, 
+    category,
+    house_id, 
+    created_by, 
+    due_date,
+    shared_with // Array of user IDs to share with
+  } = req.body;
+
+  if (!title || !amount || !house_id || !created_by) {
+    return res.status(400).json({ 
+      error: 'Missing required fields: title, amount, house_id, created_by' 
+    });
+  }
+
+  // Insert bill
+  const billQuery = `
+    INSERT INTO bills (title, description, amount, category, house_id, created_by, due_date, status, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 'active', NOW())
+  `;
+
+  const billValues = [
+    title,
+    description || null,
+    amount,
+    category || 'utilities',
+    house_id,
+    created_by,
+    due_date || null
+  ];
+
+  db.query(billQuery, billValues, (err, billResult) => {
+    if (err) {
+      console.error('Error creating bill:', err);
+      return res.status(500).json({ error: err.message });
+    }
+
+    const billId = billResult.insertId;
+
+    // Create bill shares if shared_with is provided
+    if (shared_with && Array.isArray(shared_with) && shared_with.length > 0) {
+      const shareAmount = parseFloat(amount) / shared_with.length; // Divide by total people selected
+      const shareValues = [];
+      
+      // Add all selected users (including creator if they're in the list)
+      shared_with.forEach(userId => {
+        shareValues.push([billId, userId, shareAmount, 'pending']);
+      });
+
+      const shareQuery = `
+        INSERT INTO bill_share (bill_id, user_id, amount, status, created_at)
+        VALUES ?
+      `;
+
+      db.query(shareQuery, [shareValues], (err2) => {
+        if (err2) {
+          console.error('Error creating bill shares:', err2);
+          // Still return success for bill creation, but log the error
+        }
+
+        // Log to bill_history
+        const historyQuery = `
+          INSERT INTO bill_history (bill_id, user_id, action, old_value, new_value, created_at)
+          VALUES (?, ?, 'created', NULL, ?, NOW())
+        `;
+
+        db.query(historyQuery, [billId, created_by, JSON.stringify({ title, amount, category })], (err3) => {
+          if (err3) {
+            console.error('Error logging bill history:', err3);
+          }
+          
+          res.json({ 
+            message: "Bill created successfully!", 
+            data: { id: billId }
+          });
+        });
+      });
+    } else {
+      // No sharing, just the bill
+      const historyQuery = `
+        INSERT INTO bill_history (bill_id, user_id, action, old_value, new_value, created_at)
+        VALUES (?, ?, 'created', NULL, ?, NOW())
+      `;
+
+      db.query(historyQuery, [billId, created_by, JSON.stringify({ title, amount, category })], (err3) => {
+        if (err3) {
+          console.error('Error logging bill history:', err3);
+        }
+        
+        res.json({ 
+          message: "Bill created successfully!", 
+          data: { id: billId }
+        });
+      });
+    }
   });
 });
+
+// Update bill payment status
+app.put('/bills/:id/pay', (req, res) => {
+  const billId = req.params.id;
+  const { user_id, amount_paid } = req.body;
+
+  if (!user_id) {
+    return res.status(400).json({ error: 'user_id is required' });
+  }
+
+  // Update bill_share status
+  const updateQuery = `
+    UPDATE bill_share 
+    SET status = 'paid', amount_paid = ?, paid_at = NOW()
+    WHERE bill_id = ? AND user_id = ?
+  `;
+
+  db.query(updateQuery, [amount_paid || null, billId, user_id], (err, results) => {
+    if (err) {
+      console.error('Error updating bill payment:', err);
+      return res.status(500).json({ error: err.message });
+    }
+
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ error: 'Bill share not found' });
+    }
+
+    // Log to bill_history
+    const historyQuery = `
+      INSERT INTO bill_history (bill_id, user_id, action, old_value, new_value, created_at)
+      VALUES (?, ?, 'payment', 'pending', 'paid', NOW())
+    `;
+
+    db.query(historyQuery, [billId, user_id], (err2) => {
+      if (err2) {
+        console.error('Error logging payment history:', err2);
+      }
+
+      res.json({ message: "Payment recorded successfully!" });
+    });
+  });
+});
+
+// Update bill details
 app.put('/bills/:id', (req, res) => {
-  db.query("UPDATE bills SET ? WHERE id = ?", [req.body, req.params.id], (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: "Bill updated!" });
+  const billId = req.params.id;
+  const { title, description, amount, category, due_date, status, updated_by } = req.body;
+
+  // Get current bill for history
+  db.query('SELECT * FROM bills WHERE id = ?', [billId], (err, currentBill) => {
+    if (err) {
+      console.error('Error fetching current bill:', err);
+      return res.status(500).json({ error: err.message });
+    }
+
+    if (currentBill.length === 0) {
+      return res.status(404).json({ error: 'Bill not found' });
+    }
+
+    const current = currentBill[0];
+    
+    // Build update query dynamically
+    const updateFields = [];
+    const updateValues = [];
+    const changes = [];
+
+    if (title !== undefined && title !== current.title) {
+      updateFields.push('title = ?');
+      updateValues.push(title);
+      changes.push({ field: 'title', oldValue: current.title, newValue: title });
+    }
+    
+    if (description !== undefined && description !== current.description) {
+      updateFields.push('description = ?');
+      updateValues.push(description);
+      changes.push({ field: 'description', oldValue: current.description, newValue: description });
+    }
+    
+    if (amount !== undefined && amount !== current.amount) {
+      updateFields.push('amount = ?');
+      updateValues.push(amount);
+      changes.push({ field: 'amount', oldValue: current.amount, newValue: amount });
+    }
+    
+    if (category !== undefined && category !== current.category) {
+      updateFields.push('category = ?');
+      updateValues.push(category);
+      changes.push({ field: 'category', oldValue: current.category, newValue: category });
+    }
+    
+    if (due_date !== undefined && due_date !== current.due_date) {
+      updateFields.push('due_date = ?');
+      updateValues.push(due_date);
+      changes.push({ field: 'due_date', oldValue: current.due_date, newValue: due_date });
+    }
+    
+    if (status !== undefined && status !== current.status) {
+      updateFields.push('status = ?');
+      updateValues.push(status);
+      changes.push({ field: 'status', oldValue: current.status, newValue: status });
+    }
+
+    if (updateFields.length === 0) {
+      return res.json({ message: 'No changes detected' });
+    }
+
+    // Add updated_at
+    updateFields.push('updated_at = NOW()');
+    updateValues.push(billId);
+
+    const updateQuery = `UPDATE bills SET ${updateFields.join(', ')} WHERE id = ?`;
+
+    db.query(updateQuery, updateValues, (updateErr) => {
+      if (updateErr) {
+        console.error('Error updating bill:', updateErr);
+        return res.status(500).json({ error: updateErr.message });
+      }
+
+      // Log changes to bill_history
+      if (changes.length > 0 && updated_by) {
+        const historyPromises = changes.map(change => {
+          return new Promise((resolve, reject) => {
+            const historyQuery = `
+              INSERT INTO bill_history (bill_id, user_id, action, field_changed, old_value, new_value, created_at)
+              VALUES (?, ?, 'updated', ?, ?, ?, NOW())
+            `;
+            db.query(historyQuery, [billId, updated_by, change.field, change.oldValue, change.newValue], (err) => {
+              if (err) reject(err);
+              else resolve();
+            });
+          });
+        });
+
+        Promise.allSettled(historyPromises).then(() => {
+          res.json({ 
+            message: "Bill updated successfully!", 
+            changes: changes.length 
+          });
+        });
+      } else {
+        res.json({ 
+          message: "Bill updated successfully!", 
+          changes: changes.length 
+        });
+      }
+    });
   });
 });
+
+// Delete bill
 app.delete('/bills/:id', (req, res) => {
-  db.query("DELETE FROM bills WHERE id = ?", [req.params.id], (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: "Bill deleted!" });
+  const billId = req.params.id;
+  const { deleted_by } = req.body;
+
+  // First, delete related bill_shares
+  db.query('DELETE FROM bill_share WHERE bill_id = ?', [billId], (err1) => {
+    if (err1) {
+      console.error('Error deleting bill shares:', err1);
+      return res.status(500).json({ error: err1.message });
+    }
+
+    // Log deletion to history before deleting bill
+    if (deleted_by) {
+      const historyQuery = `
+        INSERT INTO bill_history (bill_id, user_id, action, old_value, new_value, created_at)
+        VALUES (?, ?, 'deleted', 'active', 'deleted', NOW())
+      `;
+      
+      db.query(historyQuery, [billId, deleted_by], () => {
+        // Continue with deletion even if history fails
+      });
+    }
+
+    // Delete the bill
+    db.query('DELETE FROM bills WHERE id = ?', [billId], (err2, results) => {
+      if (err2) {
+        console.error('Error deleting bill:', err2);
+        return res.status(500).json({ error: err2.message });
+      }
+      
+      res.json({ message: "Bill deleted successfully!" });
+    });
   });
 });
 // Schedule endpoints
+
+// Get all calendar events (events, tasks, bills) for a house
 app.get('/schedule', (req, res) => {
-  db.query("SELECT * FROM schedule", (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(results);
+  const { house_id } = req.query;
+  
+  if (!house_id) {
+    return res.status(400).json({ error: 'house_id is required' });
+  }
+
+  // Get custom events from schedule table
+  const eventsQuery = `
+    SELECT 
+      id,
+      'event' as type,
+      title,
+      description,
+      event_date as date,
+      event_time as time,
+      event_type,
+      created_by,
+      house_id,
+      created_at
+    FROM schedule 
+    WHERE house_id = ?
+  `;
+
+  // Get tasks as calendar items
+  const tasksQuery = `
+    SELECT 
+      id,
+      'task' as type,
+      title,
+      description,
+      due_date as date,
+      NULL as time,
+      status,
+      assigned_to,
+      house_id,
+      created_at
+    FROM tasks 
+    WHERE house_id = ? AND due_date IS NOT NULL
+  `;
+
+  // Get bills as calendar items
+  const billsQuery = `
+    SELECT 
+      id,
+      'bill' as type,
+      title,
+      description,
+      due_date as date,
+      NULL as time,
+      category,
+      created_by,
+      house_id,
+      created_at
+    FROM bills 
+    WHERE house_id = ? AND due_date IS NOT NULL
+  `;
+
+  const allQueries = [eventsQuery, tasksQuery, billsQuery];
+  const allResults = [];
+  let completedQueries = 0;
+
+  allQueries.forEach((query) => {
+    db.query(query, [house_id], (err, results) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      allResults.push(...results);
+      completedQueries++;
+
+      if (completedQueries === allQueries.length) {
+        res.json({ data: allResults });
+      }
+    });
   });
 });
+
+// Get single schedule event
 app.get('/schedule/:id', (req, res) => {
   db.query("SELECT * FROM schedule WHERE id = ?", [req.params.id], (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(results[0] || null);
   });
 });
+
+// Create new schedule event
 app.post('/schedule', (req, res) => {
-  const { house_id, scheduled_date, scheduled_time, recurrence } = req.body;
-  db.query("INSERT INTO schedule (house_id, scheduled_date, scheduled_time, recurrence) VALUES (?, ?, ?, ?)", [house_id, scheduled_date, scheduled_time, recurrence], (err, results) => {
+  const { 
+    house_id, 
+    title, 
+    description, 
+    event_date, 
+    event_time, 
+    event_type, 
+    created_by 
+  } = req.body;
+
+  if (!house_id || !title || !event_date || !created_by) {
+    return res.status(400).json({ 
+      error: 'Missing required fields: house_id, title, event_date, created_by' 
+    });
+  }
+
+  const query = `
+    INSERT INTO schedule 
+    (house_id, title, description, event_date, event_time, event_type, created_by, created_at) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+  `;
+
+  const values = [
+    house_id,
+    title,
+    description || null,
+    event_date,
+    event_time || null,
+    event_type || 'meeting',
+    created_by
+  ];
+
+  db.query(query, values, (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: "Schedule created!", id: results.insertId });
+    res.json({ message: "Event created successfully!", id: results.insertId });
   });
 });
+
+// Update schedule event
 app.put('/schedule/:id', (req, res) => {
-  db.query("UPDATE schedule SET ? WHERE id = ?", [req.body, req.params.id], (err, results) => {
+  const { title, description, event_date, event_time, event_type } = req.body;
+  
+  const query = `
+    UPDATE schedule 
+    SET title = ?, description = ?, event_date = ?, event_time = ?, event_type = ?
+    WHERE id = ?
+  `;
+
+  const values = [title, description, event_date, event_time, event_type, req.params.id];
+
+  db.query(query, values, (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: "Schedule updated!" });
+    res.json({ message: "Event updated successfully!" });
   });
 });
+
+// Delete schedule event
 app.delete('/schedule/:id', (req, res) => {
   db.query("DELETE FROM schedule WHERE id = ?", [req.params.id], (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: "Schedule deleted!" });
+    res.json({ message: "Event deleted successfully!" });
   });
 });
 // ...existing code...
