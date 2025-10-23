@@ -45,7 +45,7 @@ import {
   UserPlus
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { getTasks, addTask, updateTask, getHouse, getHousemates, getUserStatistics, getUserCompletedTasks, getUserPendingTasks, getUserContributedBills, getBills, addBill, updateBill, deleteBill, payBill, getSchedule, addSchedule, deleteSchedule } from '../../apiHelpers';
+import { getTasks, addTask, updateTask, getHouse, getHousemates, getUserStatistics, getUserCompletedTasks, getUserPendingTasks, getUserContributedBills, getBills, addBill, updateBill, deleteBill, payBill } from '../../apiHelpers';
 import { updateUserBio, updateUserPhone } from '../../apiHelpers';
 import { Button } from './components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
@@ -310,7 +310,6 @@ export default function App({ user }) {
   useEffect(() => {
     fetchTasks();
     fetchBills();
-    fetchScheduleEvents();
   }, [user?.house_id]);
 
   useEffect(() => {
@@ -469,8 +468,20 @@ export default function App({ user }) {
       const res = await getBills(user.house_id);
       console.log('Bills API response:', res.data);
       
+      // Extract the bills array from the response
+      const billsData = res.data.data || res.data || [];
+      console.log('Bills data array:', billsData);
+      
       // Map backend data to frontend format
-      const mapped = res.data.map(bill => {
+      console.log('About to map', billsData.length, 'bills');
+      if (billsData.length === 0) {
+        console.log('No bills found - setting empty array');
+        setBills([]);
+        setLoadingBills(false);
+        return;
+      }
+      
+      const mapped = billsData.map(bill => {
         // Find the category data, handle empty/null categories
         let categoryData;
         if (bill.category && bill.category !== '') {
@@ -487,13 +498,11 @@ export default function App({ user }) {
         const totalPaidAmount = parseFloat(bill.total_paid_amount) || 0;
         const billAmount = parseFloat(bill.amount) || 0;
         
-        // Use the per_person_amount from the backend, with fallback calculation
-        let perPerson = parseFloat(bill.per_person_amount) || 0;
-        
-        // If per_person_amount is 0 or not available, calculate it manually
-        if (perPerson === 0 && totalShares > 0 && billAmount > 0) {
+        // Calculate per person amount
+        let perPerson = 0;
+        if (totalShares > 0 && billAmount > 0) {
           perPerson = billAmount / totalShares;
-        } else if (perPerson === 0 && totalShares === 0 && billAmount > 0) {
+        } else if (totalShares === 0 && billAmount > 0) {
           // Personal bill (no shares)
           perPerson = billAmount;
         }
@@ -527,7 +536,6 @@ export default function App({ user }) {
         return {
           ...bill,
           icon: categoryData.icon,
-          categoryName: categoryData.name,
           dueDate: bill.due_date ? new Date(bill.due_date).toLocaleDateString() : 'No due date',
           perPerson: perPerson.toFixed(2),
           paid: totalPaidAmount.toFixed(2),
@@ -535,10 +543,12 @@ export default function App({ user }) {
           isOverdue: status === 'Overdue',
           paymentProgress: totalShares > 0 && billAmount > 0 ? Math.round((totalPaidAmount / billAmount) * 100) : 0,
           createdBy: bill.created_by_name ? `${bill.created_by_name} ${bill.created_by_surname || ''}`.trim() : 'Unknown',
-          contributors: bill.contributors || null
+          contributors: null // Will be implemented separately
         };
       });
       
+      console.log('Mapped bills:', mapped);
+      console.log('Setting bills state with', mapped.length, 'bills');
       setBills(mapped);
     } catch (error) {
       console.error('Error fetching bills:', error);
@@ -689,10 +699,6 @@ export default function App({ user }) {
   const [loadingHousemates, setLoadingHousemates] = useState(false);
   const [recentActivities, setRecentActivities] = useState([]);
   const [loadingActivities, setLoadingActivities] = useState(false);
-  
-  // Schedule/Calendar state
-  const [scheduleEvents, setScheduleEvents] = useState([]);
-  const [loadingSchedule, setLoadingSchedule] = useState(false);
   const [inviteFormData, setInviteFormData] = useState({
     firstName: '',
     lastName: '',
@@ -1043,9 +1049,9 @@ export default function App({ user }) {
       });
     }
     
-    // Add schedule events if filter is enabled
+    // Add house events if filter is enabled
     if (scheduleFilters.events) {
-      scheduleEvents.forEach(event => {
+      houseEvents.forEach(event => {
         items.push({
           id: `event-${event.id}`,
           title: event.title,
@@ -1080,79 +1086,36 @@ export default function App({ user }) {
     setIsEventDetailOpen(true);
   };
 
-  // Function to fetch schedule events (tasks, bills, events)
-  const fetchScheduleEvents = async () => {
-    if (!user?.house_id) {
+  const handleAddEvent = () => {
+    if (!eventFormData.title || !eventFormData.date) {
       return;
     }
 
-    setLoadingSchedule(true);
-    try {
-      const response = await getSchedule({ house_id: user.house_id });
-      setScheduleEvents(response.data || []);
-    } catch (error) {
-      console.error('Error fetching schedule events:', error);
-      setScheduleEvents([]);
-    } finally {
-      setLoadingSchedule(false);
-    }
-  };
+    const newEvent = {
+      id: houseEvents.length + 1,
+      title: eventFormData.title,
+      description: eventFormData.description,
+      date: eventFormData.date,
+      time: eventFormData.time,
+  type: eventFormData.type,
+      attendees: eventFormData.attendees,
+      color: 'purple'
+    };
 
-  // Function to add new event
-  const handleAddEvent = async () => {
-    if (!eventFormData.title || !eventFormData.date || !user?.id || !user?.house_id) {
-      alert('Please fill in all required fields');
-      return;
-    }
-
-    try {
-      const eventData = {
-        house_id: user.house_id,
-        title: eventFormData.title,
-        description: eventFormData.description,
-        event_date: eventFormData.date,
-        event_time: eventFormData.time,
-        event_type: eventFormData.type,
-        created_by: user.id
-      };
-
-      await addSchedule(eventData);
-      
-      // Reset form
-      setEventFormData({
-        title: '',
-        description: '',
-        date: '',
-        time: '',
-        type: 'meeting',
-        attendees: ['All']
-      });
-      
-      setIsAddEventOpen(false);
-      
-      // Refresh schedule events
-      fetchScheduleEvents();
-      
-      console.log('Event created successfully');
-    } catch (error) {
-      console.error('Error creating event:', error);
-      alert('Error creating event. Please try again.');
-    }
-  };
-
-  // Function to delete an event
-  const handleDeleteEvent = async (eventId) => {
-    if (!eventId) return;
-
-    try {
-      await deleteSchedule(eventId);
-      fetchScheduleEvents(); // Refresh the schedule
-      setIsEventDetailOpen(false); // Close the detail dialog
-      console.log('Event deleted successfully');
-    } catch (error) {
-      console.error('Error deleting event:', error);
-      alert('Error deleting event. Please try again.');
-    }
+    // In a real app, this would update the backend
+    console.log('Adding new event:', newEvent);
+    
+    // Reset form
+    setEventFormData({
+      title: '',
+      description: '',
+      date: '',
+      time: '',
+      type: 'meeting',
+      attendees: ['All']
+    });
+    
+    setIsAddEventOpen(false);
   };
 
   // Calendar helper functions
@@ -3443,15 +3406,6 @@ export default function App({ user }) {
                     {selectedEvent?.type === 'bill' && selectedEvent?.status !== 'Paid' && (
                       <Button variant="outline" size="sm">
                         Record Payment
-                      </Button>
-                    )}
-                    {selectedEvent?.type === 'event' && (
-                      <Button 
-                        variant="destructive" 
-                        size="sm"
-                        onClick={() => handleDeleteEvent(selectedEvent.id.split('-')[1])}
-                      >
-                        Delete Event
                       </Button>
                     )}
                     <Button variant="outline" onClick={() => setIsEventDetailOpen(false)}>

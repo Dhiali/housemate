@@ -8,7 +8,6 @@ export function BillItem({
   id,
   icon,
   title,
-  categoryName,
   description,
   amount,
   perPerson,
@@ -69,18 +68,8 @@ export function BillItem({
             {icon}
           </div>
           <div className="flex-1">
-            {/* Category name as main title */}
-            <h2 className="text-lg font-semibold text-gray-900 mb-1">{categoryName}</h2>
-            
-            {/* User-typed bill title */}
-            <h3 className="text-base font-medium text-gray-700 mb-2">{title}</h3>
-            
-            {/* Bill description */}
-            {description && (
-              <p className="text-sm text-gray-500 mb-3">{description}</p>
-            )}
-            
-            {/* Status and due date on same line */}
+            <h3 className="font-medium text-gray-900 mb-1">{title}</h3>
+            <p className="text-sm text-gray-500 mb-3">{description}</p>
             <div className="flex items-center space-x-4 mb-3">
               <span className={`px-2 py-1 rounded-md text-xs border ${getStatusColor(status)}`}>
                 {status}
@@ -95,8 +84,6 @@ export function BillItem({
                 <span className="text-xs text-red-500 font-medium">OVERDUE</span>
               )}
             </div>
-            
-            {/* Payment tracker */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-500">{progressText}</span>
