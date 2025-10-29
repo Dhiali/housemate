@@ -8,7 +8,7 @@
   "scripts": {
     "build": "echo 'No build step needed'",
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js"
+  "start": "node -r dotenv/config src/server.js"
   },
   "keywords": [],
   "author": "",

@@ -1,10 +1,10 @@
 import mysql from 'mysql2';
 
-// Configuration for Railway MySQL
+// Configuration for Google Cloud SQL
 let dbConfig;
 
 if (process.env.DATABASE_URL) {
-  // Railway often provides DATABASE_URL
+  // For Google Cloud SQL, use individual environment variables
   console.log('🔗 Using DATABASE_URL for connection');
   dbConfig = {
     uri: process.env.DATABASE_URL,
@@ -44,10 +44,10 @@ db.getConnection((err, connection) => {
     console.error("Error message:", err.message);
     console.error("Error stack:", err.stack);
     
-    // Check for common Railway MySQL connection issues
+    // Check for common connection issues
     if (err.code === 'ECONNREFUSED') {
       console.error("🔍 ECONNREFUSED suggests:");
-      console.error("  - Railway MySQL service may not be running");
+      console.error("  - Cloud SQL instance may not be running");
       console.error("  - Environment variables may not be set correctly");
       console.error("  - Host/port may be incorrect");
     }

@@ -22,7 +22,7 @@ const corsOrigins = process.env.CORS_ORIGINS
       "http://localhost:5175",
       "https://housemate.website",
       "https://www.housemate.website",
-      "https://housemate-2w0s1mema-dees-projects-67461cad.vercel.app"
+  // ...existing code...
     ];
 
 app.use(cors({ 
