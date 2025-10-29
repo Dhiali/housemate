@@ -5,6 +5,12 @@ import react from '@vitejs/plugin-react-swc'
 export default defineConfig({
   plugins: [react()],
   
+  // Development server configuration
+  server: {
+    hmr: true,
+    port: 3000
+  },
+  
   // Performance optimizations
   build: {
     // Enable sourcemaps for better debugging in production
@@ -16,8 +22,11 @@ export default defineConfig({
     // Advanced minification
     minify: 'esbuild',
     
-    // Enable CSS code splitting
-    cssCodeSplit: true,
+    // Disable CSS code splitting to ensure CSS is included in HTML
+    cssCodeSplit: false,
+    
+    // Target modern browsers for better optimization
+    target: 'esnext',
     
     // Rollup specific optimizations
     rollupOptions: {
@@ -80,25 +89,11 @@ export default defineConfig({
     },
     
     // Enable tree shaking
-    treeshake: true,
-    
-    // Target modern browsers for better optimization
-    target: ['es2020', 'edge88', 'firefox78', 'chrome87', 'safari13.1']
+    treeshake: true
   },
   
   // Optimize image assets
   assetsInclude: ['**/*.webp'],
-  
-  // Development optimizations
-  server: {
-    // Enable HTTP/2 in development
-    https: false,
-    
-    // Optimize HMR
-    hmr: {
-      overlay: false
-    }
-  },
   
   // Optimize dependencies
   optimizeDeps: {

@@ -8,6 +8,7 @@ import { ForgotPasswordForm } from "./components/ForgotPasswordForm.jsx";
 import { addUser, addHouse, updateUser } from "../../apiHelpers";
 import { useSEO, SEO_CONFIG } from '../../hooks/useSEO.js';
 import { trackAuth, trackHousehold, trackPageView } from '../../utils/analytics.js';
+import './index.css';
 
 // Lazy load the Dashboard application
 const DashboardApp = lazy(() => import('../../dashboard/src/App.jsx'));

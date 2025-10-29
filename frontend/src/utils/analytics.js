@@ -501,10 +501,7 @@ export const analyticsDebug = {
   }
 };
 
-// Auto-initialize on import
-if (typeof window !== 'undefined') {
-  initializeAnalytics();
-}
+// Note: Manual initialization only - called from App.jsx to prevent double initialization
 
 export default {
   init: initializeAnalytics,

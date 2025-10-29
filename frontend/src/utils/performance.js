@@ -87,7 +87,7 @@ const trackNavigationTiming = () => {
   if (navigationEntry) {
     performanceData.navigation = {
       domContentLoaded: navigationEntry.domContentLoadedEventEnd - navigationEntry.navigationStart,
-      loadComplete: navigationEntry.loadEventEnd - navigationStart,
+      loadComplete: navigationEntry.loadEventEnd - navigationEntry.navigationStart,
       dnsLookup: navigationEntry.domainLookupEnd - navigationEntry.domainLookupStart,
       tcpConnect: navigationEntry.connectEnd - navigationEntry.connectStart,
       request: navigationEntry.responseEnd - navigationEntry.requestStart,

@@ -44,6 +44,7 @@ import {
   HelpCircle,
   UserPlus
 } from 'lucide-react';
+import './index.css';
 import { useState, useEffect } from 'react';
 import { getTasks, addTask, updateTask, getHouse, getHouseStatistics, getHousemates, getUserStatistics, getUserCompletedTasks, getUserPendingTasks, getUserContributedBills, getBills, addBill, updateBill, deleteBill, payBill } from '../../apiHelpers';
 import { updateUserBio, updateUserPhone } from '../../apiHelpers';

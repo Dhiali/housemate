@@ -32,8 +32,67 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 
-// Ensure bills and related tables exist
-const createBillsTables = () => {
+// Ensure all tables exist
+const createAllTables = () => {
+  console.log('🔧 Initializing database tables...');
+  
+  // Create houses table first (referenced by users)
+  const createHousesQuery = `
+    CREATE TABLE IF NOT EXISTS houses (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      address TEXT,
+      house_rules TEXT,
+      avatar VARCHAR(500),
+      created_by INT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `;
+
+  // Create users table
+  const createUsersQuery = `
+    CREATE TABLE IF NOT EXISTS users (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      surname VARCHAR(255) NOT NULL,
+      email VARCHAR(255) UNIQUE NOT NULL,
+      password VARCHAR(255) NOT NULL,
+      bio TEXT,
+      phone VARCHAR(20),
+      preferred_contact ENUM('email', 'phone', 'app') DEFAULT 'app',
+      avatar VARCHAR(500),
+      house_id INT,
+      role ENUM('admin', 'member', 'guest') DEFAULT 'member',
+      status ENUM('active', 'inactive', 'pending') DEFAULT 'active',
+      last_login TIMESTAMP NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (house_id) REFERENCES houses(id) ON DELETE SET NULL
+    )
+  `;
+
+  // Create tasks table
+  const createTasksQuery = `
+    CREATE TABLE IF NOT EXISTS tasks (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      title VARCHAR(255) NOT NULL,
+      description TEXT,
+      assigned_to INT,
+      created_by INT NOT NULL,
+      house_id INT NOT NULL,
+      status ENUM('open', 'pending', 'in_progress', 'completed') DEFAULT 'open',
+      priority ENUM('low', 'medium', 'high') DEFAULT 'medium',
+      due_date DATE,
+      category VARCHAR(100) DEFAULT 'general',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL,
+      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (house_id) REFERENCES houses(id) ON DELETE CASCADE
+    )
+  `;
+
   // Create bills table
   const createBillsQuery = `
     CREATE TABLE IF NOT EXISTS bills (
@@ -47,7 +106,9 @@ const createBillsTables = () => {
       due_date DATE,
       status ENUM('active', 'paid', 'overdue') DEFAULT 'active',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (house_id) REFERENCES houses(id) ON DELETE CASCADE,
+      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
     )
   `;
   
@@ -61,7 +122,8 @@ const createBillsTables = () => {
       amount_paid DECIMAL(10,2) DEFAULT 0.00,
       status ENUM('pending', 'paid') DEFAULT 'pending',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (bill_id) REFERENCES bills(id) ON DELETE CASCADE
+      FOREIGN KEY (bill_id) REFERENCES bills(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )
   `;
 
@@ -75,39 +137,74 @@ const createBillsTables = () => {
       amount DECIMAL(10,2),
       notes TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (bill_id) REFERENCES bills(id) ON DELETE CASCADE
+      FOREIGN KEY (bill_id) REFERENCES bills(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )
   `;
-  
-  db.query(createBillsQuery, (err) => {
-    if (err) {
-      console.error('Error creating bills table:', err);
-    } else {
-      console.log('✅ Bills table ready');
-      
-      // Create bill_share table after bills table is ready
-      db.query(createBillShareQuery, (err) => {
-        if (err) {
-          console.error('Error creating bill_share table:', err);
-        } else {
-          console.log('✅ Bill share table ready');
-        }
-      });
 
-      // Create bill_history table
-      db.query(createBillHistoryQuery, (err) => {
+  // Execute table creation in sequence to handle foreign key dependencies
+  db.query(createHousesQuery, (err) => {
+    if (err) {
+      console.error('❌ Error creating houses table:', err);
+    } else {
+      console.log('✅ Houses table ready');
+      
+      // Create users table after houses
+      db.query(createUsersQuery, (err) => {
         if (err) {
-          console.error('Error creating bill_history table:', err);
+          console.error('❌ Error creating users table:', err);
         } else {
-          console.log('✅ Bill history table ready');
+          console.log('✅ Users table ready');
+          
+          // Create tasks table after users
+          db.query(createTasksQuery, (err) => {
+            if (err) {
+              console.error('❌ Error creating tasks table:', err);
+            } else {
+              console.log('✅ Tasks table ready');
+            }
+          });
+          
+          // Create bills table after users
+          db.query(createBillsQuery, (err) => {
+            if (err) {
+              console.error('❌ Error creating bills table:', err);
+            } else {
+              console.log('✅ Bills table ready');
+              
+              // Create bill_share table after bills
+              db.query(createBillShareQuery, (err) => {
+                if (err) {
+                  console.error('❌ Error creating bill_share table:', err);
+                } else {
+                  console.log('✅ Bill share table ready');
+                }
+              });
+
+              // Create bill_history table after bills
+              db.query(createBillHistoryQuery, (err) => {
+                if (err) {
+                  console.error('❌ Error creating bill_history table:', err);
+                } else {
+                  console.log('✅ Bill history table ready');
+                }
+              });
+            }
+          });
         }
       });
     }
   });
 };
 
+// Ensure bills and related tables exist
+const createBillsTables = () => {
+  // This is now handled by createAllTables() above
+  console.log('📝 Legacy createBillsTables() called - tables handled by createAllTables()');
+};
+
 // Create tables on startup
-createBillsTables();
+createAllTables();
 
 // Health check endpoint
 app.get('/health', (req, res) => {
