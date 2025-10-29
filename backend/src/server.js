@@ -109,26 +109,75 @@ const createBillsTables = () => {
 // Create tables on startup
 createBillsTables();
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    database: 'checking...'
+  });
+  
+  // Test database connection
+  db.query('SELECT 1', (err, results) => {
+    if (err) {
+      console.error('❌ Database health check failed:', err.message);
+    } else {
+      console.log('✅ Database health check passed');
+    }
+  });
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ message: 'HouseMate API Server', version: '1.0.0' });
+});
+
 // Login endpoint
 app.post('/login', async (req, res) => {
+  console.log('🔍 Login attempt:', { email: req.body.email, hasPassword: !!req.body.password });
+  
   const { email, password } = req.body;
   if (!email || !password) {
+    console.log('❌ Login failed: Missing email or password');
     return res.status(400).json({ error: 'Email and password required' });
   }
+  
   try {
+    console.log('🔍 Querying database for user:', email);
     db.query('SELECT * FROM users WHERE email = ?', [email], async (err, results) => {
-      if (err) return res.status(500).json({ error: err.message });
-      if (!results.length) return res.status(401).json({ error: 'Invalid credentials' });
+      if (err) {
+        console.error('❌ Database error during login:', err.message);
+        return res.status(500).json({ error: err.message });
+      }
+      
+      console.log('🔍 Database query result:', { userFound: results.length > 0 });
+      
+      if (!results.length) {
+        console.log('❌ Login failed: User not found');
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+      
       const user = results[0];
+      console.log('🔍 Comparing passwords for user:', user.id);
+      
       const valid = await bcrypt.compare(password, user.password);
-      if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
+      if (!valid) {
+        console.log('❌ Login failed: Invalid password');
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+      
+      console.log('✅ Login successful for user:', user.id);
+      
       // Generate JWT
       const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, 'your_jwt_secret', { expiresIn: '7d' });
+      
       // Update last_login
       db.query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
+      
       res.json({ token, user: { id: user.id, name: user.name, surname: user.surname, email: user.email, role: user.role, house_id: user.house_id } });
     });
   } catch (err) {
+    console.error('❌ Unexpected error during login:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
