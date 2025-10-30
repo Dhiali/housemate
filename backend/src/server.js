@@ -151,8 +151,7 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: '10mb' }));
 
-// Ensure all tables exist
-const createAllTables = () => {
+// Database initialization functions
 async function initializeDatabaseWithRetry() {
   console.log('🔧 Initializing database tables...');
   
@@ -1950,4 +1949,3 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`🌐 Database: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 3306}`);
   console.log(`🔐 JWT Secret configured: ${process.env.JWT_SECRET ? 'Yes' : 'No (using fallback)'}`);
 });
-});}
