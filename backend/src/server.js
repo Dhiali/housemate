@@ -96,12 +96,42 @@ const authLimiter = rateLimit({
 app.use(limiter);
 app.use(xss()); // Clean user input from malicious HTML
 
+// Enhanced CORS configuration
 app.use(cors({ 
-  origin: corsOrigins,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (corsOrigins.includes(origin)) {
+      console.log(`✅ CORS allowed for origin: ${origin}`);
+      return callback(null, true);
+    } else {
+      console.log(`❌ CORS blocked for origin: ${origin}`);
+      console.log(`📝 Allowed origins:`, corsOrigins);
+      return callback(new Error('Not allowed by CORS'), false);
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD', 'PATCH'],
+  allowedHeaders: [
+    'Origin',
+    'X-Requested-With', 
+    'Content-Type', 
+    'Accept',
+    'Authorization',
+    'Cache-Control',
+    'Pragma'
+  ],
+  exposedHeaders: ['X-Total-Count'],
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
+
+// Log all incoming requests for debugging
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path} - Origin: ${req.get('origin') || 'none'}`);
+  next();
+});
 
 app.use(express.json({ limit: '10mb' }));
 
