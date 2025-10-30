@@ -15,8 +15,9 @@ if (process.env.DATABASE_URL) {
 } else {
   // Fallback to individual environment variables
   console.log('🔗 Using individual environment variables for connection');
+  
   dbConfig = {
-    host: process.env.MYSQL_HOST || process.env.DB_HOST || 'localhost',
+    host: process.env.MYSQL_HOST || process.env.DB_HOST || '34.35.107.158',
     user: process.env.MYSQL_USER || process.env.DB_USER || 'root',
     password: process.env.MYSQL_PASSWORD || process.env.DB_PASSWORD || '',
     database: process.env.MYSQL_DATABASE || process.env.DB_NAME || 'housemate_db',
@@ -31,7 +32,8 @@ console.log('🔧 Database config:', {
   host: dbConfig.host || 'using DATABASE_URL',
   user: dbConfig.user || 'from DATABASE_URL',
   database: dbConfig.database || 'from DATABASE_URL',
-  port: dbConfig.port || 'from DATABASE_URL'
+  port: dbConfig.port || 'from DATABASE_URL',
+  passwordSet: dbConfig.password ? 'YES' : 'NO'
 });
 
 const db = mysql.createPool(dbConfig);

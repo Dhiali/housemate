@@ -1,5 +1,5 @@
-# Use Node.js 18 as the base image
-FROM node:18-alpine
+# Use Node.js 20 for better compatibility
+FROM node:20-alpine
 
 # Set working directory
 WORKDIR /app
@@ -21,11 +21,12 @@ RUN adduser -S backend -u 1001
 RUN chown -R backend:nodejs /app
 USER backend
 
-# Expose port
-EXPOSE 3000
+# Expose port (Cloud Run uses PORT environment variable)
+EXPOSE 8080
 
 # Set environment to production
 ENV NODE_ENV=production
+ENV PORT=8080
 
 # Start the application
 CMD ["npm", "start"]

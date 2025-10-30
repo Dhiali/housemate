@@ -69,7 +69,7 @@ export function SettingsContent({
       // Assume user id is in profileSettings.id
       const userId = profileSettings.id || profileSettings.userId || profileSettings.user_id;
       if (!userId) throw new Error('User ID missing for avatar upload');
-      const res = await fetch(`http://localhost:3000/users/${userId}/avatar`, {
+      const res = await fetch(`https://housemate-backend-694893036218.us-central1.run.app/users/${userId}/avatar`, {
         method: 'PUT',
         body: formData
       });
@@ -179,7 +179,7 @@ export function SettingsContent({
                 <div className="flex items-center space-x-4">
                   <div className="w-20 h-20 bg-purple-500 rounded-full flex items-center justify-center overflow-hidden">
                     {avatarPreview ? (
-                      <img src={avatarPreview.startsWith('/uploads/') ? `http://localhost:3000${avatarPreview}` : avatarPreview} alt="Avatar" className="w-full h-full object-cover rounded-full" />
+                      <img src={avatarPreview.startsWith('/uploads/') ? `https://housemate-backend-694893036218.us-central1.run.app${avatarPreview}` : avatarPreview} alt="Avatar" className="w-full h-full object-cover rounded-full" />
                     ) : (
                       <span className="text-white text-2xl font-medium">YO</span>
                     )}

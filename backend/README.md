@@ -21,4 +21,4 @@ Simple Express server for the Housemate app.
    npm run dev
    ```
 
-Server defaults to http://localhost:4000 and exposes `/health`.
+Server deploys to Google Cloud Run and exposes `/health`.

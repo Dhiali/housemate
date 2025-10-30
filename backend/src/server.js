@@ -1,40 +1,115 @@
+// Load environment variables FIRST before any other imports
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env from the backend directory
+const envPath = path.join(__dirname, '../.env');
+const result = dotenv.config({ path: envPath });
+if (result.error) {
+  console.log('❌ Error loading .env file:', result.error.message);
+} else {
+  console.log('✅ Environment variables loaded from .env file');
+}
+
 import express from 'express';
-import db from './db.js';
+import { initializeDatabase } from './database.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import cors from 'cors';
-import path from 'path';
 import fs from 'fs';
-import dotenv from 'dotenv';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import xss from 'xss-clean';
+import { body, validationResult, param } from 'express-validator';
 import upload, { processImage, processHouseAvatar, bufferToDataUrl } from './avatarUploadWebP.js';
 
-// Load environment variables
-dotenv.config();
-
 const app = express();
+
+// Database connection - will be initialized later
+let db = null;
+
+// Validate critical environment variables
+const requiredEnvVars = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+
+if (missingEnvVars.length > 0) {
+  console.error('❌ Missing required environment variables:', missingEnvVars);
+  console.error('Please ensure all database environment variables are set');
+} else {
+  console.log('✅ All required environment variables are set');
+  console.log('🔧 Database config loaded:', {
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT || 3306
+  });
+}
 
 // Configure CORS with environment variables
 const corsOrigins = process.env.CORS_ORIGINS 
   ? process.env.CORS_ORIGINS.split(',')
   : [
-      "http://localhost:5173", 
-      "http://localhost:5174", 
-      "http://localhost:5175",
+      "https://white-water-0fbd05910.azurestaticapps.net", // Azure Static Web App
       "https://housemate.website",
-      "https://www.housemate.website",
-  // ...existing code...
+      "https://www.housemate.website"
     ];
+
+// Security middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  }
+}));
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // limit each IP to 5 login attempts per windowMs
+  message: 'Too many login attempts, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use(limiter);
+app.use(xss()); // Clean user input from malicious HTML
 
 app.use(cors({ 
   origin: corsOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
+
 app.use(express.json({ limit: '10mb' }));
 
 // Ensure all tables exist
 const createAllTables = () => {
   console.log('🔧 Initializing database tables...');
+  
+  // Initialize database connection first
+  db = initializeDatabase();
   
   // Create houses table first (referenced by users)
   const createHousesQuery = `
@@ -230,7 +305,21 @@ app.get('/', (req, res) => {
 });
 
 // Login endpoint
-app.post('/login', async (req, res) => {
+app.post('/login', 
+  authLimiter,
+  [
+    body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+  ],
+  async (req, res) => {
+  // Check validation results
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ 
+      error: 'Validation failed', 
+      details: errors.array() 
+    });
+  }
   console.log('🔍 Login attempt:', { email: req.body.email, hasPassword: !!req.body.password });
   
   const { email, password } = req.body;
@@ -265,8 +354,9 @@ app.post('/login', async (req, res) => {
       
       console.log('✅ Login successful for user:', user.id);
       
-      // Generate JWT
-      const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, 'your_jwt_secret', { expiresIn: '7d' });
+      // Generate JWT with environment variable
+      const jwtSecret = process.env.JWT_SECRET || 'fallback-jwt-secret-change-in-production';
+      const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, jwtSecret, { expiresIn: '7d' });
       
       // Update last_login
       db.query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
@@ -280,7 +370,29 @@ app.post('/login', async (req, res) => {
 });
 
 // Register endpoint
-app.post('/register', async (req, res) => {
+app.post('/register',
+  authLimiter,
+  [
+    body('name').trim().isLength({ min: 1, max: 255 }).withMessage('Name is required'),
+    body('surname').trim().isLength({ min: 1, max: 255 }).withMessage('Surname is required'),
+    body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+    body('password')
+      .isLength({ min: 8 })
+      .withMessage('Password must be at least 8 characters')
+      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
+      .withMessage('Password must contain uppercase, lowercase, number and special character'),
+    body('bio').optional().trim().isLength({ max: 1000 }).withMessage('Bio too long'),
+    body('phone').optional().isMobilePhone().withMessage('Invalid phone number'),
+  ],
+  async (req, res) => {
+  // Check validation results
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ 
+      error: 'Validation failed', 
+      details: errors.array() 
+    });
+  }
   const {
     name,
     surname,
@@ -372,7 +484,43 @@ app.post('/houses', (req, res) => {
   );
 });
 app.put('/houses/:id', (req, res) => {
-  db.query("UPDATE houses SET ? WHERE id = ?", [req.body, req.params.id], (err, results) => {
+  // Validate and sanitize input
+  const { name, address, house_rules, avatar } = req.body;
+  const houseId = parseInt(req.params.id);
+  
+  if (!houseId || isNaN(houseId)) {
+    return res.status(400).json({ error: 'Invalid house ID' });
+  }
+  
+  // Build update query with only allowed fields
+  const updates = [];
+  const values = [];
+  
+  if (name !== undefined) {
+    updates.push('name = ?');
+    values.push(name);
+  }
+  if (address !== undefined) {
+    updates.push('address = ?');
+    values.push(address);
+  }
+  if (house_rules !== undefined) {
+    updates.push('house_rules = ?');
+    values.push(house_rules);
+  }
+  if (avatar !== undefined) {
+    updates.push('avatar = ?');
+    values.push(avatar);
+  }
+  
+  if (updates.length === 0) {
+    return res.status(400).json({ error: 'No valid fields to update' });
+  }
+  
+  const query = `UPDATE houses SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`;
+  values.push(houseId);
+  
+  db.query(query, values, (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ message: "House updated!" });
   });
@@ -1691,8 +1839,10 @@ app.get('/health', (req, res) => {
   });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌐 Database: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 3306}`);
+  console.log(`🔐 JWT Secret configured: ${process.env.JWT_SECRET ? 'Yes' : 'No (using fallback)'}`);
 });

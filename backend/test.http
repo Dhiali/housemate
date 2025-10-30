@@ -1,8 +1,11 @@
-GET http://localhost:3000/users
+# Test endpoints for production deployment
+# Replace YOUR_CLOUD_RUN_URL with actual Cloud Run URL
+
+GET https://YOUR_CLOUD_RUN_URL/users
 Content-Type: application/json
 
 ###
-POST http://localhost:3000/users
+POST https://YOUR_CLOUD_RUN_URL/users
 Content-Type: application/json
 
 {
@@ -14,5 +17,5 @@ Content-Type: application/json
 
 ###
 # Test recent activities endpoint
-GET http://localhost:3000/houses/1/activities
+GET https://YOUR_CLOUD_RUN_URL/houses/1/activities
 Content-Type: application/json

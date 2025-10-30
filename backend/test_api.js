@@ -1,7 +1,9 @@
 // Simple test to verify the API endpoints work
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:3000';
+// Test API endpoints
+// Update YOUR_CLOUD_RUN_URL with actual Cloud Run URL
+const API_BASE = 'https://YOUR_CLOUD_RUN_URL';
 
 async function testTaskCreation() {
   try {
