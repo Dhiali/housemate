@@ -1,20 +1,65 @@
+# Dependencies
 node_modules/
 npm-debug.log
+yarn-error.log
+
+# Git
 .git/
 .gitignore
+
+# Environment files
 .env
-.env.local
-.env.development
-.env.development.local
-.env.test
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
+
+# Documentation and tests
 README.md
 test.http
 test_api.js
+*.test.js
+*.spec.js
+
+# Logs
 *.log
+logs/
+
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+
+# IDE
 .vscode/
+.idea/
+*.swp
+*.swo
+
+# Build artifacts
+dist/
+build/
+
+# Platform specific files
+nixpacks.toml
+railway.toml
+render.yaml
+vercel.json
+Procfile
+package-railway.json
+start.bat
+run-server.ps1
+
+# Uploads (keep structure but ignore content)
 uploads/avatars/*
 !uploads/avatars/.gitkeep
+
+# Database files
+*.sql
+!src/database/*.sql
+
+# Temporary files
+tmp/
+temp/
