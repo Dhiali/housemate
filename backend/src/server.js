@@ -1845,10 +1845,6 @@ app.put('/users/:id/email', (req, res) => {
       res.json({ message: 'Email updated!', email: results2[0]?.email });
     });
   });
-});
-
-
-
 
   // Update user phone number
   app.put('/users/:id/phone', (req, res) => {
@@ -1954,4 +1950,4 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`🌐 Database: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 3306}`);
   console.log(`🔐 JWT Secret configured: ${process.env.JWT_SECRET ? 'Yes' : 'No (using fallback)'}`);
 });
-}
+});}
