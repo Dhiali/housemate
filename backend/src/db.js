@@ -3,38 +3,26 @@ import mysql from 'mysql2';
 // Configuration for Google Cloud SQL
 let dbConfig;
 
-if (process.env.DATABASE_URL) {
-  // For Google Cloud SQL, use individual environment variables
-  console.log('🔗 Using DATABASE_URL for connection');
-  dbConfig = {
-    uri: process.env.DATABASE_URL,
-    ssl: {
-      rejectUnauthorized: false
-    }
-  };
-} else {
-  // Fallback to individual environment variables
-  console.log('🔗 Using individual environment variables for connection');
-  
-  dbConfig = {
-    host: process.env.MYSQL_HOST || process.env.DB_HOST || '34.35.107.158',
-    user: process.env.MYSQL_USER || process.env.DB_USER || 'root',
-    password: process.env.MYSQL_PASSWORD || process.env.DB_PASSWORD || '',
-    database: process.env.MYSQL_DATABASE || process.env.DB_NAME || 'housemate_db',
-    port: process.env.MYSQL_PORT || process.env.DB_PORT || 3306,
-    ssl: {
-      rejectUnauthorized: false
-    },
-    // Connection timeout settings for Cloud Run
-    connectTimeout: 60000, // 60 seconds
-    acquireTimeout: 60000, // 60 seconds
-    timeout: 60000, // 60 seconds
-    reconnect: true,
-    // Connection pool settings
-    connectionLimit: 10,
-    queueLimit: 0
-  };
-}
+// Always use DB_* environment variables for Google Cloud SQL
+console.log('🔗 Using DB_* environment variables for connection');
+dbConfig = {
+  host: process.env.DB_HOST || '34.35.107.158',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'housemate_db',
+  port: process.env.DB_PORT || 3306,
+  ssl: {
+    rejectUnauthorized: false
+  },
+  // Connection timeout settings for Cloud Run
+  connectTimeout: 60000, // 60 seconds
+  acquireTimeout: 60000, // 60 seconds
+  timeout: 60000, // 60 seconds
+  reconnect: true,
+  // Connection pool settings
+  connectionLimit: 10,
+  queueLimit: 0
+};
 
 console.log('🔧 Database config:', {
   host: dbConfig.host || 'using DATABASE_URL',
