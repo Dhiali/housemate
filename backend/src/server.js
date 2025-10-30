@@ -53,7 +53,8 @@ if (missingEnvVars.length > 0) {
 const corsOrigins = process.env.CORS_ORIGINS 
   ? process.env.CORS_ORIGINS.split(',')
   : [
-      "https://white-water-0fbd05910.azurestaticapps.net", // Azure Static Web App
+      "https://white-water-0fbd05910.azurestaticapps.net", // Azure Static Web App (old)
+      "https://white-water-0fbd05910.3.azurestaticapps.net", // Azure Static Web App (current)
       "https://housemate.website",
       "https://www.housemate.website"
     ];
