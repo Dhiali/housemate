@@ -17,7 +17,7 @@ export const register = (user) => API.post('/register', user);
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "https://housemate-backend-694893036218.us-central1.run.app",
+  baseURL: import.meta.env.VITE_API_URL || "https://housemate-backend-694893036218.africa-south1.run.app",
 });
 
 // Houses
