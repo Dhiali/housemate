@@ -66,14 +66,12 @@ if (missingEnvVars.length > 0) {
 }
 
 // Configure CORS with environment variables
-const corsOrigins = process.env.CORS_ORIGINS 
-  ? process.env.CORS_ORIGINS.split(',')
-  : [
-      "https://white-water-0fbd05910.azurestaticapps.net", // Azure Static Web App (old)
-      "https://white-water-0fbd05910.3.azurestaticapps.net", // Azure Static Web App (current)
-      "https://housemate.website",
-      "https://www.housemate.website"
-    ];
+const corsOrigins = [
+  "https://white-water-0fbd05910.3.azurestaticapps.net",
+  "https://white-water-0fbd05910.azurestaticapps.net",
+  "https://housemate.website",
+  "https://www.housemate.website"
+];
 
 // Security middleware
 app.use(helmet({
@@ -150,6 +148,11 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json({ limit: '10mb' }));
+// Start database initialization and table creation
+
+initializeDatabaseWithRetry().catch((err) => {
+  console.error('❌ Database initialization error (non-fatal):', err);
+});
 
 // Database initialization functions
 async function initializeDatabaseWithRetry() {
@@ -1844,37 +1847,38 @@ app.put('/users/:id/email', (req, res) => {
       res.json({ message: 'Email updated!', email: results2[0]?.email });
     });
   });
+});
 
-  // Update user phone number
-  app.put('/users/:id/phone', (req, res) => {
-    const { phone } = req.body;
-    console.log('PUT /users/:id/phone', req.params.id, 'phone:', JSON.stringify(phone));
-    console.log('Phone type:', typeof phone, 'Phone length:', phone?.length);
-    console.log('SQL params:', [phone, req.params.id]);
-    if (isNaN(Number(req.params.id))) {
-      console.error('Phone update failed: id is not a number', req.params.id);
-      return res.status(400).json({ error: 'User id must be a number' });
+// Update user phone number
+app.put('/users/:id/phone', (req, res) => {
+  const { phone } = req.body;
+  console.log('PUT /users/:id/phone', req.params.id, 'phone:', JSON.stringify(phone));
+  console.log('Phone type:', typeof phone, 'Phone length:', phone?.length);
+  console.log('SQL params:', [phone, req.params.id]);
+  if (isNaN(Number(req.params.id))) {
+    console.error('Phone update failed: id is not a number', req.params.id);
+    return res.status(400).json({ error: 'User id must be a number' });
+  }
+  if (typeof phone !== 'string') {
+    console.log('Phone update failed: phone is not a string', phone);
+    return res.status(400).json({ error: 'Phone must be a string' });
+  }
+  db.query('UPDATE users SET phone = ? WHERE id = ?', [phone, req.params.id], (err, results) => {
+    if (err) {
+      console.error('Phone update DB error:', err);
+      return res.status(500).json({ error: err.message });
     }
-    if (typeof phone !== 'string') {
-      console.log('Phone update failed: phone is not a string', phone);
-      return res.status(400).json({ error: 'Phone must be a string' });
-    }
-    db.query('UPDATE users SET phone = ? WHERE id = ?', [phone, req.params.id], (err, results) => {
-      if (err) {
-        console.error('Phone update DB error:', err);
-        return res.status(500).json({ error: err.message });
+    console.log('Phone update DB results:', results);
+    db.query('SELECT phone FROM users WHERE id = ?', [req.params.id], (err2, results2) => {
+      if (err2) {
+        console.error('Phone select DB error:', err2);
+        return res.status(500).json({ error: err2.message });
       }
-      console.log('Phone update DB results:', results);
-      db.query('SELECT phone FROM users WHERE id = ?', [req.params.id], (err2, results2) => {
-        if (err2) {
-          console.error('Phone select DB error:', err2);
-          return res.status(500).json({ error: err2.message });
-        }
-        console.log('Phone after update:', results2);
-        res.json({ message: 'Phone updated!', phone: results2[0]?.phone });
-      });
+      console.log('Phone after update:', results2);
+      res.json({ message: 'Phone updated!', phone: results2[0]?.phone });
     });
   });
+});
 
 app.post('/users', (req, res) => {
   const { name, email, password, role } = req.body;
@@ -1943,11 +1947,15 @@ app.get('/health', (req, res) => {
 });
 
 const PORT = process.env.PORT || 8080;
+console.log('🟢 About to start app.listen...');
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 Database: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 3306}`);
   console.log(`🔐 JWT Secret configured: ${process.env.JWT_SECRET ? 'Yes' : 'No (using fallback)'}`);
+  console.log('🟢 app.listen callback reached, server should be alive!');
 });
 
-})
+// Start database initialization and table creation in the background
+initializeDatabaseWithRetry().catch((err) => {
+  console.error('❌ Database initialization error (non-fatal):', err);});
