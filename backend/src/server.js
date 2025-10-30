@@ -31,6 +31,22 @@ const app = express();
 
 // Database connection - will be initialized later
 let db = null;
+let dbAvailable = false;
+
+// Helper function to check database availability
+function isDatabaseAvailable() {
+  return db && dbAvailable;
+}
+
+// Helper function to handle database errors gracefully
+function handleDatabaseError(res, error, message = 'Database connection failed') {
+  console.error(`❌ ${message}:`, error);
+  res.status(503).json({ 
+    error: 'Service temporarily unavailable', 
+    message: 'Database connection issues. Please try again later.',
+    code: 'DATABASE_UNAVAILABLE'
+  });
+}
 
 // Validate critical environment variables
 const requiredEnvVars = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
@@ -137,10 +153,32 @@ app.use(express.json({ limit: '10mb' }));
 
 // Ensure all tables exist
 const createAllTables = () => {
+async function initializeDatabaseWithRetry() {
   console.log('🔧 Initializing database tables...');
   
-  // Initialize database connection first
-  db = initializeDatabase();
+  try {
+    // Initialize database connection first
+    db = initializeDatabase();
+    
+    // Don't block server startup - do database initialization in background
+    setTimeout(async () => {
+      try {
+        await createDatabaseTables();
+      } catch (error) {
+        console.error('❌ Database table creation failed, will retry in 30 seconds:', error.message);
+        // Retry after 30 seconds
+        setTimeout(() => createDatabaseTables(), 30000);
+      }
+    }, 5000); // Start after 5 seconds to let server start first
+    
+  } catch (error) {
+    console.error('❌ Database initialization failed, server will continue without database:', error.message);
+  }
+}
+
+async function createDatabaseTables() {
+  return new Promise((resolve, reject) => {
+    console.log('🔧 Creating database tables...');
   
   // Create houses table first (referenced by users)
   const createHousesQuery = `
@@ -248,60 +286,70 @@ const createAllTables = () => {
     )
   `;
 
-  // Execute table creation in sequence to handle foreign key dependencies
-  db.query(createHousesQuery, (err) => {
-    if (err) {
-      console.error('❌ Error creating houses table:', err);
-    } else {
-      console.log('✅ Houses table ready');
-      
-      // Create users table after houses
-      db.query(createUsersQuery, (err) => {
-        if (err) {
-          console.error('❌ Error creating users table:', err);
-        } else {
-          console.log('✅ Users table ready');
-          
-          // Create tasks table after users
-          db.query(createTasksQuery, (err) => {
-            if (err) {
-              console.error('❌ Error creating tasks table:', err);
-            } else {
-              console.log('✅ Tasks table ready');
-            }
-          });
-          
-          // Create bills table after users
-          db.query(createBillsQuery, (err) => {
-            if (err) {
-              console.error('❌ Error creating bills table:', err);
-            } else {
-              console.log('✅ Bills table ready');
-              
-              // Create bill_share table after bills
-              db.query(createBillShareQuery, (err) => {
-                if (err) {
-                  console.error('❌ Error creating bill_share table:', err);
-                } else {
-                  console.log('✅ Bill share table ready');
-                }
-              });
+    // Execute table creation in sequence to handle foreign key dependencies
+    db.query(createHousesQuery, (err) => {
+      if (err) {
+        console.error('❌ Error creating houses table:', err);
+        reject(err);
+      } else {
+        console.log('✅ Houses table ready');
+        
+        // Create users table after houses
+        db.query(createUsersQuery, (err) => {
+          if (err) {
+            console.error('❌ Error creating users table:', err);
+            reject(err);
+          } else {
+            console.log('✅ Users table ready');
+            
+            // Create tasks table after users
+            db.query(createTasksQuery, (err) => {
+              if (err) {
+                console.error('❌ Error creating tasks table:', err);
+                reject(err);
+              } else {
+                console.log('✅ Tasks table ready');
+              }
+            });
+            
+            // Create bills table after users
+            db.query(createBillsQuery, (err) => {
+              if (err) {
+                console.error('❌ Error creating bills table:', err);
+                reject(err);
+              } else {
+                console.log('✅ Bills table ready');
+                
+                // Create bill_share table after bills
+                db.query(createBillShareQuery, (err) => {
+                  if (err) {
+                    console.error('❌ Error creating bill_share table:', err);
+                    reject(err);
+                  } else {
+                    console.log('✅ Bill share table ready');
+                  }
+                });
 
-              // Create bill_history table after bills
-              db.query(createBillHistoryQuery, (err) => {
-                if (err) {
-                  console.error('❌ Error creating bill_history table:', err);
-                } else {
-                  console.log('✅ Bill history table ready');
-                }
-              });
-            }
-          });
-        }
-      });
-    }
+                // Create bill_history table after bills
+                db.query(createBillHistoryQuery, (err) => {
+                  if (err) {
+                    console.error('❌ Error creating bill_history table:', err);
+                    reject(err);
+                  } else {
+                    console.log('✅ Bill history table ready');
+                    console.log('🎉 All database tables created successfully!');
+                    dbAvailable = true;
+                    resolve();
+                  }
+                });
+              }
+            });
+          }
+        });
+      }
+    });
   });
-};
+}
 
 // Ensure bills and related tables exist
 const createBillsTables = () => {
@@ -309,25 +357,33 @@ const createBillsTables = () => {
   console.log('📝 Legacy createBillsTables() called - tables handled by createAllTables()');
 };
 
-// Create tables on startup
-createAllTables();
+// Create tables on startup (non-blocking)
+initializeDatabaseWithRetry();
 
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
-    database: 'checking...'
+    database: {
+      connected: isDatabaseAvailable(),
+      status: isDatabaseAvailable() ? 'connected' : 'connecting/unavailable'
+    },
+    environment: process.env.NODE_ENV || 'development'
   });
   
-  // Test database connection
-  db.query('SELECT 1', (err, results) => {
-    if (err) {
-      console.error('❌ Database health check failed:', err.message);
-    } else {
-      console.log('✅ Database health check passed');
-    }
-  });
+  // Test database connection if available
+  if (db) {
+    db.query('SELECT 1', (err, results) => {
+      if (err) {
+        console.error('❌ Database health check failed:', err.message);
+        dbAvailable = false;
+      } else {
+        console.log('✅ Database health check passed');
+        dbAvailable = true;
+      }
+    });
+  }
 });
 
 // Root endpoint
@@ -359,6 +415,11 @@ app.post('/login',
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
   ],
   async (req, res) => {
+  // Check if database is available
+  if (!isDatabaseAvailable()) {
+    return handleDatabaseError(res, new Error('Database not available'), 'Login failed');
+  }
+
   // Check validation results
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
