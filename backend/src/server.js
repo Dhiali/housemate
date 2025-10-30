@@ -335,6 +335,22 @@ app.get('/', (req, res) => {
   res.json({ message: 'HouseMate API Server', version: '1.0.0' });
 });
 
+// CORS test endpoint
+app.get('/cors-test', (req, res) => {
+  res.json({ 
+    message: 'CORS test successful!',
+    origin: req.get('origin'),
+    timestamp: new Date().toISOString(),
+    headers: req.headers
+  });
+});
+
+// OPTIONS handler for preflight requests
+app.options('*', (req, res) => {
+  console.log(`📋 OPTIONS request for ${req.path} from origin: ${req.get('origin')}`);
+  res.status(204).send();
+});
+
 // Login endpoint
 app.post('/login', 
   authLimiter,
