@@ -2,7 +2,7 @@
 import { useState, lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
-import SplashScreen from './SplashScreen.jsx';
+// import SplashScreen from './SplashScreen.jsx';
 import { useStructuredData } from './hooks/useStructuredData.js';
 import { initPerformanceMonitoring, markPerformance } from './utils/performance.js';
 import { 
@@ -19,7 +19,7 @@ const LandingPage = lazy(() => import('./components/LandingPage.jsx'));
 const AuthApp = lazy(() => import('./Auth/src/App.jsx'));
 
 function App() {
-  const [showSplash, setShowSplash] = useState(true);
+  // const [showSplash, setShowSplash] = useState(true);
   
   // Initialize performance monitoring and service worker
   useEffect(() => {
@@ -93,8 +93,8 @@ function App() {
 
   return (
     <>
-      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
-      <div style={{ display: showSplash ? 'none' : 'block' }}>
+  {/* SplashScreen removed, show app immediately */}
+  <div>
         <Router>
           <Suspense fallback={<LoadingSpinner />}>
             <Routes>
