@@ -1,53 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../dashboard/src/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '../dashboard/src/components/ui/card';
 import { motion } from 'framer-motion';
 import { useScrollAnimation } from './useScrollAnimation';
-import Footer from './Footer';
+import { Home, CheckSquare, CreditCard, Calendar, Users, ArrowRight, CheckCircle, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
 
-
-const features = [
-  {
-    icon: '💰',
-    title: 'Split Bills Fairly',
-    description: 'Automatically calculate and split shared expenses among housemates. No more awkward money conversations.'
-  },
-  {
-    icon: '📊',
-    title: 'Track Expenses',
-    description: 'Keep detailed records of all household expenses. See who paid what and when with complete transparency.'
-  },
-  {
-    icon: '✅',
-    title: 'Manage Tasks',
-    description: 'Assign and track household chores and responsibilities. Everyone knows what needs to be done.'
-  },
-  {
-    icon: '🏠',
-    title: 'Organize Your Home',
-    description: 'Create a harmonious living environment with clear communication and shared accountability.'
-  },
-  {
-    icon: '📱',
-    title: 'Easy to Use',
-    description: 'Simple, intuitive interface that makes managing shared living effortless for everyone.'
-  },
-  {
-    icon: '🔒',
-    title: 'Secure & Private',
-    description: 'Your financial data is encrypted and secure. Only your housemates can see shared information.'
-  }
-];
-
-const benefits = [
-  'Eliminate awkward money conversations',
-  'Ensure fair distribution of expenses',
-  'Keep everyone accountable for chores',
-  'Maintain transparent financial records',
-  'Reduce household conflicts',
-  'Save time on expense calculations'
-];
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 60 },
@@ -61,34 +18,37 @@ const LandingPage = () => {
   const [heroRef, heroControls] = useScrollAnimation();
   const [featuresRef, featuresControls] = useScrollAnimation();
   const [benefitsRef, benefitsControls] = useScrollAnimation();
-  const [statsRef, statsControls] = useScrollAnimation();
   const [ctaRef, ctaControls] = useScrollAnimation();
 
+  const handleAuthClick = () => {
+    navigate('/auth/signup');
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header/Navigation */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50 backdrop-blur-sm bg-white/95">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center overflow-hidden">
-                <img src="/HouseMate logo.png" alt="Housemate Logo" className="w-8 h-8 object-contain" />
-              </div>
-              <span className="font-bold text-xl text-gray-900">HouseMate</span>
+    <div className="min-h-screen bg-white flex flex-col">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
+              <Home size={16} className="text-white" />
             </div>
-            <nav className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-600 hover:text-purple-600 transition-colors">Features</a>
-              <a href="#benefits" className="text-gray-600 hover:text-purple-600 transition-colors">Benefits</a>
-              <a href="#pricing" className="text-gray-600 hover:text-purple-600 transition-colors">Pricing</a>
-            </nav>
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" onClick={() => navigate('/auth/signin')} className="text-gray-600 hover:text-purple-600">
-                Sign In
-              </Button>
-              <Button onClick={() => navigate('/auth/signup')} className="bg-purple-600 text-white hover:bg-purple-700 shadow-sm">
-                Get Started Free
-              </Button>
-            </div>
+            <span className="text-xl font-semibold text-gray-900">HouseMate</span>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/auth/signin')}
+            >
+              Sign In
+            </Button>
+            <Button
+              onClick={handleAuthClick}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              Get Started
+            </Button>
           </div>
         </div>
       </header>
@@ -98,90 +58,50 @@ const LandingPage = () => {
         ref={heroRef} 
         initial="hidden" 
         animate={heroControls} 
-        variants={sectionVariants} 
-        className="relative overflow-hidden bg-gradient-to-b from-white to-gray-50 pt-16 pb-24"
+        variants={sectionVariants}
+        className="flex-1 bg-gradient-to-b from-purple-50 to-white"
       >
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="text-center max-w-4xl mx-auto">
-            <div className="mb-8">
-              <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-purple-100 text-purple-700 mb-6">
-                🏠 The future of shared living
-              </span>
+        <div className="max-w-7xl mx-auto px-6 py-20">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <h1 className="text-5xl text-gray-900 mb-6">
+                Simplify Your Shared Living
+              </h1>
+              <p className="text-xl text-gray-600 mb-8">
+                HouseMate is the all-in-one platform that helps roommates manage household tasks, split bills, and coordinate schedules effortlessly. Say goodbye to awkward conversations and confusion.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button
+                  onClick={handleAuthClick}
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-6 text-lg"
+                >
+                  Get Started Free
+                  <ArrowRight className="ml-2" size={20} />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="px-8 py-6 text-lg"
+                  onClick={() => {
+                    document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  Learn More
+                </Button>
+              </div>
             </div>
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 tracking-tight">
-              Simplify Your{' '}
-              <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                Shared Living
-              </span>
-            </h1>
-            <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
-              Split bills fairly, track expenses transparently, and manage household tasks effortlessly. 
-              Keep your housemates organized and your finances crystal clear.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Button 
-                size="lg" 
-                onClick={() => navigate('/auth/signup')} 
-                className="bg-purple-600 text-white hover:bg-purple-700 px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
-              >
-                Start For Free
-                <span className="ml-2">→</span>
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                onClick={() => navigate('/auth/signin')} 
-                className="px-8 py-4 text-lg border-2 border-gray-300 hover:border-purple-400 hover:bg-purple-50 transition-all"
-              >
-                Sign In
-              </Button>
+            
+            <div className="relative">
+              <div className="rounded-2xl overflow-hidden shadow-2xl">
+                <img
+                  src="https://images.unsplash.com/photo-1688549143237-e258a419d200?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBzaGFyZWQlMjBob3VzZSUyMHJvb21tYXRlc3xlbnwxfHx8fDE3NjIxMDUxNjR8MA&ixlib=rb-4.1.0&q=80&w=1080"
+                  alt="Modern shared house"
+                  className="w-full h-[500px] object-cover"
+                  onError={(e) => {
+                    e.target.src = 'https://via.placeholder.com/500x300/e5e7eb/6b7280?text=Modern+Shared+House';
+                  }}
+                />
+              </div>
             </div>
-            <div className="flex items-center justify-center space-x-6 text-sm text-gray-500">
-              <span className="flex items-center">
-                <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                No credit card required
-              </span>
-              <span className="flex items-center">
-                <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                Free forever
-              </span>
-              <span className="flex items-center">
-                <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                Setup in 2 minutes
-              </span>
-            </div>
-          </div>
-        </div>
-      </motion.section>
-
-      {/* Stats Section */}
-      <motion.section 
-        ref={statsRef} 
-        initial="hidden" 
-        animate={statsControls} 
-        variants={sectionVariants} 
-        className="py-16 bg-white border-y border-gray-200"
-      >
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {[
-              { number: '10,000+', label: 'Happy Housemates' },
-              { number: '2,500+', label: 'Houses Managed' },
-              { number: '$2M+', label: 'Bills Split Fairly' },
-              { number: '99.9%', label: 'Uptime' }
-            ].map((stat, index) => (
-              <motion.div 
-                key={index}
-                initial="hidden" 
-                whileInView="visible" 
-                viewport={{ once: true }} 
-                variants={sectionVariants}
-                className="text-center"
-              >
-                <div className="text-3xl md:text-4xl font-bold text-purple-600 mb-2">{stat.number}</div>
-                <div className="text-gray-600 font-medium">{stat.label}</div>
-              </motion.div>
-            ))}
           </div>
         </div>
       </motion.section>
@@ -191,124 +111,242 @@ const LandingPage = () => {
         ref={featuresRef} 
         initial="hidden" 
         animate={featuresControls} 
-        variants={sectionVariants} 
-        className="py-24 bg-gray-50" 
-        id="features"
+        variants={sectionVariants}
+        id="features" 
+        className="py-20 bg-white"
       >
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="text-center mb-20">
-            <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-purple-100 text-purple-700 mb-6">
-              ✨ Powerful Features
-            </span>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Everything You Need</h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              HouseMate provides all the tools you need to manage shared living spaces effectively and harmoniously.
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl text-gray-900 mb-4">
+              Everything You Need to Manage Your Home
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              HouseMate brings all your household management tools into one intuitive platform, making shared living harmonious and stress-free.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <motion.div 
-                key={index} 
-                initial="hidden" 
-                whileInView="visible" 
-                viewport={{ once: true }} 
-                variants={sectionVariants}
-                className="group"
-              >
-                <Card className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 h-full group-hover:border-purple-200">
-                  <CardHeader className="pb-4">
-                    <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-purple-200 transition-colors">
-                      <span className="text-2xl">{feature.icon}</span>
-                    </div>
-                    <CardTitle className="text-xl font-semibold text-gray-900 mb-2">{feature.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <p className="text-gray-600 leading-relaxed">{feature.description}</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+            <motion.div 
+              initial="hidden" 
+              whileInView="visible" 
+              viewport={{ once: true }} 
+              variants={sectionVariants}
+              className="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-shadow"
+            >
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                <CheckSquare className="text-blue-600" size={24} />
+              </div>
+              <h3 className="text-xl text-gray-900 mb-3">Task Management</h3>
+              <p className="text-gray-600">
+                Create, assign, and track household tasks. Set priorities, due dates, and get reminders so nothing falls through the cracks.
+              </p>
+            </motion.div>
+
+            <motion.div 
+              initial="hidden" 
+              whileInView="visible" 
+              viewport={{ once: true }} 
+              variants={sectionVariants}
+              className="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-shadow"
+            >
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                <CreditCard className="text-green-600" size={24} />
+              </div>
+              <h3 className="text-xl text-gray-900 mb-3">Bill Splitting</h3>
+              <p className="text-gray-600">
+                Easily split bills, track payments, and see who owes what. Support for equal splits or custom allocations.
+              </p>
+            </motion.div>
+
+            <motion.div 
+              initial="hidden" 
+              whileInView="visible" 
+              viewport={{ once: true }} 
+              variants={sectionVariants}
+              className="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-shadow"
+            >
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                <Calendar className="text-purple-600" size={24} />
+              </div>
+              <h3 className="text-xl text-gray-900 mb-3">Shared Calendar</h3>
+              <p className="text-gray-600">
+                Coordinate schedules, plan events, and see all household activities in one place. Never miss important dates.
+              </p>
+            </motion.div>
+
+            <motion.div 
+              initial="hidden" 
+              whileInView="visible" 
+              viewport={{ once: true }} 
+              variants={sectionVariants}
+              className="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-shadow"
+            >
+              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
+                <Users className="text-orange-600" size={24} />
+              </div>
+              <h3 className="text-xl text-gray-900 mb-3">Housemate Profiles</h3>
+              <p className="text-gray-600">
+                Keep everyone's contact info, preferences, and activity history organized. Know who's responsible for what.
+              </p>
+            </motion.div>
+
+            <motion.div 
+              initial="hidden" 
+              whileInView="visible" 
+              viewport={{ once: true }} 
+              variants={sectionVariants}
+              className="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-shadow"
+            >
+              <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mb-4">
+                <CheckCircle className="text-pink-600" size={24} />
+              </div>
+              <h3 className="text-xl text-gray-900 mb-3">Activity Tracking</h3>
+              <p className="text-gray-600">
+                See real-time updates on completed tasks, payments made, and upcoming responsibilities for full transparency.
+              </p>
+            </motion.div>
+
+            <motion.div 
+              initial="hidden" 
+              whileInView="visible" 
+              viewport={{ once: true }} 
+              variants={sectionVariants}
+              className="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-shadow"
+            >
+              <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
+                <Home className="text-indigo-600" size={24} />
+              </div>
+              <h3 className="text-xl text-gray-900 mb-3">Dashboard Overview</h3>
+              <p className="text-gray-600">
+                Get a comprehensive view of your household at a glance with stats, upcoming tasks, and recent activity.
+              </p>
+            </motion.div>
           </div>
         </div>
       </motion.section>
 
-      {/* Benefits Section */}
+      {/* Why Choose HouseMate */}
       <motion.section 
         ref={benefitsRef} 
         initial="hidden" 
         animate={benefitsControls} 
-        variants={sectionVariants} 
-        className="py-24 bg-white" 
-        id="benefits"
+        variants={sectionVariants}
+        className="py-20 bg-purple-50"
       >
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-purple-100 text-purple-700 mb-6">
-                🎯 Why Choose Us
-              </span>
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-                Transform Your Shared Living Experience
+              <h2 className="text-4xl text-gray-900 mb-6">
+                Why Choose HouseMate?
               </h2>
-              <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                Living with housemates doesn't have to be complicated. HouseMate makes it easy to maintain 
-                fairness, transparency, and harmony in your shared living space.
-              </p>
-              <div className="space-y-4">
-                {benefits.map((benefit, index) => (
-                  <motion.div 
-                    key={index} 
-                    initial="hidden" 
-                    whileInView="visible" 
-                    viewport={{ once: true }} 
-                    variants={sectionVariants}
-                    className="flex items-center gap-4"
-                  >
-                    <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-white text-sm font-bold">✓</span>
-                    </div>
-                    <span className="text-gray-700 text-lg">{benefit}</span>
-                  </motion.div>
-                ))}
+              <div className="space-y-6">
+                <motion.div 
+                  initial="hidden" 
+                  whileInView="visible" 
+                  viewport={{ once: true }} 
+                  variants={sectionVariants}
+                  className="flex items-start space-x-4"
+                >
+                  <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                    <CheckCircle className="text-white" size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg text-gray-900 mb-2">Fair & Transparent</h3>
+                    <p className="text-gray-600">
+                      Keep everyone accountable with clear task assignments and payment tracking. No more disputes about who did what.
+                    </p>
+                  </div>
+                </motion.div>
+
+                <motion.div 
+                  initial="hidden" 
+                  whileInView="visible" 
+                  viewport={{ once: true }} 
+                  variants={sectionVariants}
+                  className="flex items-start space-x-4"
+                >
+                  <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                    <CheckCircle className="text-white" size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg text-gray-900 mb-2">Easy to Use</h3>
+                    <p className="text-gray-600">
+                      Intuitive interface that anyone can use. Set up your household in minutes and start managing tasks right away.
+                    </p>
+                  </div>
+                </motion.div>
+
+                <motion.div 
+                  initial="hidden" 
+                  whileInView="visible" 
+                  viewport={{ once: true }} 
+                  variants={sectionVariants}
+                  className="flex items-start space-x-4"
+                >
+                  <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                    <CheckCircle className="text-white" size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg text-gray-900 mb-2">Stay Organized</h3>
+                    <p className="text-gray-600">
+                      All household information in one place. Never forget a bill due date or whose turn it is to clean the kitchen.
+                    </p>
+                  </div>
+                </motion.div>
+
+                <motion.div 
+                  initial="hidden" 
+                  whileInView="visible" 
+                  viewport={{ once: true }} 
+                  variants={sectionVariants}
+                  className="flex items-start space-x-4"
+                >
+                  <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                    <CheckCircle className="text-white" size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg text-gray-900 mb-2">Reduce Conflicts</h3>
+                    <p className="text-gray-600">
+                      Clear communication and expectations prevent misunderstandings and keep everyone on the same page.
+                    </p>
+                  </div>
+                </motion.div>
               </div>
             </div>
-            <div className="relative">
-              <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-3xl p-8 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-purple-200 rounded-full -translate-y-16 translate-x-16 opacity-50"></div>
-                <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-200 rounded-full translate-y-12 -translate-x-12 opacity-50"></div>
-                <div className="relative">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-6">Quick Setup Demo</h3>
-                  <div className="space-y-4">
-                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                          <span className="text-purple-600 font-bold">1</span>
-                        </div>
-                        <span className="font-semibold text-gray-900">Create your house</span>
-                      </div>
-                      <p className="text-gray-600 text-sm ml-11">Set up your shared living space in seconds</p>
-                    </div>
-                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                          <span className="text-purple-600 font-bold">2</span>
-                        </div>
-                        <span className="font-semibold text-gray-900">Invite housemates</span>
-                      </div>
-                      <p className="text-gray-600 text-sm ml-11">Send invites via email or share a link</p>
-                    </div>
-                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                          <span className="text-purple-600 font-bold">3</span>
-                        </div>
-                        <span className="font-semibold text-gray-900">Start managing</span>
-                      </div>
-                      <p className="text-gray-600 text-sm ml-11">Split bills, assign tasks, stay organized</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+
+            <div className="grid grid-cols-1 gap-6">
+              <motion.div 
+                initial="hidden" 
+                whileInView="visible" 
+                viewport={{ once: true }} 
+                variants={sectionVariants}
+                className="rounded-2xl overflow-hidden shadow-xl"
+              >
+                <img
+                  src="https://images.unsplash.com/photo-1759661937582-0ccd5dacf20f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0YXNrJTIwbWFuYWdlbWVudCUyMGNoZWNrbGlzdHxlbnwxfHx8fDE3NjIwOTIxMTZ8MA&ixlib=rb-4.1.0&q=80&w=1080"
+                  alt="Task management"
+                  className="w-full h-64 object-cover"
+                  onError={(e) => {
+                    e.target.src = 'https://via.placeholder.com/400x256/e5e7eb/6b7280?text=Task+Management';
+                  }}
+                />
+              </motion.div>
+              <motion.div 
+                initial="hidden" 
+                whileInView="visible" 
+                viewport={{ once: true }} 
+                variants={sectionVariants}
+                className="rounded-2xl overflow-hidden shadow-xl"
+              >
+                <img
+                  src="https://images.unsplash.com/photo-1634757439914-23b8acb9d411?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxob3VzZSUyMGJpbGxzJTIwcGF5bWVudHxlbnwxfHx8fDE3NjIxMDUxNjR8MA&ixlib=rb-4.1.0&q=80&w=1080"
+                  alt="Bill payments"
+                  className="w-full h-64 object-cover"
+                  onError={(e) => {
+                    e.target.src = 'https://via.placeholder.com/400x256/e5e7eb/6b7280?text=Bill+Payments';
+                  }}
+                />
+              </motion.div>
             </div>
           </div>
         </div>
@@ -319,52 +357,168 @@ const LandingPage = () => {
         ref={ctaRef} 
         initial="hidden" 
         animate={ctaControls} 
-        variants={sectionVariants} 
-        className="py-24 bg-gradient-to-br from-purple-600 to-blue-600 relative overflow-hidden"
-        id="pricing"
+        variants={sectionVariants}
+        className="py-20 bg-gradient-to-br from-purple-600 to-purple-800"
       >
-        <div className="absolute inset-0 bg-pattern opacity-20"></div>
-        <div className="max-w-4xl mx-auto px-6 lg:px-8 text-center relative">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            Ready to Transform Your Shared Living?
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <h2 className="text-4xl text-white mb-6">
+            Ready to Transform Your Household?
           </h2>
-          <p className="text-xl text-purple-100 mb-12 max-w-2xl mx-auto leading-relaxed">
-            Join thousands of housemates who have already simplified their lives with HouseMate. 
-            Start your journey to harmonious shared living today.
+          <p className="text-xl text-purple-100 mb-8">
+            Join thousands of happy roommates who have simplified their shared living with HouseMate. Get started today for free!
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-            <Button 
-              size="lg" 
-              onClick={() => navigate('/auth/signup')} 
-              className="bg-white text-purple-600 hover:bg-gray-50 px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
-            >
-              Get Started Free
-              <span className="ml-2">→</span>
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              onClick={() => navigate('/auth/signin')} 
-              className="border-2 border-white/30 text-white hover:bg-white/10 backdrop-blur-sm px-8 py-4 text-lg transition-all"
-            >
-              Sign In
-            </Button>
-          </div>
-          <div className="flex items-center justify-center space-x-8 text-purple-100">
-            <span className="flex items-center text-sm">
-              <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
-              No credit card required
-            </span>
-            <span className="flex items-center text-sm">
-              <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
-              Free forever plan
-            </span>
-          </div>
+          <Button
+            onClick={handleAuthClick}
+            className="bg-white hover:bg-gray-100 text-purple-600 px-8 py-6 text-lg"
+          >
+            Get Started Now
+            <ArrowRight className="ml-2" size={20} />
+          </Button>
         </div>
       </motion.section>
 
       {/* Footer */}
-      <Footer />
+      <footer className="bg-gray-900 text-gray-300 py-12">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            {/* Brand */}
+            <div>
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
+                  <Home size={16} className="text-white" />
+                </div>
+                <span className="text-xl text-white">HouseMate</span>
+              </div>
+              <p className="text-sm text-gray-400">
+                Simplifying shared living, one household at a time.
+              </p>
+            </div>
+
+            {/* Product */}
+            <div>
+              <h4 className="text-white mb-4">Product</h4>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <button
+                    onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+                    className="hover:text-white transition-colors"
+                  >
+                    Features
+                  </button>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                    How It Works
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                    FAQ
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Company */}
+            <div>
+              <h4 className="text-white mb-4">Company</h4>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                    About Us
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                    Contact
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                    Careers
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                    Blog
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Account */}
+            <div>
+              <h4 className="text-white mb-4">Account</h4>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <button
+                    onClick={() => navigate('/auth/signin')}
+                    className="hover:text-white transition-colors"
+                  >
+                    Sign In
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={handleAuthClick}
+                    className="hover:text-white transition-colors"
+                  >
+                    Sign Up
+                  </button>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                    Privacy Policy
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                    Terms of Service
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
+            <p className="text-sm text-gray-400 mb-4 md:mb-0">
+              © 2025 HouseMate. All rights reserved.
+            </p>
+            
+            {/* Social Links */}
+            <div className="flex items-center space-x-4">
+              <a
+                href="#"
+                className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-purple-600 transition-colors"
+                aria-label="Facebook"
+              >
+                <Facebook size={18} />
+              </a>
+              <a
+                href="#"
+                className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-purple-600 transition-colors"
+                aria-label="Twitter"
+              >
+                <Twitter size={18} />
+              </a>
+              <a
+                href="#"
+                className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-purple-600 transition-colors"
+                aria-label="Instagram"
+              >
+                <Instagram size={18} />
+              </a>
+              <a
+                href="#"
+                className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-purple-600 transition-colors"
+                aria-label="LinkedIn"
+              >
+                <Linkedin size={18} />
+              </a>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
