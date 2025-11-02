@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://housemate-backend-694893036218.africa-south1.run.app", // backend URL in africa-south1
+  baseURL: "https://housemate-backend-234825552341.africa-south1.run.app", // backend URL in africa-south1
 });
 
 // Example API functions
