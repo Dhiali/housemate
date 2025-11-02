@@ -7,7 +7,96 @@ import { Home, CheckSquare, CreditCard, Calendar, Users, ArrowRight, CheckCircle
 
 
 
-export function LandingPage({ onAuthClick }) {
+const features = [
+  {
+    icon: CheckSquare,
+    iconBg: 'bg-blue-100',
+    iconColor: 'text-blue-600',
+    title: 'Task Management',
+    description: 'Create, assign, and track household tasks. Set priorities, due dates, and get reminders so nothing falls through the cracks.'
+  },
+  {
+    icon: CreditCard,
+    iconBg: 'bg-green-100',
+    iconColor: 'text-green-600',
+    title: 'Bill Splitting',
+    description: 'Easily split bills, track payments, and see who owes what. Support for equal splits or custom allocations.'
+  },
+  {
+    icon: Calendar,
+    iconBg: 'bg-purple-100',
+    iconColor: 'text-purple-600',
+    title: 'Shared Calendar',
+    description: 'Coordinate schedules, plan events, and see all household activities in one place. Never miss important dates.'
+  },
+  {
+    icon: Users,
+    iconBg: 'bg-orange-100',
+    iconColor: 'text-orange-600',
+    title: 'Housemate Profiles',
+    description: 'Keep everyone\'s contact info, preferences, and activity history organized. Know who\'s responsible for what.'
+  },
+  {
+    icon: CheckCircle,
+    iconBg: 'bg-pink-100',
+    iconColor: 'text-pink-600',
+    title: 'Activity Tracking',
+    description: 'See real-time updates on completed tasks, payments made, and upcoming responsibilities for full transparency.'
+  },
+  {
+    icon: Home,
+    iconBg: 'bg-indigo-100',
+    iconColor: 'text-indigo-600',
+    title: 'Dashboard Overview',
+    description: 'Get a comprehensive view of your household at a glance with stats, upcoming tasks, and recent activity.'
+  }
+];
+
+const benefits = [
+  {
+    title: 'Fair & Transparent',
+    description: 'Keep everyone accountable with clear task assignments and payment tracking. No more disputes about who did what.'
+  },
+  {
+    title: 'Easy to Use',
+    description: 'Intuitive interface that anyone can use. Set up your household in minutes and start managing tasks right away.'
+  },
+  {
+    title: 'Stay Organized',
+    description: 'All household information in one place. Never forget a bill due date or whose turn it is to clean the kitchen.'
+  },
+  {
+    title: 'Reduce Conflicts',
+    description: 'Clear communication and expectations prevent misunderstandings and keep everyone on the same page.'
+  }
+];
+
+const sectionVariants = {
+  hidden: { opacity: 0, y: 60 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: 'easeOut' } },
+};
+
+const LandingPage = () => {
+  const navigate = useNavigate();
+
+  // Animations for each section
+  const [heroRef, heroControls] = useScrollAnimation();
+  const [featuresRef, featuresControls] = useScrollAnimation();
+  const [benefitsRef, benefitsControls] = useScrollAnimation();
+  const [ctaRef, ctaControls] = useScrollAnimation();
+
+  const handleAuthClick = () => {
+    navigate('/auth/signin');
+  };
+
+  const handleGetStarted = () => {
+    navigate('/auth/signup');
+  };
+
+  const scrollToFeatures = () => {
+    document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
@@ -23,12 +112,12 @@ export function LandingPage({ onAuthClick }) {
           <div className="flex items-center space-x-4">
             <Button
               variant="ghost"
-              onClick={onAuthClick}
+              onClick={handleAuthClick}
             >
               Sign In
             </Button>
             <Button
-              onClick={onAuthClick}
+              onClick={handleGetStarted}
               className="bg-purple-600 hover:bg-purple-700 text-white"
             >
               Get Started
@@ -38,7 +127,13 @@ export function LandingPage({ onAuthClick }) {
       </header>
 
       {/* Hero Section */}
-      <section className="flex-1 bg-gradient-to-b from-purple-50 to-white">
+      <motion.section 
+        ref={heroRef}
+        initial="hidden"
+        animate={heroControls}
+        variants={sectionVariants}
+        className="flex-1 bg-gradient-to-b from-purple-50 to-white"
+      >
         <div className="max-w-7xl mx-auto px-6 py-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
@@ -50,7 +145,7 @@ export function LandingPage({ onAuthClick }) {
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button
-                  onClick={onAuthClick}
+                  onClick={handleGetStarted}
                   className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-6 text-lg"
                 >
                   Get Started Free
@@ -59,9 +154,7 @@ export function LandingPage({ onAuthClick }) {
                 <Button
                   variant="outline"
                   className="px-8 py-6 text-lg"
-                  onClick={() => {
-                    document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
-                  }}
+                  onClick={scrollToFeatures}
                 >
                   Learn More
                 </Button>
@@ -79,10 +172,17 @@ export function LandingPage({ onAuthClick }) {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-white">
+      <motion.section 
+        ref={featuresRef}
+        initial="hidden"
+        animate={featuresControls}
+        variants={sectionVariants}
+        id="features" 
+        className="py-20 bg-white"
+      >
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl text-gray-900 mb-4">
@@ -94,71 +194,39 @@ export function LandingPage({ onAuthClick }) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-            <div className="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                <CheckSquare className="text-blue-600" size={24} />
-              </div>
-              <h3 className="text-xl text-gray-900 mb-3">Task Management</h3>
-              <p className="text-gray-600">
-                Create, assign, and track household tasks. Set priorities, due dates, and get reminders so nothing falls through the cracks.
-              </p>
-            </div>
-
-            <div className="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
-                <CreditCard className="text-green-600" size={24} />
-              </div>
-              <h3 className="text-xl text-gray-900 mb-3">Bill Splitting</h3>
-              <p className="text-gray-600">
-                Easily split bills, track payments, and see who owes what. Support for equal splits or custom allocations.
-              </p>
-            </div>
-
-            <div className="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
-                <Calendar className="text-purple-600" size={24} />
-              </div>
-              <h3 className="text-xl text-gray-900 mb-3">Shared Calendar</h3>
-              <p className="text-gray-600">
-                Coordinate schedules, plan events, and see all household activities in one place. Never miss important dates.
-              </p>
-            </div>
-
-            <div className="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
-                <Users className="text-orange-600" size={24} />
-              </div>
-              <h3 className="text-xl text-gray-900 mb-3">Housemate Profiles</h3>
-              <p className="text-gray-600">
-                Keep everyone's contact info, preferences, and activity history organized. Know who's responsible for what.
-              </p>
-            </div>
-
-            <div className="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mb-4">
-                <CheckCircle className="text-pink-600" size={24} />
-              </div>
-              <h3 className="text-xl text-gray-900 mb-3">Activity Tracking</h3>
-              <p className="text-gray-600">
-                See real-time updates on completed tasks, payments made, and upcoming responsibilities for full transparency.
-              </p>
-            </div>
-
-            <div className="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
-                <Home className="text-indigo-600" size={24} />
-              </div>
-              <h3 className="text-xl text-gray-900 mb-3">Dashboard Overview</h3>
-              <p className="text-gray-600">
-                Get a comprehensive view of your household at a glance with stats, upcoming tasks, and recent activity.
-              </p>
-            </div>
+            {features.map((feature, index) => {
+              const IconComponent = feature.icon;
+              return (
+                <motion.div 
+                  key={index}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                  variants={sectionVariants}
+                  className="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-shadow"
+                >
+                  <div className={`w-12 h-12 ${feature.iconBg} rounded-lg flex items-center justify-center mb-4`}>
+                    <IconComponent className={feature.iconColor} size={24} />
+                  </div>
+                  <h3 className="text-xl text-gray-900 mb-3">{feature.title}</h3>
+                  <p className="text-gray-600">
+                    {feature.description}
+                  </p>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Why Choose HouseMate */}
-      <section className="py-20 bg-purple-50">
+      <motion.section 
+        ref={benefitsRef}
+        initial="hidden"
+        animate={benefitsControls}
+        variants={sectionVariants}
+        className="py-20 bg-purple-50"
+      >
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
@@ -166,53 +234,26 @@ export function LandingPage({ onAuthClick }) {
                 Why Choose HouseMate?
               </h2>
               <div className="space-y-6">
-                <div className="flex items-start space-x-4">
-                  <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                    <CheckCircle className="text-white" size={16} />
-                  </div>
-                  <div>
-                    <h3 className="text-lg text-gray-900 mb-2">Fair & Transparent</h3>
-                    <p className="text-gray-600">
-                      Keep everyone accountable with clear task assignments and payment tracking. No more disputes about who did what.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-4">
-                  <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                    <CheckCircle className="text-white" size={16} />
-                  </div>
-                  <div>
-                    <h3 className="text-lg text-gray-900 mb-2">Easy to Use</h3>
-                    <p className="text-gray-600">
-                      Intuitive interface that anyone can use. Set up your household in minutes and start managing tasks right away.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-4">
-                  <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                    <CheckCircle className="text-white" size={16} />
-                  </div>
-                  <div>
-                    <h3 className="text-lg text-gray-900 mb-2">Stay Organized</h3>
-                    <p className="text-gray-600">
-                      All household information in one place. Never forget a bill due date or whose turn it is to clean the kitchen.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-4">
-                  <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                    <CheckCircle className="text-white" size={16} />
-                  </div>
-                  <div>
-                    <h3 className="text-lg text-gray-900 mb-2">Reduce Conflicts</h3>
-                    <p className="text-gray-600">
-                      Clear communication and expectations prevent misunderstandings and keep everyone on the same page.
-                    </p>
-                  </div>
-                </div>
+                {benefits.map((benefit, index) => (
+                  <motion.div
+                    key={index}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true }}
+                    variants={sectionVariants}
+                    className="flex items-start space-x-4"
+                  >
+                    <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                      <CheckCircle className="text-white" size={16} />
+                    </div>
+                    <div>
+                      <h3 className="text-lg text-gray-900 mb-2">{benefit.title}</h3>
+                      <p className="text-gray-600">
+                        {benefit.description}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
               </div>
             </div>
 
@@ -234,10 +275,16 @@ export function LandingPage({ onAuthClick }) {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-purple-600 to-purple-800">
+      <motion.section 
+        ref={ctaRef}
+        initial="hidden"
+        animate={ctaControls}
+        variants={sectionVariants}
+        className="py-20 bg-gradient-to-br from-purple-600 to-purple-800"
+      >
         <div className="max-w-4xl mx-auto px-6 text-center">
           <h2 className="text-4xl text-white mb-6">
             Ready to Transform Your Household?
@@ -246,14 +293,14 @@ export function LandingPage({ onAuthClick }) {
             Join thousands of happy roommates who have simplified their shared living with HouseMate. Get started today for free!
           </p>
           <Button
-            onClick={onAuthClick}
+            onClick={handleGetStarted}
             className="bg-white hover:bg-gray-100 text-purple-600 px-8 py-6 text-lg"
           >
             Get Started Now
             <ArrowRight className="ml-2" size={20} />
           </Button>
         </div>
-      </section>
+      </motion.section>
 
       {/* Footer */}
       <footer className="bg-gray-900 text-gray-300 py-12">
@@ -278,7 +325,7 @@ export function LandingPage({ onAuthClick }) {
               <ul className="space-y-2 text-sm">
                 <li>
                   <button
-                    onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+                    onClick={scrollToFeatures}
                     className="hover:text-white transition-colors"
                   >
                     Features
@@ -330,7 +377,7 @@ export function LandingPage({ onAuthClick }) {
               <ul className="space-y-2 text-sm">
                 <li>
                   <button
-                    onClick={onAuthClick}
+                    onClick={handleAuthClick}
                     className="hover:text-white transition-colors"
                   >
                     Sign In
@@ -338,7 +385,7 @@ export function LandingPage({ onAuthClick }) {
                 </li>
                 <li>
                   <button
-                    onClick={onAuthClick}
+                    onClick={handleGetStarted}
                     className="hover:text-white transition-colors"
                   >
                     Sign Up
@@ -399,4 +446,6 @@ export function LandingPage({ onAuthClick }) {
       </footer>
     </div>
   );
-}
+};
+
+export default LandingPage;
