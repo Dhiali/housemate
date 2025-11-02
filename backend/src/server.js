@@ -88,10 +88,9 @@ if (missingEnvVars.length > 0) {
 // Configure CORS with environment variables
 const corsOrigins = [
   "https://white-water-0fbd05910.3.azurestaticapps.net",
-  "https://white-water-0fbd05910.azurestaticapps.net",
-  "https://housemate.website",
   "https://www.housemate.website"
 ];
+// Only use enhanced CORS configuration below
 
 // Security middleware
 app.use(helmet({
