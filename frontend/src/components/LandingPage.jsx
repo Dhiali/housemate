@@ -70,9 +70,7 @@ const LandingPage = () => {
         <div className="max-w-5xl mx-auto px-4">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-card-foreground font-bold text-sm">🏠</span>
-              </div>
+              <img src="/HouseMate logo.png" alt="Housemate Logo" className="w-8 h-8 rounded-lg object-contain mr-2" />
               <span className="text-xl font-bold text-primary">Housemate</span>
             </div>
             <div className="flex items-center gap-2">
@@ -124,36 +122,20 @@ const LandingPage = () => {
 
       {/* Benefits Section */}
       <motion.section ref={benefitsRef} initial="hidden" animate={benefitsControls} variants={sectionVariants} className="py-20 px-4">
-        <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <h2 className="text-4xl font-bold text-primary mb-6">Why Choose Housemate?</h2>
-            <p className="text-lg text-muted-foreground mb-8">Living with housemates doesn't have to be complicated. Housemate makes it easy to maintain fairness, transparency, and harmony in your shared living space.</p>
-            <ul className="space-y-3">
-              {benefits.map((benefit, index) => (
-                <motion.li key={index} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={sectionVariants} className="flex items-center gap-3">
-                  <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center"><span className="text-white text-xs">✓</span></div>
-                  <span className="text-muted-foreground">{benefit}</span>
-                </motion.li>
-              ))}
-            </ul>
+          <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="text-4xl font-bold text-primary mb-6">Why Choose Housemate?</h2>
+              <p className="text-lg text-muted-foreground mb-8">Living with housemates doesn't have to be complicated. Housemate makes it easy to maintain fairness, transparency, and harmony in your shared living space.</p>
+              <ul className="space-y-3">
+                {benefits.map((benefit, index) => (
+                  <motion.li key={index} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={sectionVariants} className="flex items-center gap-3">
+                    <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center"><span className="text-white text-xs">✓</span></div>
+                    <span className="text-muted-foreground">{benefit}</span>
+                  </motion.li>
+                ))}
+              </ul>
+            </div>
           </div>
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={sectionVariants} className="relative">
-            <Card className="rounded-2xl shadow-xl p-8">
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-primary rounded-xl mx-auto mb-4 flex items-center justify-center">
-                  <span className="text-white text-2xl">📊</span>
-                </div>
-                <CardTitle className="text-lg font-semibold text-primary">Monthly Summary</CardTitle>
-              </div>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center py-2 border-b border-border"><span className="text-muted-foreground">Rent</span><span className="font-semibold">$400.00</span></div>
-                <div className="flex justify-between items-center py-2 border-b border-border"><span className="text-muted-foreground">Utilities</span><span className="font-semibold">$75.00</span></div>
-                <div className="flex justify-between items-center py-2 border-b border-border"><span className="text-muted-foreground">Groceries</span><span className="font-semibold">$120.00</span></div>
-                <div className="flex justify-between items-center py-2 pt-4 border-t-2 border-border"><span className="text-lg font-semibold text-primary">Total</span><span className="text-lg font-bold text-green-600">$595.00</span></div>
-              </div>
-            </Card>
-          </motion.div>
-        </div>
       </motion.section>
 
       {/* CTA Section */}
