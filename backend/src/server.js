@@ -1,3 +1,23 @@
+// Proxy endpoint for ReasonLabs API to bypass CORS
+import axios from 'axios';
+
+app.get('/proxy/reasonlabs', async (req, res) => {
+  try {
+    // Forward query params if present
+    const reasonlabsUrl = 'https://ab.reasonlabsapi.com/sub/sdk-QtSYWOMLlkHBbNMB';
+    const response = await axios.get(reasonlabsUrl, {
+      params: req.query,
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+    res.set('Access-Control-Allow-Origin', '*');
+    res.json(response.data);
+  } catch (error) {
+    console.error('Proxy error:', error.message);
+    res.status(500).json({ error: 'Proxy request failed', details: error.message });
+  }
+});
 // Load environment variables FIRST before any other imports
 import dotenv from 'dotenv';
 import path from 'path';
