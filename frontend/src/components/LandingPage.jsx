@@ -5,8 +5,6 @@ import { motion } from 'framer-motion';
 import { useScrollAnimation } from './useScrollAnimation';
 import { Home, CheckSquare, CreditCard, Calendar, Users, ArrowRight, CheckCircle, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
 
-
-
 const features = [
   {
     icon: CheckSquare,
@@ -99,6 +97,7 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
+
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -112,12 +111,12 @@ const LandingPage = () => {
           <div className="flex items-center space-x-4">
             <Button
               variant="ghost"
-              onClick={handleAuthClick}
+              onClick={onAuthClick}
             >
               Sign In
             </Button>
             <Button
-              onClick={handleGetStarted}
+              onClick={onAuthClick}
               className="bg-purple-600 hover:bg-purple-700 text-white"
             >
               Get Started
@@ -127,13 +126,14 @@ const LandingPage = () => {
       </header>
 
       {/* Hero Section */}
-      <motion.section 
+<motion.section 
         ref={heroRef}
         initial="hidden"
         animate={heroControls}
         variants={sectionVariants}
         className="flex-1 bg-gradient-to-b from-purple-50 to-white"
       >
+
         <div className="max-w-7xl mx-auto px-6 py-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
@@ -145,7 +145,7 @@ const LandingPage = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button
-                  onClick={handleGetStarted}
+                  onClick={onAuthClick}
                   className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-6 text-lg"
                 >
                   Get Started Free
@@ -163,10 +163,13 @@ const LandingPage = () => {
             
             <div className="relative">
               <div className="rounded-2xl overflow-hidden shadow-2xl">
-                <ImageWithFallback
-                  src="https://images.unsplash.com/photo-1688549143237-e258a419d200?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBzaGFyZWQlMjBob3VzZSUyMHJvb21tYXRlc3xlbnwxfHx8fDE3NjIxMDUxNjR8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
+                <img
+                  src="https://images.unsplash.com/photo-1688549143237-e258a419d200?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBzaGFyZWQlMjBob3VzZSUyMHJvb21tYXRlc3xlbnwxfHx8fDE3NjIxMDUxNjR8MA&ixlib=rb-4.1.0&q=80&w=1080"
                   alt="Modern shared house"
                   className="w-full h-[500px] object-cover"
+                  onError={(e) => {
+                    e.target.src = "https://via.placeholder.com/1080x500/f3f4f6/9ca3af?text=Modern+Shared+House";
+                  }}
                 />
               </div>
             </div>
@@ -175,7 +178,7 @@ const LandingPage = () => {
       </motion.section>
 
       {/* Features Section */}
-      <motion.section 
+<motion.section 
         ref={featuresRef}
         initial="hidden"
         animate={featuresControls}
@@ -183,7 +186,8 @@ const LandingPage = () => {
         id="features" 
         className="py-20 bg-white"
       >
-        <div className="max-w-7xl mx-auto px-6">
+
+           <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl text-gray-900 mb-4">
               Everything You Need to Manage Your Home
@@ -205,10 +209,10 @@ const LandingPage = () => {
                   variants={sectionVariants}
                   className="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-shadow"
                 >
-                  <div className={`w-12 h-12 ${feature.iconBg} rounded-lg flex items-center justify-center mb-4`}>
+               <div className={`w-12 h-12 ${feature.iconBg} rounded-lg flex items-center justify-center mb-4`}>
                     <IconComponent className={feature.iconColor} size={24} />
-                  </div>
-                  <h3 className="text-xl text-gray-900 mb-3">{feature.title}</h3>
+              </div>
+              <h3 className="text-xl text-gray-900 mb-3">{feature.title}</h3>
                   <p className="text-gray-600">
                     {feature.description}
                   </p>
@@ -219,8 +223,10 @@ const LandingPage = () => {
         </div>
       </motion.section>
 
+
       {/* Why Choose HouseMate */}
-      <motion.section 
+
+<motion.section 
         ref={benefitsRef}
         initial="hidden"
         animate={benefitsControls}
@@ -233,7 +239,7 @@ const LandingPage = () => {
               <h2 className="text-4xl text-gray-900 mb-6">
                 Why Choose HouseMate?
               </h2>
-              <div className="space-y-6">
+               <div className="space-y-6">
                 {benefits.map((benefit, index) => (
                   <motion.div
                     key={index}
@@ -243,11 +249,11 @@ const LandingPage = () => {
                     variants={sectionVariants}
                     className="flex items-start space-x-4"
                   >
-                    <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                      <CheckCircle className="text-white" size={16} />
-                    </div>
-                    <div>
-                      <h3 className="text-lg text-gray-900 mb-2">{benefit.title}</h3>
+                                  <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                    <CheckCircle className="text-white" size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg text-gray-900 mb-2">{benefit.title}</h3>
                       <p className="text-gray-600">
                         {benefit.description}
                       </p>
@@ -257,19 +263,26 @@ const LandingPage = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-6">
+             
+           <div className="grid grid-cols-1 gap-6">
               <div className="rounded-2xl overflow-hidden shadow-xl">
-                <ImageWithFallback
-                  src="https://images.unsplash.com/photo-1759661937582-0ccd5dacf20f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0YXNrJTIwbWFuYWdlbWVudCUyMGNoZWNrbGlzdHxlbnwxfHx8fDE3NjIwOTIxMTZ8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
+                <img
+                  src="https://images.unsplash.com/photo-1759661937582-0ccd5dacf20f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0YXNrJTIwbWFuYWdlbWVudCUyMGNoZWNrbGlzdHxlbnwxfHx8fDE3NjIwOTIxMTZ8MA&ixlib=rb-4.1.0&q=80&w=1080"
                   alt="Task management"
                   className="w-full h-64 object-cover"
+                  onError={(e) => {
+                    e.target.src = "https://via.placeholder.com/1080x256/f3f4f6/9ca3af?text=Task+Management";
+                  }}
                 />
               </div>
               <div className="rounded-2xl overflow-hidden shadow-xl">
-                <ImageWithFallback
-                  src="https://images.unsplash.com/photo-1634757439914-23b8acb9d411?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxob3VzZSUyMGJpbGxzJTIwcGF5bWVudHxlbnwxfHx8fDE3NjIxMDUxNjR8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
+               <img
+                  src="https://images.unsplash.com/photo-1634757439914-23b8acb9d411?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxob3VzZSUyMGJpbGxzJTIwcGF5bWVudHxlbnwxfHx8fDE3NjIxMDUxNjR8MA&ixlib=rb-4.1.0&q=80&w=1080"
                   alt="Bill payments"
                   className="w-full h-64 object-cover"
+                  onError={(e) => {
+                    e.target.src = "https://via.placeholder.com/1080x256/f3f4f6/9ca3af?text=Bill+Payments";
+                  }}
                 />
               </div>
             </div>
@@ -277,7 +290,7 @@ const LandingPage = () => {
         </div>
       </motion.section>
 
-      {/* CTA Section */}
+{/* CTA Section */}
       <motion.section 
         ref={ctaRef}
         initial="hidden"
@@ -285,6 +298,7 @@ const LandingPage = () => {
         variants={sectionVariants}
         className="py-20 bg-gradient-to-br from-purple-600 to-purple-800"
       >
+
         <div className="max-w-4xl mx-auto px-6 text-center">
           <h2 className="text-4xl text-white mb-6">
             Ready to Transform Your Household?
@@ -302,6 +316,7 @@ const LandingPage = () => {
         </div>
       </motion.section>
 
+    
       {/* Footer */}
       <footer className="bg-gray-900 text-gray-300 py-12">
         <div className="max-w-7xl mx-auto px-6">
@@ -377,7 +392,7 @@ const LandingPage = () => {
               <ul className="space-y-2 text-sm">
                 <li>
                   <button
-                    onClick={handleAuthClick}
+                    onClick={onAuthClick}
                     className="hover:text-white transition-colors"
                   >
                     Sign In
@@ -385,7 +400,7 @@ const LandingPage = () => {
                 </li>
                 <li>
                   <button
-                    onClick={handleGetStarted}
+                    onClick={onAuthClick}
                     className="hover:text-white transition-colors"
                   >
                     Sign Up
@@ -446,6 +461,6 @@ const LandingPage = () => {
       </footer>
     </div>
   );
-};
+}
 
 export default LandingPage;
