@@ -1,4 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from "react";
+import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { register } from "../../apiHelpers";
 import { AuthCard } from "./components/AuthCard.jsx";
 import { SignInForm } from "./components/SignInForm.jsx";
@@ -13,14 +14,22 @@ import './index.css';
 // Lazy load the Dashboard application
 const DashboardApp = lazy(() => import('../../dashboard/src/App.jsx'));
 
-
 export default function App() {
-  const [currentView, setCurrentView] = useState("signin");
+  const navigate = useNavigate();
+  const location = useLocation();
   const [pendingUser, setPendingUser] = useState(null);
   const [showDashboard, setShowDashboard] = useState(false);
   const [showCreateHouseForm, setShowCreateHouseForm] = useState(false);
   const [authToken, setAuthToken] = useState(null);
   const [authUser, setAuthUser] = useState(null);
+
+  // Get current view from URL path
+  const getCurrentView = () => {
+    const path = location.pathname.split('/').pop();
+    return path || 'signin';
+  };
+
+  const currentView = getCurrentView();
 
   // On app load, check localStorage for token/user
   useEffect(() => {
@@ -56,12 +65,13 @@ export default function App() {
 
   const seoConfig = getSEOConfig();
   useSEO(seoConfig.title, seoConfig.description, seoConfig.keywords, seoConfig.image, seoConfig.imageAlt);
+  
   const handleTabSwitch = (view) => {
-    setCurrentView(view);
+    navigate(`/auth/${view}`);
   };
 
   const handleForgotPassword = () => {
-    setCurrentView("forgot-password");
+    navigate('/auth/forgot-password');
   };
 
   const handleCreateHouseMateAccount = (userData) => {
@@ -73,7 +83,7 @@ export default function App() {
         if (userId) {
           setPendingUser({ ...userData, id: userId });
           setShowCreateHouseForm(true);
-          setCurrentView("create-house");
+          navigate('/auth/create-house');
         } else {
           // Handle error: user not created
           alert("User registration failed. Please try again.");
@@ -129,7 +139,7 @@ export default function App() {
   };
 
   const handleBack = () => {
-    setCurrentView("signin");
+    navigate('/auth/signin');
   };
 
   // Called by SignInForm on successful sign-in
@@ -142,35 +152,6 @@ export default function App() {
     
     // Track successful sign in
     trackAuth.signIn('email');
-  };
-
-  const renderContent = () => {
-    switch (currentView) {
-      case "signin":
-        return (
-          <SignInForm
-            onForgotPassword={handleForgotPassword}
-            onCreateHouse={() => setCurrentView("create-house")}
-            onSignInSuccess={handleSignInSuccess}
-          />
-        );
-      case "create-house":
-        return (
-          <>
-            {!showCreateHouseForm ? (
-              <SignUpForm onCreateHouseMateAccount={handleCreateHouseMateAccount} />
-            ) : (
-              <CreateHouseForm onCreateHouse={handleCreateHouse} />
-            )}
-          </>
-        );
-      case "signup":
-        return <SignUpForm houseId={createdHouseId} onCreateHouseMateAccount={handleCreateHouseMateAccount} onSignUpSuccess={() => setShowDashboard(true)} />;
-      case "forgot-password":
-        return <ForgotPasswordForm onBack={handleBack} />;
-      default:
-        return null;
-    }
   };
 
   const getDescription = () => {
@@ -207,36 +188,80 @@ export default function App() {
     <main className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-purple-600 flex items-center justify-center p-4">
       <section className="w-full max-w-md">
         <AuthCard description={getDescription()}>
-          {(currentView !== "forgot-password" && (currentView === "signin" || currentView === "create-house")) && (
-            <nav className="flex mb-6 bg-gray-100 rounded-lg p-1" role="tablist" aria-label="Authentication options">
-              <button
-                onClick={() => handleTabSwitch("signin")}
-                className={`flex-1 py-2 px-4 rounded-md text-center transition-all duration-200 ${currentView === "signin" ? "bg-white text-blue-600 font-semibold" : "text-gray-500"}`}
-                role="tab"
-                aria-selected={currentView === "signin"}
-                aria-controls="signin-panel"
-              >
-                Sign In
-              </button>
-              <button
-                onClick={() => setCurrentView("create-house")}
-                className={`flex-1 py-2 px-4 rounded-md text-center transition-all duration-200 ${currentView === "create-house" ? "bg-white text-blue-600 font-semibold" : "text-gray-500"}`}
-                role="tab"
-                aria-selected={currentView === "create-house"}
-                aria-controls="create-house-panel"
-              >
-                Create House
-              </button>
-            </nav>
-          )}
-          
-          <section 
-            id={currentView === "signin" ? "signin-panel" : currentView === "create-house" ? "create-house-panel" : `${currentView}-panel`}
-            role="tabpanel"
-            aria-labelledby={`${currentView}-tab`}
-          >
-            {renderContent()}
-          </section>
+          <Routes>
+            <Route 
+              path="/signin" 
+              element={
+                <>
+                  <nav className="flex mb-6 bg-gray-100 rounded-lg p-1" role="tablist" aria-label="Authentication options">
+                    <button
+                      onClick={() => handleTabSwitch("signin")}
+                      className="flex-1 py-2 px-4 rounded-md text-center transition-all duration-200 bg-white text-blue-600 font-semibold"
+                      role="tab"
+                      aria-selected={true}
+                      aria-controls="signin-panel"
+                    >
+                      Sign In
+                    </button>
+                    <button
+                      onClick={() => navigate('/auth/signup')}
+                      className="flex-1 py-2 px-4 rounded-md text-center transition-all duration-200 text-gray-500"
+                      role="tab"
+                      aria-selected={false}
+                      aria-controls="signup-panel"
+                    >
+                      Create House
+                    </button>
+                  </nav>
+                  <SignInForm
+                    onForgotPassword={handleForgotPassword}
+                    onCreateHouse={() => navigate('/auth/signup')}
+                    onSignInSuccess={handleSignInSuccess}
+                  />
+                </>
+              } 
+            />
+            <Route 
+              path="/signup" 
+              element={
+                <>
+                  <nav className="flex mb-6 bg-gray-100 rounded-lg p-1" role="tablist" aria-label="Authentication options">
+                    <button
+                      onClick={() => navigate('/auth/signin')}
+                      className="flex-1 py-2 px-4 rounded-md text-center transition-all duration-200 text-gray-500"
+                      role="tab"
+                      aria-selected={false}
+                      aria-controls="signin-panel"
+                    >
+                      Sign In
+                    </button>
+                    <button
+                      onClick={() => navigate('/auth/signup')}
+                      className="flex-1 py-2 px-4 rounded-md text-center transition-all duration-200 bg-white text-blue-600 font-semibold"
+                      role="tab"
+                      aria-selected={true}
+                      aria-controls="signup-panel"
+                    >
+                      Create House
+                    </button>
+                  </nav>
+                  <SignUpForm onCreateHouseMateAccount={handleCreateHouseMateAccount} />
+                </>
+              } 
+            />
+            <Route 
+              path="/create-house" 
+              element={
+                <CreateHouseForm onCreateHouse={handleCreateHouse} />
+              } 
+            />
+            <Route 
+              path="/forgot-password" 
+              element={<ForgotPasswordForm onBack={handleBack} />} 
+            />
+            <Route path="/" element={<Navigate to="/auth/signin" replace />} />
+            <Route path="*" element={<Navigate to="/auth/signin" replace />} />
+          </Routes>
           
           <footer className="text-center mt-6 text-sm text-black">
             By continuing, you agree to our{' '}

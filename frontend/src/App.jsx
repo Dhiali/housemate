@@ -1,5 +1,6 @@
 
 import { useState, lazy, Suspense, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 import SplashScreen from './SplashScreen.jsx';
 import { useStructuredData } from './hooks/useStructuredData.js';
@@ -13,7 +14,8 @@ import {
 import { createPerformanceDashboard } from './utils/lighthouseOptimization.js';
 import analytics from './utils/analytics.js';
 
-// Lazy load the main Auth application
+// Lazy load components
+const LandingPage = lazy(() => import('./components/LandingPage.jsx'));
 const AuthApp = lazy(() => import('./Auth/src/App.jsx'));
 
 function App() {
@@ -80,20 +82,33 @@ function App() {
   // Add structured data for SEO
   useStructuredData();
 
+  const LoadingSpinner = () => (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading HouseMate...</p>
+      </div>
+    </div>
+  );
+
   return (
     <>
       {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
       <div style={{ display: showSplash ? 'none' : 'block' }}>
-        <Suspense fallback={
-          <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading HouseMate...</p>
-            </div>
-          </div>
-        }>
-          <AuthApp />
-        </Suspense>
+        <Router>
+          <Suspense fallback={<LoadingSpinner />}>
+            <Routes>
+              {/* Landing page - default route */}
+              <Route path="/" element={<LandingPage />} />
+              
+              {/* Auth routes */}
+              <Route path="/auth/*" element={<AuthApp />} />
+              
+              {/* Redirect any unknown routes to landing page */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
+        </Router>
       </div>
     </>
   );
