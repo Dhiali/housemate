@@ -690,6 +690,7 @@ export default function App({ user }) {
         amount: parseFloat(billFormData.amount),
         category: billFormData.category,
         split_method: billFormData.splitMethod,
+        status: 'unpaid', // Set default status to match ENUM values
         house_id: user.house_id,
         created_by: user.id,
         due_date: billFormData.dueDate || null,
