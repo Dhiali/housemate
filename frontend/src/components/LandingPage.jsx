@@ -30,14 +30,51 @@ const LandingPage = () => {
       {/* Hero Section */}
       <section className="hero">
         <div className="container">
-          <h1>Simplify Your Shared Living</h1>
-          <p className="hero-subtitle">
-            HouseMate is the all-in-one platform that helps roommates manage household tasks, 
-            split bills, and coordinate schedules effortlessly. Say goodbye to awkward conversations and confusion.
-          </p>
-          <div className="hero-buttons">
-            <button className="btn primary" onClick={handleGetStarted}>Get Started Free</button>
-            <button className="btn secondary">Learn More</button>
+          <div className="hero-content">
+            <div className="hero-text">
+              <h1>Simplify Your Shared Living</h1>
+              <p className="hero-subtitle">
+                HouseMate is the all-in-one platform that helps roommates manage household tasks, 
+                split bills, and coordinate schedules effortlessly. Say goodbye to awkward conversations and confusion.
+              </p>
+              <div className="hero-buttons">
+                <button className="btn primary" onClick={handleGetStarted}>Get Started Free</button>
+                <button className="btn secondary">Learn More</button>
+              </div>
+            </div>
+            <div className="hero-image">
+              <div className="hero-visual">
+                <div className="feature-preview">
+                  <div className="preview-card">
+                    <div className="card-header">
+                      <div className="card-icon bg-purple-100 text-purple-600">
+                        <CheckSquare size={16} />
+                      </div>
+                      <span>Tasks</span>
+                    </div>
+                    <div className="card-content">Clean kitchen, Pay rent, Buy groceries</div>
+                  </div>
+                  <div className="preview-card">
+                    <div className="card-header">
+                      <div className="card-icon bg-green-100 text-green-600">
+                        <CreditCard size={16} />
+                      </div>
+                      <span>Bills</span>
+                    </div>
+                    <div className="card-content">$1,200 total, $300 per person</div>
+                  </div>
+                  <div className="preview-card">
+                    <div className="card-header">
+                      <div className="card-icon bg-blue-100 text-blue-600">
+                        <Calendar size={16} />
+                      </div>
+                      <span>Calendar</span>
+                    </div>
+                    <div className="card-content">House meeting tomorrow 7PM</div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
