@@ -282,8 +282,30 @@
 .App .footer-bottom {
   border-top: 1px solid #334155;
   padding-top: 2rem;
-  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   color: #94a3b8;
+}
+
+.App .social-icons {
+  display: flex;
+  gap: 1rem;
+}
+
+.App .social-icons a {
+  color: #94a3b8;
+  transition: color 0.2s, transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.App .social-icons a:hover {
+  color: #e2e8f0;
+  transform: translateY(-2px);
 }
 
 /* Responsive Design */
@@ -312,5 +334,11 @@
   .App .btn {
     width: 100%;
     max-width: 300px;
+  }
+
+  .App .footer-bottom {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
   }
 }
