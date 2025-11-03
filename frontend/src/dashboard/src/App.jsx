@@ -689,6 +689,7 @@ export default function App({ user }) {
         description: billFormData.description,
         amount: parseFloat(billFormData.amount),
         category: billFormData.category,
+        split_method: billFormData.splitMethod,
         house_id: user.house_id,
         created_by: user.id,
         due_date: billFormData.dueDate || null,
