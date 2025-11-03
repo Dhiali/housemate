@@ -845,10 +845,12 @@ app.post('/bills', (req, res) => {
     description,
     amount, 
     category,
+    split_method,
     house_id, 
     created_by, 
     due_date,
-    shared_with // Array of user IDs to share with
+    paid_by,
+    bill_share // Array of bill share objects
   } = req.body;
 
   if (!title || !amount || !house_id || !created_by) {
@@ -860,10 +862,10 @@ app.post('/bills', (req, res) => {
   
   console.log('Validation passed, creating bill...');
 
-  // Insert bill
+  // Insert bill with new fields
   const billQuery = `
-    INSERT INTO bills (title, description, amount, category, house_id, created_by, due_date, status, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, 'active', NOW())
+    INSERT INTO bills (title, description, amount, category, split_method, house_id, created_by, due_date, paid_by, status, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'unpaid', NOW())
   `;
 
   const billValues = [
@@ -871,9 +873,11 @@ app.post('/bills', (req, res) => {
     description || null,
     amount,
     category || 'utilities',
+    split_method || 'equal',
     house_id,
     created_by,
-    due_date || null
+    due_date || null,
+    paid_by || null
   ];
 
   console.log('Executing bill query:', billQuery);
@@ -891,14 +895,57 @@ app.post('/bills', (req, res) => {
 
     const billId = billResult.insertId;
 
-    // For now, just return success for the basic bill creation
-    // We'll add sharing functionality later once basic creation works
-    console.log('Bill created successfully, returning response...');
-    
-    res.json({ 
-      message: "Bill created successfully!", 
-      data: { id: billId }
-    });
+    // Create bill_share entries if they exist
+    if (bill_share && Array.isArray(bill_share) && bill_share.length > 0) {
+      console.log('Creating bill_share entries for', bill_share.length, 'users');
+      
+      const shareQuery = `
+        INSERT INTO bill_share (bill_id, user_id, share_amount, is_settled, payment_method, payment_notes, paid_by_user_id, settled_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+      
+      let completedShares = 0;
+      const totalShares = bill_share.length;
+      
+      bill_share.forEach((share, index) => {
+        db.query(shareQuery, [
+          billId,
+          share.user_id,
+          share.share_amount,
+          share.is_settled ? 1 : 0, // Convert boolean to tinyint
+          null, // payment_method
+          null, // payment_notes
+          null, // paid_by_user_id
+          null  // settled_at
+        ], (shareErr, shareResult) => {
+          if (shareErr) {
+            console.error(`Error creating bill_share ${index + 1}:`, shareErr);
+          } else {
+            console.log(`Created bill_share for user ${share.user_id}, amount: ${share.share_amount}`);
+          }
+          
+          completedShares++;
+          
+          // Send response when all shares are processed
+          if (completedShares === totalShares) {
+            console.log('All bill_share entries processed');
+            res.json({ 
+              message: "Bill and bill shares created successfully!", 
+              data: { id: billId },
+              shares_created: totalShares
+            });
+          }
+        });
+      });
+    } else {
+      // No bill shares to create
+      console.log('No bill_share entries to create');
+      res.json({ 
+        message: "Bill created successfully!", 
+        data: { id: billId },
+        shares_created: 0
+      });
+    }
   });
 });
 
