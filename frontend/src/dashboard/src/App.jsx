@@ -692,7 +692,23 @@ export default function App({ user }) {
         split_method: billFormData.splitMethod,
         house_id: user.house_id,
         created_by: user.id,
-        due_date: billFormData.dueDate || null
+        due_date: billFormData.dueDate || null,
+        paid_by: null, // Always null as per your requirement - individual payments tracked in bill_share
+        
+        // Include bill sharing information
+        bill_share: billFormData.splitMethod === 'equal' 
+          ? housemates.map(housemate => ({
+              user_id: housemate.id,
+              share_amount: parseFloat(billFormData.amount) / housemates.length,
+              is_settled: false
+            }))
+          : selectedHousemates.map(housemate => ({
+              user_id: housemate.id, 
+              share_amount: selectedHousemates.length > 0 
+                ? parseFloat(billFormData.amount) / selectedHousemates.length 
+                : parseFloat(billFormData.amount),
+              is_settled: false
+            }))
       };
 
       console.log('Creating bill with data:', billData);
