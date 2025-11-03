@@ -35,9 +35,7 @@ const LandingPage = () => {
             split bills, and coordinate schedules effortlessly. Say goodbye to awkward conversations and confusion.
           </p>
           <div className="hero-buttons">
-            <button className="btn primary" onClick={handleGetStarted}>
-              Get Started Free <span className="arrow">→</span>
-            </button>
+            <button className="btn primary" onClick={handleGetStarted}>Get Started Free</button>
             <button className="btn secondary">Learn More</button>
           </div>
         </div>
