@@ -173,16 +173,46 @@
   transform: translateY(-4px);
 }
 
+.App .feature-icon-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.App .feature-icon {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .App .feature-card h3 {
   font-size: 1.25rem;
-  margin-bottom: 1rem;
+  margin: 0;
   color: #1e293b;
 }
 
 .App .feature-card p {
   color: #64748b;
   line-height: 1.6;
+  margin: 0;
 }
+
+/* Color classes for icons */
+.App .bg-purple-100 { background-color: #f3e8ff; }
+.App .text-purple-600 { color: #9333ea; }
+.App .bg-green-100 { background-color: #dcfce7; }
+.App .text-green-600 { color: #16a34a; }
+.App .bg-blue-100 { background-color: #dbeafe; }
+.App .text-blue-600 { color: #2563eb; }
+.App .bg-orange-100 { background-color: #fed7aa; }
+.App .text-orange-600 { color: #ea580c; }
+.App .bg-pink-100 { background-color: #fce7f3; }
+.App .text-pink-600 { color: #db2777; }
+.App .bg-indigo-100 { background-color: #e0e7ff; }
+.App .text-indigo-600 { color: #4f46e5; }
 
 /* Why Choose Section */
 .App .why-choose {

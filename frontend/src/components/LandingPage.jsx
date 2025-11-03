@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { CheckSquare, CreditCard, Calendar, Users, BarChart3, Activity } from 'lucide-react';
 import './LandingPage.css';
 
 const LandingPage = () => {
@@ -52,32 +53,62 @@ const LandingPage = () => {
           
           <div className="features-grid">
             <div className="feature-card">
-              <h3>Task Management</h3>
+              <div className="feature-icon-header">
+                <h3>Task Management</h3>
+                <div className="feature-icon bg-purple-100 text-purple-600">
+                  <CheckSquare size={20} />
+                </div>
+              </div>
               <p>Create, assign, and track household tasks. Set priorities, due dates, and get reminders so nothing falls through the cracks.</p>
             </div>
             
             <div className="feature-card">
-              <h3>Bill Splitting</h3>
+              <div className="feature-icon-header">
+                <h3>Bill Splitting</h3>
+                <div className="feature-icon bg-green-100 text-green-600">
+                  <CreditCard size={20} />
+                </div>
+              </div>
               <p>Easily split bills, track payments, and see who owes what. Support for equal splits or custom allocations.</p>
             </div>
             
             <div className="feature-card">
-              <h3>Shared Calendar</h3>
+              <div className="feature-icon-header">
+                <h3>Shared Calendar</h3>
+                <div className="feature-icon bg-blue-100 text-blue-600">
+                  <Calendar size={20} />
+                </div>
+              </div>
               <p>Coordinate schedules, plan events, and see all household activities in one place. Never miss important dates.</p>
             </div>
             
             <div className="feature-card">
-              <h3>Housemate Profiles</h3>
+              <div className="feature-icon-header">
+                <h3>Housemate Profiles</h3>
+                <div className="feature-icon bg-orange-100 text-orange-600">
+                  <Users size={20} />
+                </div>
+              </div>
               <p>Keep everyone's contact info, preferences, and address history organized. Know who's responsible for what.</p>
             </div>
             
             <div className="feature-card">
-              <h3>Activity Tracking</h3>
+              <div className="feature-icon-header">
+                <h3>Activity Tracking</h3>
+                <div className="feature-icon bg-pink-100 text-pink-600">
+                  <Activity size={20} />
+                </div>
+              </div>
               <p>See real-time updates on completed tasks, payments made, and upcoming responsibilities for full transparency.</p>
             </div>
             
             <div className="feature-card">
-              <h3>Dashboard Overview</h3>
+              <div className="feature-icon-header">
+                <h3>Dashboard Overview</h3>
+                <div className="feature-icon bg-indigo-100 text-indigo-600">
+                  <BarChart3 size={20} />
+                </div>
+              </div>
               <p>Get a comprehensive view of your household at a glance, upcoming tasks, and recent activity.</p>
             </div>
           </div>
