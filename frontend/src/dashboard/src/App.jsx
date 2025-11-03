@@ -985,6 +985,10 @@ export default function App({ user }) {
   ];
 
   const handleSubmitTask = async () => {
+    console.log('handleSubmitTask called with taskFormData:', taskFormData);
+    console.log('Available housemates:', housemates);
+    console.log('Current user:', user);
+
     if (!taskFormData.category || !taskFormData.title || !taskFormData.assignedTo) {
       alert('Please fill in all required fields: category, title, and assigned to.');
       return;
@@ -998,7 +1002,11 @@ export default function App({ user }) {
     try {
       // Find the assigned housemate by name to get their ID
       const assignedHousemate = housemates.find(hm => hm.name === taskFormData.assignedTo);
+      console.log('Looking for housemate with name:', taskFormData.assignedTo);
+      console.log('Found assignedHousemate:', assignedHousemate);
+      
       if (!assignedHousemate) {
+        console.error('Housemate not found. Available housemates:', housemates.map(hm => hm.name));
         alert('Selected housemate not found.');
         return;
       }
@@ -1046,7 +1054,38 @@ export default function App({ user }) {
       
     } catch (error) {
       console.error('Error creating task:', error);
-      alert('Failed to create task. Please try again.');
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        config: error.config
+      });
+      
+      let errorMessage = 'Failed to create task. Please try again.';
+      
+      if (error.response) {
+        const status = error.response.status;
+        switch (status) {
+          case 500:
+            errorMessage = 'Server error occurred. Please check the task data and try again.';
+            break;
+          case 400:
+            errorMessage = 'Invalid task data. Please check all fields and try again.';
+            break;
+          case 401:
+            errorMessage = 'Authentication failed. Please sign in again.';
+            break;
+          case 403:
+            errorMessage = 'You do not have permission to create tasks.';
+            break;
+          default:
+            errorMessage = `Server error (${status}). Please try again.`;
+        }
+      } else if (error.request) {
+        errorMessage = 'Unable to connect to server. Please check your internet connection.';
+      }
+      
+      alert(errorMessage);
     }
   };
 
