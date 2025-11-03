@@ -120,7 +120,12 @@ const LandingPage = () => {
             Join thousands of happy roommates who have simplified their shared living with HouseMate. 
             Get started today for free!
           </p>
-          <button className="btn primary large" onClick={handleGetStarted}>Get Started Now</button>
+          <button className="btn primary large" onClick={handleGetStarted}>
+            Get Started Now 
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" style={{marginLeft: '0.5rem'}}>
+              <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+            </svg>
+          </button>
         </div>
       </section>
 

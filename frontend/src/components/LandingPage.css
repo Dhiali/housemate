@@ -105,6 +105,9 @@
   cursor: pointer;
   transition: all 0.2s;
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .App .btn.primary {
@@ -218,7 +221,8 @@
 /* CTA Section */
 .App .cta {
   padding: 4rem 0;
-  background: #1e293b;
+  margin-bottom: 2rem;
+  background: linear-gradient(135deg, #9810FA 0%, #6E11B0 100%);
   color: white;
   text-align: center;
 }
