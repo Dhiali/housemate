@@ -1883,9 +1883,9 @@ export default function App({ user }) {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="LOW PRIORITY">Low Priority</SelectItem>
-                        <SelectItem value="MEDIUM PRIORITY">Medium Priority</SelectItem>
-                        <SelectItem value="HIGH PRIORITY">High Priority</SelectItem>
+                        <SelectItem value="low">Low Priority</SelectItem>
+                        <SelectItem value="medium">Medium Priority</SelectItem>
+                        <SelectItem value="high">High Priority</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -2058,7 +2058,7 @@ export default function App({ user }) {
                               )}
                               {item.type === 'task' && item.priority && (
                                 <Badge variant={
-                                  item.priority === 'HIGH PRIORITY' ? 'destructive' :
+                                  item.priority === 'high' ? 'destructive' :
                                   item.priority === 'MEDIUM PRIORITY' ? 'default' :
                                   'secondary'
                                 } className="text-xs">
@@ -3442,9 +3442,9 @@ export default function App({ user }) {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="LOW PRIORITY">Low Priority</SelectItem>
-                          <SelectItem value="MEDIUM PRIORITY">Medium Priority</SelectItem>
-                          <SelectItem value="HIGH PRIORITY">High Priority</SelectItem>
+                          <SelectItem value="low">Low Priority</SelectItem>
+                          <SelectItem value="medium">Medium Priority</SelectItem>
+                          <SelectItem value="high">High Priority</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -3518,7 +3518,7 @@ export default function App({ user }) {
                               <Label className="text-sm font-medium text-gray-900">Priority</Label>
                               <div className="mt-1">
                                 <Badge variant={
-                                  selectedEvent.priority === 'HIGH PRIORITY' ? 'destructive' :
+                                  selectedEvent.priority === 'high' ? 'destructive' :
                                   selectedEvent.priority === 'MEDIUM PRIORITY' ? 'default' :
                                   'secondary'
                                 }>
