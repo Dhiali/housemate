@@ -1,10 +1,6 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-
-// Placeholder images since Figma assets won't be available
-const imgImageWithFallback = "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80";
-const imgImageWithFallback1 = "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80";
-const imgImageWithFallback2 = "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80";
+import imgImageWithFallback from "figma:asset/28d046f9a36b25ebb211a851864cc5429ebf2d4f.png";
+import imgImageWithFallback1 from "figma:asset/6bde711d86e98b4dc44b1cad24ba11f38af49663.png";
+import imgImageWithFallback2 from "figma:asset/4201b903c4f548a9bc8c150d17865a4414a20690.png";
 
 // SVG Paths
 const svgPaths = {
@@ -50,8 +46,6 @@ function Paragraph() {
 }
 
 function Icon() {
-  const navigate = useNavigate();
-  
   return (
     <div className="absolute left-[160.36px] size-[16px] top-[16px]" data-name="Icon">
       <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 16 16">
@@ -65,10 +59,8 @@ function Icon() {
 }
 
 function Button() {
-  const navigate = useNavigate();
-  
   return (
-    <div className="bg-[#9810fa] h-[48px] relative rounded-[8px] shrink-0 w-[188.363px] cursor-pointer" data-name="Button" onClick={() => navigate('/auth/signup')}>
+    <div className="bg-[#9810fa] h-[48px] relative rounded-[8px] shrink-0 w-[188.363px]" data-name="Button">
       <div className="bg-clip-padding border-0 border-[transparent] border-solid box-border h-[48px] relative w-[188.363px]">
         <p className="absolute font-['Arial:Regular',sans-serif] leading-[28px] left-[12px] not-italic text-[18px] text-nowrap text-white top-[8.6px] whitespace-pre">Get Started Free</p>
         <Icon />
@@ -79,9 +71,7 @@ function Button() {
 
 function Button1() {
   return (
-    <div className="bg-white h-[49.6px] relative rounded-[8px] shrink-0 w-[158.925px] cursor-pointer" data-name="Button" onClick={() => {
-      document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
-    }}>
+    <div className="bg-white h-[49.6px] relative rounded-[8px] shrink-0 w-[158.925px]" data-name="Button">
       <div aria-hidden="true" className="absolute border-[0.8px] border-[rgba(0,0,0,0.1)] border-solid inset-0 pointer-events-none rounded-[8px]" />
       <div className="bg-clip-padding border-0 border-[transparent] border-solid box-border content-stretch flex gap-[8px] h-[49.6px] items-center justify-center px-[32.8px] py-[24.8px] relative w-[158.925px]">
         <p className="font-['Arial:Regular',sans-serif] leading-[28px] not-italic relative shrink-0 text-[18px] text-neutral-950 text-nowrap whitespace-pre">Learn More</p>
@@ -214,6 +204,7 @@ function Container6() {
     </div>
   );
 }
+
 function Icon2() {
   return (
     <div className="relative shrink-0 size-[24px]" data-name="Icon">
@@ -473,13 +464,12 @@ function Container17() {
 
 function Section1() {
   return (
-    <div className="absolute bg-white box-border content-stretch flex flex-col gap-[64px] h-[963.2px] items-start left-0 pb-0 pt-[80px] px-[24px] top-[728.8px] w-[1192.8px]" data-name="Section" id="features">
+    <div className="absolute bg-white box-border content-stretch flex flex-col gap-[64px] h-[963.2px] items-start left-0 pb-0 pt-[80px] px-[24px] top-[728.8px] w-[1192.8px]" data-name="Section">
       <Container4 />
       <Container17 />
     </div>
   );
 }
-// Continue with remaining components...
 
 function Heading10() {
   return (
@@ -549,11 +539,193 @@ function Container20() {
   );
 }
 
+function Icon8() {
+  return (
+    <div className="relative shrink-0 size-[16px]" data-name="Icon">
+      <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 16 16">
+        <g clipPath="url(#clip0_1_320)" id="Icon">
+          <path d={svgPaths.p34e03900} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
+          <path d={svgPaths.p1f2c5400} id="Vector_2" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
+        </g>
+        <defs>
+          <clipPath id="clip0_1_320">
+            <rect fill="white" height="16" width="16" />
+          </clipPath>
+        </defs>
+      </svg>
+    </div>
+  );
+}
+
+function Container21() {
+  return (
+    <div className="absolute bg-[#9810fa] content-stretch flex items-center justify-center left-0 rounded-[2.68435e+07px] size-[24px] top-[4px]" data-name="Container">
+      <Icon8 />
+    </div>
+  );
+}
+
+function Heading12() {
+  return (
+    <div className="h-[28px] relative shrink-0 w-full" data-name="Heading 3">
+      <p className="absolute font-['Arial:Regular',sans-serif] leading-[28px] left-0 not-italic text-[#101828] text-[18px] text-nowrap top-[-1.4px] whitespace-pre">Easy to Use</p>
+    </div>
+  );
+}
+
+function Paragraph9() {
+  return (
+    <div className="h-[48px] relative shrink-0 w-full" data-name="Paragraph">
+      <p className="absolute font-['Arial:Regular',sans-serif] leading-[24px] left-0 not-italic text-[#4a5565] text-[16px] top-[-2.2px] w-[454px]">Intuitive interface that anyone can use. Set up your household in minutes and start managing tasks right away.</p>
+    </div>
+  );
+}
+
+function Container22() {
+  return (
+    <div className="absolute content-stretch flex flex-col gap-[8px] h-[84px] items-start left-[40px] top-0 w-[508.4px]" data-name="Container">
+      <Heading12 />
+      <Paragraph9 />
+    </div>
+  );
+}
+
+function Container23() {
+  return (
+    <div className="h-[84px] relative shrink-0 w-full" data-name="Container">
+      <Container21 />
+      <Container22 />
+    </div>
+  );
+}
+
+function Icon9() {
+  return (
+    <div className="relative shrink-0 size-[16px]" data-name="Icon">
+      <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 16 16">
+        <g clipPath="url(#clip0_1_320)" id="Icon">
+          <path d={svgPaths.p34e03900} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
+          <path d={svgPaths.p1f2c5400} id="Vector_2" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
+        </g>
+        <defs>
+          <clipPath id="clip0_1_320">
+            <rect fill="white" height="16" width="16" />
+          </clipPath>
+        </defs>
+      </svg>
+    </div>
+  );
+}
+
+function Container24() {
+  return (
+    <div className="absolute bg-[#9810fa] content-stretch flex items-center justify-center left-0 rounded-[2.68435e+07px] size-[24px] top-[4px]" data-name="Container">
+      <Icon9 />
+    </div>
+  );
+}
+
+function Heading13() {
+  return (
+    <div className="h-[28px] relative shrink-0 w-full" data-name="Heading 3">
+      <p className="absolute font-['Arial:Regular',sans-serif] leading-[28px] left-0 not-italic text-[#101828] text-[18px] text-nowrap top-[-1.4px] whitespace-pre">Stay Organized</p>
+    </div>
+  );
+}
+
+function Paragraph10() {
+  return (
+    <div className="h-[48px] relative shrink-0 w-full" data-name="Paragraph">
+      <p className="absolute font-['Arial:Regular',sans-serif] leading-[24px] left-0 not-italic text-[#4a5565] text-[16px] top-[-2.2px] w-[496px]">All household information in one place. Never forget a bill due date or whose turn it is to clean the kitchen.</p>
+    </div>
+  );
+}
+
+function Container25() {
+  return (
+    <div className="absolute content-stretch flex flex-col gap-[8px] h-[84px] items-start left-[40px] top-0 w-[508.4px]" data-name="Container">
+      <Heading13 />
+      <Paragraph10 />
+    </div>
+  );
+}
+
+function Container26() {
+  return (
+    <div className="h-[84px] relative shrink-0 w-full" data-name="Container">
+      <Container24 />
+      <Container25 />
+    </div>
+  );
+}
+
+function Icon10() {
+  return (
+    <div className="relative shrink-0 size-[16px]" data-name="Icon">
+      <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 16 16">
+        <g clipPath="url(#clip0_1_320)" id="Icon">
+          <path d={svgPaths.p34e03900} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
+          <path d={svgPaths.p1f2c5400} id="Vector_2" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
+        </g>
+        <defs>
+          <clipPath id="clip0_1_320">
+            <rect fill="white" height="16" width="16" />
+          </clipPath>
+        </defs>
+      </svg>
+    </div>
+  );
+}
+
+function Container27() {
+  return (
+    <div className="absolute bg-[#9810fa] content-stretch flex items-center justify-center left-0 rounded-[2.68435e+07px] size-[24px] top-[4px]" data-name="Container">
+      <Icon10 />
+    </div>
+  );
+}
+
+function Heading14() {
+  return (
+    <div className="h-[28px] relative shrink-0 w-full" data-name="Heading 3">
+      <p className="absolute font-['Arial:Regular',sans-serif] leading-[28px] left-0 not-italic text-[#101828] text-[18px] text-nowrap top-[-1.4px] whitespace-pre">Reduce Conflicts</p>
+    </div>
+  );
+}
+
+function Paragraph11() {
+  return (
+    <div className="h-[48px] relative shrink-0 w-full" data-name="Paragraph">
+      <p className="absolute font-['Arial:Regular',sans-serif] leading-[24px] left-0 not-italic text-[#4a5565] text-[16px] top-[-2.2px] w-[502px]">Clear communication and expectations prevent misunderstandings and keep everyone on the same page.</p>
+    </div>
+  );
+}
+
+function Container28() {
+  return (
+    <div className="absolute content-stretch flex flex-col gap-[8px] h-[84px] items-start left-[40px] top-0 w-[508.4px]" data-name="Container">
+      <Heading14 />
+      <Paragraph11 />
+    </div>
+  );
+}
+
+function Container29() {
+  return (
+    <div className="h-[84px] relative shrink-0 w-full" data-name="Container">
+      <Container27 />
+      <Container28 />
+    </div>
+  );
+}
+
 function Container30() {
   return (
     <div className="content-stretch flex flex-col gap-[24px] h-[408px] items-start relative shrink-0 w-full" data-name="Container">
       <Container20 />
-      {/* Add more benefit items here... */}
+      <Container23 />
+      <Container26 />
+      <Container29 />
     </div>
   );
 }
@@ -647,10 +819,8 @@ function Icon11() {
 }
 
 function Button2() {
-  const navigate = useNavigate();
-  
   return (
-    <div className="absolute bg-white h-[48px] left-[352.06px] rounded-[8px] top-[152px] w-[191.863px] cursor-pointer" data-name="Button" onClick={() => navigate('/auth/signup')}>
+    <div className="absolute bg-white h-[48px] left-[352.06px] rounded-[8px] top-[152px] w-[191.863px]" data-name="Button">
       <p className="absolute font-['Arial:Regular',sans-serif] leading-[28px] left-[12px] not-italic text-[#9810fa] text-[18px] text-nowrap top-[8.6px] whitespace-pre">Get Started Now</p>
       <Icon11 />
     </div>
@@ -675,14 +845,478 @@ function Section3() {
   );
 }
 
-// Footer components and navigation header...
-function LandingPageMain() {
+function Icon12() {
+  return (
+    <div className="relative shrink-0 size-[16px]" data-name="Icon">
+      <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 16 16">
+        <g id="Icon">
+          <path d={svgPaths.p3a151200} id="Vector" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
+          <path d={svgPaths.p18af2500} id="Vector_2" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+function Container36() {
+  return (
+    <div className="bg-[#9810fa] relative rounded-[10px] shrink-0 size-[32px]" data-name="Container">
+      <div className="bg-clip-padding border-0 border-[transparent] border-solid box-border content-stretch flex items-center justify-center relative size-[32px]">
+        <Icon12 />
+      </div>
+    </div>
+  );
+}
+
+function Text() {
+  return (
+    <div className="h-[28px] relative shrink-0 w-[101.562px]" data-name="Text">
+      <div className="bg-clip-padding border-0 border-[transparent] border-solid box-border h-[28px] relative w-[101.562px]">
+        <p className="absolute font-['Arial:Regular',sans-serif] leading-[28px] left-0 not-italic text-[20px] text-nowrap text-white top-[-2.2px] whitespace-pre">HouseMate</p>
+      </div>
+    </div>
+  );
+}
+
+function Container37() {
+  return (
+    <div className="content-stretch flex gap-[8px] h-[32px] items-center relative shrink-0 w-full" data-name="Container">
+      <Container36 />
+      <Text />
+    </div>
+  );
+}
+
+function Paragraph13() {
+  return (
+    <div className="h-[40px] relative shrink-0 w-full" data-name="Paragraph">
+      <p className="absolute font-['Arial:Regular',sans-serif] leading-[20px] left-0 not-italic text-[#99a1af] text-[14px] top-[-1.2px] w-[250px]">Simplifying shared living, one household at a time.</p>
+    </div>
+  );
+}
+
+function Container38() {
+  return (
+    <div className="absolute content-stretch flex flex-col gap-[16px] h-[144px] items-start left-0 top-0 w-[262.2px]" data-name="Container">
+      <Container37 />
+      <Paragraph13 />
+    </div>
+  );
+}
+
+function Heading4() {
+  return (
+    <div className="h-[24px] relative shrink-0 w-full" data-name="Heading 4">
+      <p className="absolute font-['Arial:Regular',sans-serif] leading-[24px] left-0 not-italic text-[16px] text-nowrap text-white top-[-2.2px] whitespace-pre">Product</p>
+    </div>
+  );
+}
+
+function Button3() {
+  return (
+    <div className="absolute h-[20px] left-0 top-0 w-[52.087px]" data-name="Button">
+      <p className="absolute font-['Arial:Regular',sans-serif] leading-[20px] left-0 not-italic text-[#d1d5dc] text-[14px] text-nowrap top-[-1.2px] whitespace-pre">Features</p>
+    </div>
+  );
+}
+
+function ListItem() {
+  return (
+    <div className="h-[20px] relative shrink-0 w-full" data-name="List Item">
+      <Button3 />
+    </div>
+  );
+}
+
+function Link() {
+  return (
+    <div className="absolute content-stretch flex h-[18.4px] items-start left-0 top-[0.8px] w-[82.9px]" data-name="Link">
+      <p className="font-['Arial:Regular',sans-serif] leading-[20px] not-italic relative shrink-0 text-[#d1d5dc] text-[14px] text-nowrap whitespace-pre">How It Works</p>
+    </div>
+  );
+}
+
+function ListItem1() {
+  return (
+    <div className="h-[20px] relative shrink-0 w-full" data-name="List Item">
+      <Link />
+    </div>
+  );
+}
+
+function Link1() {
+  return (
+    <div className="absolute content-stretch flex h-[18.4px] items-start left-0 top-[0.8px] w-[25.613px]" data-name="Link">
+      <p className="font-['Arial:Regular',sans-serif] leading-[20px] not-italic relative shrink-0 text-[#d1d5dc] text-[14px] text-nowrap whitespace-pre">FAQ</p>
+    </div>
+  );
+}
+
+function ListItem2() {
+  return (
+    <div className="h-[20px] relative shrink-0 w-full" data-name="List Item">
+      <Link1 />
+    </div>
+  );
+}
+
+function List() {
+  return (
+    <div className="content-stretch flex flex-col gap-[8px] h-[76px] items-start relative shrink-0 w-full" data-name="List">
+      <ListItem />
+      <ListItem1 />
+      <ListItem2 />
+    </div>
+  );
+}
+
+function Container39() {
+  return (
+    <div className="absolute content-stretch flex flex-col gap-[16px] h-[144px] items-start left-[294.2px] top-0 w-[262.2px]" data-name="Container">
+      <Heading4 />
+      <List />
+    </div>
+  );
+}
+
+function Heading16() {
+  return (
+    <div className="h-[24px] relative shrink-0 w-full" data-name="Heading 4">
+      <p className="absolute font-['Arial:Regular',sans-serif] leading-[24px] left-0 not-italic text-[16px] text-nowrap text-white top-[-2.2px] whitespace-pre">Company</p>
+    </div>
+  );
+}
+
+function Link2() {
+  return (
+    <div className="absolute content-stretch flex h-[18.4px] items-start left-0 top-[0.8px] w-[57.525px]" data-name="Link">
+      <p className="font-['Arial:Regular',sans-serif] leading-[20px] not-italic relative shrink-0 text-[#d1d5dc] text-[14px] text-nowrap whitespace-pre">About Us</p>
+    </div>
+  );
+}
+
+function ListItem3() {
+  return (
+    <div className="h-[20px] relative shrink-0 w-full" data-name="List Item">
+      <Link2 />
+    </div>
+  );
+}
+
+function Link3() {
+  return (
+    <div className="absolute content-stretch flex h-[18.4px] items-start left-0 top-[0.8px] w-[47.875px]" data-name="Link">
+      <p className="font-['Arial:Regular',sans-serif] leading-[20px] not-italic relative shrink-0 text-[#d1d5dc] text-[14px] text-nowrap whitespace-pre">Contact</p>
+    </div>
+  );
+}
+
+function ListItem4() {
+  return (
+    <div className="h-[20px] relative shrink-0 w-full" data-name="List Item">
+      <Link3 />
+    </div>
+  );
+}
+
+function Link4() {
+  return (
+    <div className="absolute content-stretch flex h-[18.4px] items-start left-0 top-[0.8px] w-[46.112px]" data-name="Link">
+      <p className="font-['Arial:Regular',sans-serif] leading-[20px] not-italic relative shrink-0 text-[#d1d5dc] text-[14px] text-nowrap whitespace-pre">Careers</p>
+    </div>
+  );
+}
+
+function ListItem5() {
+  return (
+    <div className="h-[20px] relative shrink-0 w-full" data-name="List Item">
+      <Link4 />
+    </div>
+  );
+}
+
+function Link5() {
+  return (
+    <div className="absolute content-stretch flex h-[18.4px] items-start left-0 top-[0.8px] w-[27.875px]" data-name="Link">
+      <p className="font-['Arial:Regular',sans-serif] leading-[20px] not-italic relative shrink-0 text-[#d1d5dc] text-[14px] text-nowrap whitespace-pre">Blog</p>
+    </div>
+  );
+}
+
+function ListItem6() {
+  return (
+    <div className="h-[20px] relative shrink-0 w-full" data-name="List Item">
+      <Link5 />
+    </div>
+  );
+}
+
+function List1() {
+  return (
+    <div className="content-stretch flex flex-col gap-[8px] h-[104px] items-start relative shrink-0 w-full" data-name="List">
+      <ListItem3 />
+      <ListItem4 />
+      <ListItem5 />
+      <ListItem6 />
+    </div>
+  );
+}
+
+function Container40() {
+  return (
+    <div className="absolute content-stretch flex flex-col gap-[16px] h-[144px] items-start left-[588.4px] top-0 w-[262.2px]" data-name="Container">
+      <Heading16 />
+      <List1 />
+    </div>
+  );
+}
+
+function Heading17() {
+  return (
+    <div className="h-[24px] relative shrink-0 w-full" data-name="Heading 4">
+      <p className="absolute font-['Arial:Regular',sans-serif] leading-[24px] left-0 not-italic text-[16px] text-nowrap text-white top-[-2.2px] whitespace-pre">Account</p>
+    </div>
+  );
+}
+
+function Button4() {
+  return (
+    <div className="absolute h-[20px] left-0 top-0 w-[42.487px]" data-name="Button">
+      <p className="absolute font-['Arial:Regular',sans-serif] leading-[20px] left-0 not-italic text-[#d1d5dc] text-[14px] text-nowrap top-[-1.2px] whitespace-pre">Sign In</p>
+    </div>
+  );
+}
+
+function ListItem7() {
+  return (
+    <div className="h-[20px] relative shrink-0 w-full" data-name="List Item">
+      <Button4 />
+    </div>
+  );
+}
+
+function Button5() {
+  return (
+    <div className="absolute h-[20px] left-0 top-0 w-[48.688px]" data-name="Button">
+      <p className="absolute font-['Arial:Regular',sans-serif] leading-[20px] left-0 not-italic text-[#d1d5dc] text-[14px] text-nowrap top-[-1.2px] whitespace-pre">Sign Up</p>
+    </div>
+  );
+}
+
+function ListItem8() {
+  return (
+    <div className="h-[20px] relative shrink-0 w-full" data-name="List Item">
+      <Button5 />
+    </div>
+  );
+}
+
+function Link6() {
+  return (
+    <div className="absolute content-stretch flex h-[18.4px] items-start left-0 top-[0.8px] w-[82.563px]" data-name="Link">
+      <p className="font-['Arial:Regular',sans-serif] leading-[20px] not-italic relative shrink-0 text-[#d1d5dc] text-[14px] text-nowrap whitespace-pre">Privacy Policy</p>
+    </div>
+  );
+}
+
+function ListItem9() {
+  return (
+    <div className="h-[20px] relative shrink-0 w-full" data-name="List Item">
+      <Link6 />
+    </div>
+  );
+}
+
+function Link7() {
+  return (
+    <div className="absolute content-stretch flex h-[18.4px] items-start left-0 top-[0.8px] w-[99.925px]" data-name="Link">
+      <p className="font-['Arial:Regular',sans-serif] leading-[20px] not-italic relative shrink-0 text-[#d1d5dc] text-[14px] text-nowrap whitespace-pre">Terms of Service</p>
+    </div>
+  );
+}
+
+function ListItem10() {
+  return (
+    <div className="h-[20px] relative shrink-0 w-full" data-name="List Item">
+      <Link7 />
+    </div>
+  );
+}
+
+function List2() {
+  return (
+    <div className="content-stretch flex flex-col gap-[8px] h-[104px] items-start relative shrink-0 w-full" data-name="List">
+      <ListItem7 />
+      <ListItem8 />
+      <ListItem9 />
+      <ListItem10 />
+    </div>
+  );
+}
+
+function Container41() {
+  return (
+    <div className="absolute content-stretch flex flex-col gap-[16px] h-[144px] items-start left-[882.6px] top-0 w-[262.2px]" data-name="Container">
+      <Heading17 />
+      <List2 />
+    </div>
+  );
+}
+
+function Container42() {
+  return (
+    <div className="h-[144px] relative shrink-0 w-full" data-name="Container">
+      <Container38 />
+      <Container39 />
+      <Container40 />
+      <Container41 />
+    </div>
+  );
+}
+
+function Paragraph14() {
+  return (
+    <div className="h-[20px] relative shrink-0 w-[242.5px]" data-name="Paragraph">
+      <div className="bg-clip-padding border-0 border-[transparent] border-solid box-border h-[20px] relative w-[242.5px]">
+        <p className="absolute font-['Arial:Regular',sans-serif] leading-[20px] left-0 not-italic text-[#99a1af] text-[14px] text-nowrap top-[-1.2px] whitespace-pre">© 2025 HouseMate. All rights reserved.</p>
+      </div>
+    </div>
+  );
+}
+
+function Icon13() {
+  return (
+    <div className="relative shrink-0 size-[18px]" data-name="Icon">
+      <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 18 18">
+        <g id="Icon">
+          <path d={svgPaths.p3c358280} id="Vector" stroke="var(--stroke-0, #D1D5DC)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+function Link8() {
+  return (
+    <div className="absolute bg-[#1e2939] content-stretch flex items-center justify-center left-0 rounded-[10px] size-[40px] top-0" data-name="Link">
+      <Icon13 />
+    </div>
+  );
+}
+
+function Icon14() {
+  return (
+    <div className="relative shrink-0 size-[18px]" data-name="Icon">
+      <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 18 18">
+        <g id="Icon">
+          <path d={svgPaths.pba1780} id="Vector" stroke="var(--stroke-0, #D1D5DC)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+function Link9() {
+  return (
+    <div className="absolute bg-[#1e2939] content-stretch flex items-center justify-center left-[56px] rounded-[10px] size-[40px] top-0" data-name="Link">
+      <Icon14 />
+    </div>
+  );
+}
+
+function Icon15() {
+  return (
+    <div className="relative shrink-0 size-[18px]" data-name="Icon">
+      <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 18 18">
+        <g clipPath="url(#clip0_1_352)" id="Icon">
+          <path d={svgPaths.p299a6200} id="Vector" stroke="var(--stroke-0, #D1D5DC)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+          <path d={svgPaths.p3cad6d80} id="Vector_2" stroke="var(--stroke-0, #D1D5DC)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+          <path d="M13.125 4.875H13.1325" id="Vector_3" stroke="var(--stroke-0, #D1D5DC)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+        </g>
+        <defs>
+          <clipPath id="clip0_1_352">
+            <rect fill="white" height="18" width="18" />
+          </clipPath>
+        </defs>
+      </svg>
+    </div>
+  );
+}
+
+function Link10() {
+  return (
+    <div className="absolute bg-[#1e2939] content-stretch flex items-center justify-center left-[112px] rounded-[10px] size-[40px] top-0" data-name="Link">
+      <Icon15 />
+    </div>
+  );
+}
+
+function Icon16() {
+  return (
+    <div className="relative shrink-0 size-[18px]" data-name="Icon">
+      <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 18 18">
+        <g id="Icon">
+          <path d={svgPaths.p204bd7c0} id="Vector" stroke="var(--stroke-0, #D1D5DC)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+          <path d={svgPaths.pad25e80} id="Vector_2" stroke="var(--stroke-0, #D1D5DC)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+          <path d={svgPaths.p127a4d00} id="Vector_3" stroke="var(--stroke-0, #D1D5DC)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+function Link11() {
+  return (
+    <div className="absolute bg-[#1e2939] content-stretch flex items-center justify-center left-[168px] rounded-[10px] size-[40px] top-0" data-name="Link">
+      <Icon16 />
+    </div>
+  );
+}
+
+function Container43() {
+  return (
+    <div className="h-[40px] relative shrink-0 w-[208px]" data-name="Container">
+      <div className="bg-clip-padding border-0 border-[transparent] border-solid box-border h-[40px] relative w-[208px]">
+        <Link8 />
+        <Link9 />
+        <Link10 />
+        <Link11 />
+      </div>
+    </div>
+  );
+}
+
+function Container44() {
+  return (
+    <div className="h-[72.8px] relative shrink-0 w-full" data-name="Container">
+      <div aria-hidden="true" className="absolute border-[#1e2939] border-[0.8px_0px_0px] border-solid inset-0 pointer-events-none" />
+      <div className="flex flex-row items-center size-full">
+        <div className="box-border content-stretch flex h-[72.8px] items-center justify-between pb-0 pt-[0.8px] px-0 relative w-full">
+          <Paragraph14 />
+          <Container43 />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Footer() {
+  return (
+    <div className="absolute bg-[#101828] box-border content-stretch flex flex-col gap-[32px] h-[248.8px] items-start left-0 px-[24px] py-0 top-[2796px] w-[1192.8px]" data-name="Footer">
+      <Container42 />
+      <Container44 />
+    </div>
+  );
+}
+
+function LandingPage() {
   return (
     <div className="absolute bg-white h-[3092.8px] left-0 top-0 w-[1192.8px]" data-name="LandingPage">
       <Section />
       <Section1 />
       <Section2 />
       <Section3 />
+      <Footer />
     </div>
   );
 }
@@ -732,10 +1366,8 @@ function Container46() {
 }
 
 function Button6() {
-  const navigate = useNavigate();
-  
   return (
-    <div className="h-[36px] relative rounded-[8px] shrink-0 w-[75.987px] cursor-pointer" data-name="Button" onClick={() => navigate('/auth/signin')}>
+    <div className="h-[36px] relative rounded-[8px] shrink-0 w-[75.987px]" data-name="Button">
       <div className="bg-clip-padding border-0 border-[transparent] border-solid box-border content-stretch flex gap-[8px] h-[36px] items-center justify-center px-[16px] py-[8px] relative w-[75.987px]">
         <p className="font-['Arial:Regular',sans-serif] leading-[20px] not-italic relative shrink-0 text-[14px] text-neutral-950 text-nowrap whitespace-pre">Sign In</p>
       </div>
@@ -744,10 +1376,8 @@ function Button6() {
 }
 
 function Button7() {
-  const navigate = useNavigate();
-  
   return (
-    <div className="bg-[#9810fa] h-[36px] relative rounded-[8px] shrink-0 w-[104.138px] cursor-pointer" data-name="Button" onClick={() => navigate('/auth/signup')}>
+    <div className="bg-[#9810fa] h-[36px] relative rounded-[8px] shrink-0 w-[104.138px]" data-name="Button">
       <div className="bg-clip-padding border-0 border-[transparent] border-solid box-border content-stretch flex gap-[8px] h-[36px] items-center justify-center px-[16px] py-[8px] relative w-[104.138px]">
         <p className="font-['Arial:Regular',sans-serif] leading-[20px] not-italic relative shrink-0 text-[14px] text-nowrap text-white whitespace-pre">Get Started</p>
       </div>
@@ -766,7 +1396,7 @@ function Container47() {
   );
 }
 
-function LandingPageHeader() {
+function LandingPage1() {
   return (
     <div className="absolute bg-white box-border content-stretch flex h-[68px] items-center justify-between left-0 pb-[0.8px] pt-0 px-[24px] top-0 w-[1192.8px]" data-name="LandingPage">
       <div aria-hidden="true" className="absolute border-[0px_0px_0.8px] border-black border-solid inset-0 pointer-events-none" />
@@ -776,13 +1406,11 @@ function LandingPageHeader() {
   );
 }
 
-const LandingPage = () => {
+export default function App() {
   return (
     <div className="bg-white relative size-full" data-name="Build Webpage with React">
-      <LandingPageMain />
-      <LandingPageHeader />
+      <LandingPage />
+      <LandingPage1 />
     </div>
   );
-};
-
-export default LandingPage;
+}
