@@ -674,6 +674,10 @@ export default function App({ user }) {
 
   // Handle bill form submission
   const handleSubmitBill = async () => {
+    console.log('handleSubmitBill called with billFormData:', billFormData);
+    console.log('selectedHousemates:', selectedHousemates);
+    console.log('Current user:', user);
+
     if (!billFormData.title || !billFormData.amount || !user?.id || !user?.house_id) {
       alert('Please fill in all required fields');
       return;
@@ -690,6 +694,8 @@ export default function App({ user }) {
         due_date: billFormData.dueDate || null,
         shared_with: selectedHousemates.length > 0 ? selectedHousemates.map(h => h.id) : []
       };
+
+      console.log('Creating bill with data:', billData);
 
       await addBill(billData);
       
@@ -716,7 +722,38 @@ export default function App({ user }) {
       console.log('Bill created successfully');
     } catch (error) {
       console.error('Error creating bill:', error);
-      alert('Error creating bill. Please try again.');
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        config: error.config
+      });
+      
+      let errorMessage = 'Error creating bill. Please try again.';
+      
+      if (error.response) {
+        const status = error.response.status;
+        switch (status) {
+          case 500:
+            errorMessage = 'Server error occurred. Please check the bill data and try again.';
+            break;
+          case 400:
+            errorMessage = 'Invalid bill data. Please check all fields and try again.';
+            break;
+          case 401:
+            errorMessage = 'Authentication failed. Please sign in again.';
+            break;
+          case 403:
+            errorMessage = 'You do not have permission to create bills.';
+            break;
+          default:
+            errorMessage = `Server error (${status}). Please try again.`;
+        }
+      } else if (error.request) {
+        errorMessage = 'Unable to connect to server. Please check your internet connection.';
+      }
+      
+      alert(errorMessage);
     }
   };
   
