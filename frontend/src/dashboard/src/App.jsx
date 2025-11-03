@@ -692,8 +692,7 @@ export default function App({ user }) {
         split_method: billFormData.splitMethod,
         house_id: user.house_id,
         created_by: user.id,
-        due_date: billFormData.dueDate || null,
-        shared_with: selectedHousemates.length > 0 ? selectedHousemates.map(h => h.id) : []
+        due_date: billFormData.dueDate || null
       };
 
       console.log('Creating bill with data:', billData);
