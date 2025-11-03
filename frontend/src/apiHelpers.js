@@ -49,6 +49,13 @@ export const getUserCompletedTasks = (userId) => API.get(`/users/${userId}/tasks
 export const getUserPendingTasks = (userId) => API.get(`/users/${userId}/tasks/pending`);
 export const getUserContributedBills = (userId) => API.get(`/users/${userId}/bills/contributed`);
 
+// User update endpoints
+export const updateUserBio = (userId, bio) => API.put(`/users/${userId}/bio`, { bio });
+export const updateUserPhone = (userId, phone) => API.put(`/users/${userId}/phone`, { phone });
+export const updateUserName = (userId, name) => API.put(`/users/${userId}/name`, { name });
+export const updateUserEmail = (userId, email) => API.put(`/users/${userId}/email`, { email });
+export const updateUserPreferredContact = (userId, preferred_contact) => API.put(`/users/${userId}/preferred_contact`, { preferred_contact });
+
 // Schedule
 export const getSchedule = () => API.get("/schedule");
 export const getScheduleItem = (id) => API.get(`/schedule/${id}`);
