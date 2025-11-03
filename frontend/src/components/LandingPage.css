@@ -207,6 +207,18 @@
   padding: 1.5rem;
 }
 
+.App .benefit-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  border-radius: 50%;
+  margin: 0 auto 1rem auto;
+  color: white;
+}
+
 .App .benefit h4 {
   font-size: 1.25rem;
   margin-bottom: 1rem;
