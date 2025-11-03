@@ -69,6 +69,7 @@ import { HousemateItem } from './components/HousemateItem';
 import { HousemateCard } from './components/HousemateCard';
 import { BillItem } from './components/BillItem';
 import { SettingsContent } from './components/SettingsContent';
+import { PaymentHistoryModal } from './components/PaymentHistoryModal';
 
 export default function App({ user }) {
   console.log("App component is rendering");
@@ -822,11 +823,15 @@ export default function App({ user }) {
   const [isPaymentFormOpen, setIsPaymentFormOpen] = useState(false);
   const [selectedBillId, setSelectedBillId] = useState(null);
   const [selectedHousemates, setSelectedHousemates] = useState([]);
+  const [isPaymentHistoryOpen, setIsPaymentHistoryOpen] = useState(false);
+  const [selectedBillForHistory, setSelectedBillForHistory] = useState(null);
   const [paymentFormData, setPaymentFormData] = useState({
     amount: '',
     paymentMethod: '',
     datePaid: new Date().toISOString().split('T')[0], // Today's date
-    notes: ''
+    notes: '',
+    payingFor: '', // Which user this payment is for
+    paidBy: '' // Who is making the payment (defaults to current user)
   });
   
   // Schedule page state
@@ -1152,22 +1157,35 @@ export default function App({ user }) {
         amount: bill.perPerson || '0.00', // Default to per person amount
         paymentMethod: '',
         datePaid: new Date().toISOString().split('T')[0],
-        notes: ''
+        notes: '',
+        payingFor: user?.id?.toString() || '', // Default to current user
+        paidBy: user?.id?.toString() || '' // Default to current user making payment
       });
       setIsPaymentFormOpen(true);
     }
   };
 
+  const handleViewPayments = (billId) => {
+    const bill = bills.find(b => b.id === billId);
+    if (bill) {
+      setSelectedBillForHistory(bill);
+      setIsPaymentHistoryOpen(true);
+    }
+  };
+
   const handleSubmitPayment = async () => {
-    if (!selectedBillId || !paymentFormData.amount || !paymentFormData.paymentMethod || !user?.id) {
+    if (!selectedBillId || !paymentFormData.amount || !paymentFormData.paymentMethod || !paymentFormData.payingFor || !paymentFormData.paidBy) {
       alert('Please fill in all required fields');
       return;
     }
 
     try {
       const paymentData = {
-        user_id: user.id,
-        amount_paid: parseFloat(paymentFormData.amount)
+        user_id: parseInt(paymentFormData.payingFor), // Who this payment is for
+        paid_by_user_id: parseInt(paymentFormData.paidBy), // Who is making the payment
+        amount_paid: parseFloat(paymentFormData.amount),
+        payment_method: paymentFormData.paymentMethod,
+        payment_notes: paymentFormData.notes || null
       };
 
       await payBill(selectedBillId, paymentData);
@@ -1177,7 +1195,9 @@ export default function App({ user }) {
         amount: '',
         paymentMethod: '',
         datePaid: new Date().toISOString().split('T')[0],
-        notes: ''
+        notes: '',
+        payingFor: '',
+        paidBy: ''
       });
       setSelectedBillId(null);
       setIsPaymentFormOpen(false);
@@ -2766,6 +2786,7 @@ export default function App({ user }) {
                               key={bill.id}
                               {...bill}
                               onRecordPayment={() => handleRecordPayment(bill.id)}
+                              onViewPayments={() => handleViewPayments(bill.id)}
                             />
                           ))
                         ) : (
@@ -2796,6 +2817,7 @@ export default function App({ user }) {
                               key={bill.id}
                               {...bill}
                               onRecordPayment={() => handleRecordPayment(bill.id)}
+                              onViewPayments={() => handleViewPayments(bill.id)}
                             />
                           ))
                         ) : (
@@ -2826,6 +2848,7 @@ export default function App({ user }) {
                               key={bill.id}
                               {...bill}
                               onRecordPayment={() => handleRecordPayment(bill.id)}
+                              onViewPayments={() => handleViewPayments(bill.id)}
                             />
                           ))
                         ) : (
@@ -2856,6 +2879,7 @@ export default function App({ user }) {
                               key={bill.id}
                               {...bill}
                               onRecordPayment={() => handleRecordPayment(bill.id)}
+                              onViewPayments={() => handleViewPayments(bill.id)}
                             />
                           ))
                         ) : (
@@ -2882,6 +2906,38 @@ export default function App({ user }) {
                   </DialogHeader>
                   
                   <div className="space-y-4 py-4">
+                    <div>
+                      <Label htmlFor="paying-for">Who is this payment for?</Label>
+                      <Select value={paymentFormData.payingFor} onValueChange={(value) => setPaymentFormData({...paymentFormData, payingFor: value})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select person" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {housemates.map((mate) => (
+                            <SelectItem key={mate.id} value={mate.id.toString()}>
+                              {mate.name} {mate.surname}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="paid-by">Who is making this payment?</Label>
+                      <Select value={paymentFormData.paidBy} onValueChange={(value) => setPaymentFormData({...paymentFormData, paidBy: value})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select person" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {housemates.map((mate) => (
+                            <SelectItem key={mate.id} value={mate.id.toString()}>
+                              {mate.name} {mate.surname}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
                     <div>
                       <Label htmlFor="payment-amount">Payment Amount (R)</Label>
                       <Input
@@ -4610,6 +4666,14 @@ export default function App({ user }) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Payment History Modal */}
+      <PaymentHistoryModal
+        isOpen={isPaymentHistoryOpen}
+        onClose={() => setIsPaymentHistoryOpen(false)}
+        billId={selectedBillForHistory?.id}
+        billTitle={selectedBillForHistory?.title}
+      />
       </main>
 
     </div>

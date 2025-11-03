@@ -287,9 +287,14 @@ async function createDatabaseTables() {
       amount DECIMAL(10,2) NOT NULL,
       amount_paid DECIMAL(10,2) DEFAULT 0.00,
       status ENUM('pending', 'paid') DEFAULT 'pending',
+      paid_by_user_id INT NULL,
+      paid_at TIMESTAMP NULL,
+      payment_method VARCHAR(50) NULL,
+      payment_notes TEXT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (bill_id) REFERENCES bills(id) ON DELETE CASCADE,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (paid_by_user_id) REFERENCES users(id) ON DELETE SET NULL
     )
   `;
 
@@ -813,13 +818,17 @@ app.get('/bills/:id', (req, res) => {
     const sharesQuery = `
       SELECT 
         bs.*,
-        u.first_name,
-        u.last_name,
-        u.email
+        u.name as user_name,
+        u.surname as user_surname,
+        u.email as user_email,
+        paid_by.name as paid_by_name,
+        paid_by.surname as paid_by_surname,
+        paid_by.email as paid_by_email
       FROM bill_share bs
       LEFT JOIN users u ON bs.user_id = u.id
+      LEFT JOIN users paid_by ON bs.paid_by_user_id = paid_by.id
       WHERE bs.bill_id = ?
-      ORDER BY u.first_name
+      ORDER BY u.name
     `;
     
     db.query(sharesQuery, [billId], (err2, sharesResults) => {
@@ -901,8 +910,8 @@ app.post('/bills', (req, res) => {
       console.log('Creating bill_share entries for', bill_share.length, 'users');
       
       const shareQuery = `
-        INSERT INTO bill_share (bill_id, user_id, share_amount, is_settled, payment_method, payment_notes, paid_by_user_id, settled_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO bill_share (bill_id, user_id, amount, status, payment_method, payment_notes, paid_by_user_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `;
       
       let completedShares = 0;
@@ -913,11 +922,10 @@ app.post('/bills', (req, res) => {
           billId,
           share.user_id,
           share.share_amount,
-          share.is_settled ? 1 : 0, // Convert boolean to tinyint
+          share.is_settled ? 'paid' : 'pending', // Convert boolean to status enum
           null, // payment_method
           null, // payment_notes
-          null, // paid_by_user_id
-          null  // settled_at
+          null  // paid_by_user_id
         ], (shareErr, shareResult) => {
           if (shareErr) {
             console.error(`Error creating bill_share ${index + 1}:`, shareErr);
@@ -953,20 +961,31 @@ app.post('/bills', (req, res) => {
 // Update bill payment status
 app.put('/bills/:id/pay', (req, res) => {
   const billId = req.params.id;
-  const { user_id, amount_paid } = req.body;
+  const { user_id, amount_paid, paid_by_user_id, payment_method, payment_notes } = req.body;
 
   if (!user_id) {
-    return res.status(400).json({ error: 'user_id is required' });
+    return res.status(400).json({ error: 'user_id is required (the person this payment is for)' });
   }
 
-  // Update bill_share status
+  if (!paid_by_user_id) {
+    return res.status(400).json({ error: 'paid_by_user_id is required (the person making the payment)' });
+  }
+
+  console.log(`Recording payment: Bill ${billId}, User ${user_id}, Paid by ${paid_by_user_id}, Amount ${amount_paid}`);
+
+  // Update bill_share status with payment details
   const updateQuery = `
     UPDATE bill_share 
-    SET status = 'paid', amount_paid = ?, paid_at = NOW()
+    SET status = 'paid', 
+        amount_paid = ?, 
+        paid_by_user_id = ?,
+        paid_at = NOW(),
+        payment_method = ?,
+        payment_notes = ?
     WHERE bill_id = ? AND user_id = ?
   `;
 
-  db.query(updateQuery, [amount_paid || null, billId, user_id], (err, results) => {
+  db.query(updateQuery, [amount_paid || null, paid_by_user_id, payment_method || null, payment_notes || null, billId, user_id], (err, results) => {
     if (err) {
       console.error('Error updating bill payment:', err);
       return res.status(500).json({ error: err.message });
@@ -976,18 +995,30 @@ app.put('/bills/:id/pay', (req, res) => {
       return res.status(404).json({ error: 'Bill share not found' });
     }
 
-    // Log to bill_history
+    // Log to bill_history with who made the payment
     const historyQuery = `
-      INSERT INTO bill_history (bill_id, user_id, action, old_value, new_value, created_at)
-      VALUES (?, ?, 'payment', 'pending', 'paid', NOW())
+      INSERT INTO bill_history (bill_id, user_id, action, amount, notes, created_at)
+      VALUES (?, ?, 'payment', ?, ?, NOW())
     `;
 
-    db.query(historyQuery, [billId, user_id], (err2) => {
+    const historyNotes = `Payment of ${amount_paid || 'full amount'} made by user ${paid_by_user_id} for user ${user_id}${payment_method ? ` via ${payment_method}` : ''}${payment_notes ? `. Notes: ${payment_notes}` : ''}`;
+
+    db.query(historyQuery, [billId, paid_by_user_id, amount_paid, historyNotes], (err2) => {
       if (err2) {
         console.error('Error logging payment history:', err2);
       }
 
-      res.json({ message: "Payment recorded successfully!" });
+      res.json({ 
+        message: "Payment recorded successfully!",
+        payment_details: {
+          bill_id: billId,
+          user_id: user_id,
+          paid_by_user_id: paid_by_user_id,
+          amount_paid: amount_paid,
+          payment_method: payment_method,
+          payment_notes: payment_notes
+        }
+      });
     });
   });
 });
@@ -1133,6 +1164,54 @@ app.delete('/bills/:id', (req, res) => {
     });
   });
 });
+
+// Get bill payment history
+app.get('/bills/:id/payments', (req, res) => {
+  const billId = req.params.id;
+
+  const paymentsQuery = `
+    SELECT 
+      bs.*,
+      u.name as user_name,
+      u.surname as user_surname,
+      u.email as user_email,
+      paid_by.name as paid_by_name,
+      paid_by.surname as paid_by_surname,
+      paid_by.email as paid_by_email
+    FROM bill_share bs
+    LEFT JOIN users u ON bs.user_id = u.id
+    LEFT JOIN users paid_by ON bs.paid_by_user_id = paid_by.id
+    WHERE bs.bill_id = ? AND bs.status = 'paid'
+    ORDER BY bs.paid_at DESC
+  `;
+
+  db.query(paymentsQuery, [billId], (err, results) => {
+    if (err) {
+      console.error('Error fetching bill payments:', err);
+      return res.status(500).json({ error: err.message });
+    }
+
+    res.json({ 
+      data: results.map(payment => ({
+        id: payment.id,
+        bill_id: payment.bill_id,
+        user_id: payment.user_id,
+        user_name: `${payment.user_name} ${payment.user_surname}`,
+        user_email: payment.user_email,
+        amount: payment.amount,
+        amount_paid: payment.amount_paid,
+        paid_by_user_id: payment.paid_by_user_id,
+        paid_by_name: payment.paid_by_name ? `${payment.paid_by_name} ${payment.paid_by_surname}` : null,
+        paid_by_email: payment.paid_by_email,
+        paid_at: payment.paid_at,
+        payment_method: payment.payment_method,
+        payment_notes: payment.payment_notes,
+        status: payment.status
+      }))
+    });
+  });
+});
+
 // Schedule endpoints
 app.get('/schedule', (req, res) => {
   db.query("SELECT * FROM schedule", (err, results) => {
