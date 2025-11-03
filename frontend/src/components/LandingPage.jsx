@@ -135,11 +135,11 @@ const LandingPage = () => {
       >
         <div className="max-w-7xl mx-auto px-6 py-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h1 className="text-5xl text-gray-900 mb-6">
+            <div className="max-w-lg">
+              <h1 className="text-6xl font-bold text-gray-900 mb-6 leading-tight">
                 Simplify Your Shared Living
               </h1>
-              <p className="text-xl text-gray-600 mb-8">
+              <p className="text-xl text-gray-600 mb-8 leading-relaxed">
                 HouseMate is the all-in-one platform that helps roommates manage household tasks, split bills, and coordinate schedules effortlessly. Say goodbye to awkward conversations and confusion.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -165,9 +165,9 @@ const LandingPage = () => {
                 <img
                   src="https://images.unsplash.com/photo-1688549143237-e258a419d200?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBzaGFyZWQlMjBob3VzZSUyMHJvb21tYXRlc3xlbnwxfHx8fDE3NjIxMDUxNjR8MA&ixlib=rb-4.1.0&q=80&w=1080"
                   alt="Modern shared house"
-                  className="w-full h-[100px] object-cover"
+                  className="w-full h-96 object-cover"
                   onError={(e) => {
-                    e.target.src = "https://via.placeholder.com/1080x500/f3f4f6/9ca3af?text=Modern+Shared+House";
+                    e.target.src = "https://via.placeholder.com/1080x384/f3f4f6/9ca3af?text=Modern+Shared+House";
                   }}
                 />
               </div>
