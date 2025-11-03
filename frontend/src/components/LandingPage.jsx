@@ -106,7 +106,7 @@ const LandingPage = () => {
                 </svg>
               </div>
               <h4>Easy to Use</h4>
-              <p>Intuitive interface that anyone can use. Set up your household in minutes and start managing tasks immediately.</p>
+              <p>Intuitive interface that anyone can use. Set up your household in minutes and start managing tasks.</p>
             </div>
             
             <div className="benefit">
