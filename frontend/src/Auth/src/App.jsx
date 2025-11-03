@@ -91,7 +91,36 @@ export default function App() {
       })
       .catch(err => {
         console.error('Error registering user:', err);
-        alert("User registration failed. Please try again.");
+        
+        // Enhanced error handling for better user experience
+        let errorMessage = "Registration failed. Please try again.";
+        
+        if (err.response) {
+          const status = err.response.status;
+          switch (status) {
+            case 503:
+              errorMessage = "Our server is temporarily unavailable. Please try again in a few minutes.";
+              break;
+            case 500:
+              errorMessage = "Server error occurred. Please try again later.";
+              break;
+            case 409:
+              errorMessage = "An account with this email already exists. Please try signing in instead.";
+              break;
+            case 400:
+              errorMessage = "Please check your information and try again.";
+              break;
+            case 429:
+              errorMessage = "Too many registration attempts. Please wait a few minutes before trying again.";
+              break;
+            default:
+              errorMessage = "Registration failed. Please try again.";
+          }
+        } else if (err.request) {
+          errorMessage = "Unable to connect to server. Please check your internet connection.";
+        }
+        
+        alert(errorMessage);
       });
   };
 

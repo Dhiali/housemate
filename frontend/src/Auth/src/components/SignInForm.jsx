@@ -43,7 +43,24 @@ export function SignInForm({ onForgotPassword, onCreateHouse, onSignInSuccess })
       }
     } catch (err) {
       console.log("Login error:", err);
-      setError(err?.response?.data?.error || "Login failed.");
+      
+      // Handle different types of errors with more user-friendly messages
+      if (err.code === 'ERR_NETWORK') {
+        setError("Unable to connect to the server. Please check your internet connection and try again.");
+      } else if (err.response?.status === 503) {
+        setError("Our server is temporarily unavailable. Please try again in a few minutes.");
+      } else if (err.response?.status === 500) {
+        setError("Server error occurred. Please try again later.");
+      } else if (err.response?.status === 401) {
+        setError("Invalid email or password. Please check your credentials and try again.");
+      } else if (err.response?.status === 429) {
+        setError("Too many login attempts. Please wait a moment before trying again.");
+      } else if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else {
+        setError("Login failed. Please try again.");
+      }
+      
       setSuccess("");
     }
     setLoading(false);
