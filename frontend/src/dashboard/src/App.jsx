@@ -2615,61 +2615,64 @@ export default function App({ user }) {
                         </Select>
                         </div>
                         
-                        <div className="col-span-2">
-                          <Label className="mb-3 block">Share Bill With</Label>
-                          <div className="space-y-2 max-h-40 overflow-y-auto">
-                            {housemates.map((housemate) => (
-                              <div key={housemate.id} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50">
-                                <input
-                                  type="checkbox"
-                                  id={`housemate-${housemate.id}`}
-                                  checked={selectedHousemates.some(h => h.id === housemate.id)}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setSelectedHousemates(prev => [...prev, housemate]);
-                                    } else {
-                                      setSelectedHousemates(prev => prev.filter(h => h.id !== housemate.id));
-                                    }
-                                  }}
-                                  className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                                />
-                                <Avatar className="h-8 w-8">
-                                  {housemate.avatar ? (
-                                    <AvatarImage src={housemate.avatar} alt={`${housemate.first_name}'s profile`} />
-                                  ) : null}
-                                  <AvatarFallback className="text-xs">
-                                    {housemate.avatarInitials}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1">
-                                  <p className="text-sm font-medium text-gray-900">
-                                    {housemate.first_name} {housemate.last_name}
-                                  </p>
-                                  <p className="text-xs text-gray-500">{housemate.email}</p>
-                                </div>
-                                {selectedHousemates.some(h => h.id === housemate.id) && (
-                                  <div className="text-xs text-purple-600 font-medium">
-                                    R{billFormData.amount && selectedHousemates.length > 0 ? 
-                                      (parseFloat(billFormData.amount || 0) / selectedHousemates.length).toFixed(2) : 
-                                      '0.00'}
+                        {/* Only show "Share Bill With" section when Custom Split is selected */}
+                        {billFormData.splitMethod === 'custom' && (
+                          <div className="col-span-2">
+                            <Label className="mb-3 block">Share Bill With</Label>
+                            <div className="space-y-2 max-h-40 overflow-y-auto">
+                              {housemates.map((housemate) => (
+                                <div key={housemate.id} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50">
+                                  <input
+                                    type="checkbox"
+                                    id={`housemate-${housemate.id}`}
+                                    checked={selectedHousemates.some(h => h.id === housemate.id)}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setSelectedHousemates(prev => [...prev, housemate]);
+                                      } else {
+                                        setSelectedHousemates(prev => prev.filter(h => h.id !== housemate.id));
+                                      }
+                                    }}
+                                    className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                                  />
+                                  <Avatar className="h-8 w-8">
+                                    {housemate.avatar ? (
+                                      <AvatarImage src={housemate.avatar} alt={`${housemate.first_name}'s profile`} />
+                                    ) : null}
+                                    <AvatarFallback className="text-xs">
+                                      {housemate.avatarInitials}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex-1">
+                                    <p className="text-sm font-medium text-gray-900">
+                                      {housemate.first_name} {housemate.last_name}
+                                    </p>
+                                    <p className="text-xs text-gray-500">{housemate.email}</p>
                                   </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                          {selectedHousemates.length > 0 && (
-                            <div className="mt-3 p-3 bg-purple-50 rounded-lg">
-                              <p className="text-sm text-purple-800">
-                                <strong>Selected:</strong> {selectedHousemates.length} housemate{selectedHousemates.length !== 1 ? 's' : ''}
-                              </p>
-                              <p className="text-sm text-purple-600 mt-1">
-                                Each person owes: R{billFormData.amount ? 
-                                  (parseFloat(billFormData.amount || 0) / selectedHousemates.length).toFixed(2) : 
-                                  '0.00'}
-                              </p>
+                                  {selectedHousemates.some(h => h.id === housemate.id) && (
+                                    <div className="text-xs text-purple-600 font-medium">
+                                      R{billFormData.amount && selectedHousemates.length > 0 ? 
+                                        (parseFloat(billFormData.amount || 0) / selectedHousemates.length).toFixed(2) : 
+                                        '0.00'}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
                             </div>
-                          )}
-                        </div>
+                            {selectedHousemates.length > 0 && (
+                              <div className="mt-3 p-3 bg-purple-50 rounded-lg">
+                                <p className="text-sm text-purple-800">
+                                  <strong>Selected:</strong> {selectedHousemates.length} housemate{selectedHousemates.length !== 1 ? 's' : ''}
+                                </p>
+                                <p className="text-sm text-purple-600 mt-1">
+                                  Each person owes: R{billFormData.amount ? 
+                                    (parseFloat(billFormData.amount || 0) / selectedHousemates.length).toFixed(2) : 
+                                    '0.00'}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                     
