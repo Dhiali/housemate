@@ -96,7 +96,7 @@ const LandingPage = () => {
                 </svg>
               </div>
               <h4>Fair & Transparent</h4>
-              <p>Keep everyone accountable with clear task assignments and payment tracking.<br/> No more disputes about who did what.</p>
+              <p>Keep everyone accountable with clear task assignments and payment tracking. No more disputes about who did what or when.</p>
             </div>
             
             <div className="benefit">
@@ -106,7 +106,7 @@ const LandingPage = () => {
                 </svg>
               </div>
               <h4>Easy to Use</h4>
-              <p>Intuitive interface that anyone can use. Set up your household in minutes<br/> and start managing tasks right away.</p>
+              <p>Intuitive interface that anyone can use. Set up your household in minutes and start managing tasks immediately.</p>
             </div>
             
             <div className="benefit">
