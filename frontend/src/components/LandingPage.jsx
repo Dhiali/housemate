@@ -165,7 +165,7 @@ const LandingPage = () => {
                 <img
                   src="https://images.unsplash.com/photo-1688549143237-e258a419d200?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBzaGFyZWQlMjBob3VzZSUyMHJvb21tYXRlc3xlbnwxfHx8fDE3NjIxMDUxNjR8MA&ixlib=rb-4.1.0&q=80&w=1080"
                   alt="Modern shared house"
-                  className="w-full h-[500px] object-cover"
+                  className="w-full h-[100px] object-cover"
                   onError={(e) => {
                     e.target.src = "https://via.placeholder.com/1080x500/f3f4f6/9ca3af?text=Modern+Shared+House";
                   }}
