@@ -80,13 +80,180 @@ function App() {
   // Get user data from auth context (this must be outside try block)
   const { user, isAdmin, isStandard, isReadOnly, permissions, getRoleDisplayName } = useAuth();
   
-  // All React hooks must be at the top level
+  // ALL React hooks must be at the top level - moved from inside try block
   const [currentPage, setCurrentPage] = useState('Dashboard');
   const [upcomingTasksView, setUpcomingTasksView] = useState('own');
   const [scheduleDataView, setScheduleDataView] = useState('own');
   const [tasksPageView, setTasksPageView] = useState('own');
   const [schedulePageView, setSchedulePageView] = useState('own');
   const [billsPageView, setBillsPageView] = useState('own');
+  
+  // Tasks state
+  const [tasks, setTasks] = useState([]);
+  const [loadingTasks, setLoadingTasks] = useState(true);
+  
+  // Dashboard statistics state
+  const [dashboardStats, setDashboardStats] = useState({
+    totalTasks: 0,
+    completedTasks: 0,
+    pendingTasks: 0,
+    overdueTasks: 0,
+    completionRate: 0
+  });
+  
+  // House settings state
+  const [householdSettings, setHouseholdSettings] = useState({
+    houseName: '',
+    avatar: '',
+    address: '123 Maple Street, Downtown, City 12345',
+    houseRules: 'Keep common areas clean\nNo shoes in bedrooms\nQuiet hours: 10 PM - 7 AM\nTake turns with dishes\nGuests must be approved by all housemates',
+    currency: 'ZAR',
+    currencySymbol: 'R',
+    defaultSplitMethod: 'equal',
+    taskAutoAssign: false,
+    billReminderDays: 3
+  });
+  
+  // Bills state
+  const [bills, setBills] = useState([]);
+  const [loadingBills, setLoadingBills] = useState(false);
+  
+  // Task form state
+  const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
+  const [taskFormData, setTaskFormData] = useState({
+    title: '',
+    description: '',
+    category: '',
+    priority: 'medium',
+    dueDate: '',
+    assignedTo: ''
+  });
+  
+  // Bill form state  
+  const [isBillFormOpen, setIsBillFormOpen] = useState(false);
+  const [billFormData, setBillFormData] = useState({
+    title: '',
+    description: '',
+    amount: '',
+    category: '',
+    dueDate: '',
+    splitMethod: 'equal',
+    assignedTo: []
+  });
+  
+  // Payment state
+  const [isPaymentFormOpen, setIsPaymentFormOpen] = useState(false);
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+  const [selectedBillId, setSelectedBillId] = useState(null);
+  const [selectedHousemates, setSelectedHousemates] = useState([]);
+  const [isPaymentHistoryOpen, setIsPaymentHistoryOpen] = useState(false);
+  const [selectedBillForHistory, setSelectedBillForHistory] = useState(null);
+  const [paymentFormData, setPaymentFormData] = useState({
+    amount: '',
+    method: 'bank_transfer',
+    note: '',
+    receiptUrl: ''
+  });
+  
+  // Calendar state
+  const [calendarView, setCalendarView] = useState('month');
+  const [scheduleFilters, setScheduleFilters] = useState({
+    showPersonal: true,
+    showHousehold: true,
+    showMaintenance: true
+  });
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [isEventDetailOpen, setIsEventDetailOpen] = useState(false);
+  const [isAddEventOpen, setIsAddEventOpen] = useState(false);
+  const [hoveredItem, setHoveredItem] = useState(null);
+  const [houseEvents, setHouseEvents] = useState([]);
+  const [eventFormData, setEventFormData] = useState({
+    title: '',
+    description: '',
+    startDate: '',
+    endDate: '',
+    category: 'general',
+    attendees: 'All'
+  });
+  
+  // Housemates state
+  const [selectedHousemate, setSelectedHousemate] = useState(null);
+  const [isHousemateDetailOpen, setIsHousemateDetailOpen] = useState(false);
+  const [isInviteHousemateOpen, setIsInviteHousemateOpen] = useState(false);
+  const [isManageRolesOpen, setIsManageRolesOpen] = useState(false);
+  const [selectedActivityType, setSelectedActivityType] = useState(null);
+  const [housemateCompletedTasks, setHousemateCompletedTasks] = useState([]);
+  const [housematePendingTasks, setHousematePendingTasks] = useState([]);
+  const [housemateContributedBills, setHousemateContributedBills] = useState([]);
+  const [loadingHousemateDetails, setLoadingHousemateDetails] = useState(false);
+  const [housemates, setHousemates] = useState([]);
+  const [loadingHousemates, setLoadingHousemates] = useState(false);
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [loadingActivities, setLoadingActivities] = useState(false);
+  const [inviteFormData, setInviteFormData] = useState({
+    email: '',
+    role: 'standard',
+    message: ''
+  });
+  
+  // Settings state
+  const [settingsTab, setSettingsTab] = useState('profile');
+  const [profileSettings, setProfileSettings] = useState({
+    name: '',
+    surname: '',
+    email: '',
+    phone: '',
+    bio: '',
+    avatar: '',
+    dateOfBirth: '',
+    occupation: '',
+    emergencyContact: {
+      name: '',
+      phone: '',
+      relationship: ''
+    },
+    preferences: {
+      language: 'en',
+      timezone: 'Africa/Johannesburg',
+      theme: 'light',
+      currency: 'ZAR'
+    },
+    social: {
+      instagram: '',
+      twitter: '',
+      linkedin: '',
+      facebook: ''
+    },
+    interests: [],
+    skills: [],
+    availability: {
+      monday: { morning: true, afternoon: true, evening: true },
+      tuesday: { morning: true, afternoon: true, evening: true },
+      wednesday: { morning: true, afternoon: true, evening: true },
+      thursday: { morning: true, afternoon: true, evening: true },
+      friday: { morning: true, afternoon: true, evening: true },
+      saturday: { morning: true, afternoon: true, evening: true },
+      sunday: { morning: true, afternoon: true, evening: true }
+    }
+  });
+  const [notificationSettings, setNotificationSettings] = useState({
+    email: true,
+    push: true,
+    sms: false,
+    taskReminders: true,
+    billReminders: true,
+    eventReminders: true,
+    housemateUpdates: true,
+    systemUpdates: false
+  });
+  const [privacySettings, setPrivacySettings] = useState({
+    profileVisibility: 'housemates',
+    showContactInfo: true,
+    showActivity: true,
+    allowInvitations: true,
+    dataSharing: false
+  });
 
   // Update view states based on user role after user data loads
   useEffect(() => {
@@ -135,30 +302,6 @@ function App() {
 
   const seoConfig = getSEOConfigForPage();
   useSEO(seoConfig.title, seoConfig.description, seoConfig.keywords, seoConfig.image, seoConfig.imageAlt);
-  const [tasks, setTasks] = useState([]);
-  const [loadingTasks, setLoadingTasks] = useState(true);
-
-  // Dashboard statistics state
-  const [dashboardStats, setDashboardStats] = useState({
-    totalTasks: 0,
-    completedTasks: 0,
-    pendingTasks: 0,
-    overdueTasks: 0,
-    completionRate: 0
-  });
-
-  // Fetch house info for signed-in user
-  const [householdSettings, setHouseholdSettings] = useState({
-    houseName: '',
-    avatar: '',
-    address: '123 Maple Street, Downtown, City 12345',
-    houseRules: 'Keep common areas clean\nNo shoes in bedrooms\nQuiet hours: 10 PM - 7 AM\nTake turns with dishes\nGuests must be approved by all housemates',
-    currency: 'ZAR',
-    currencySymbol: 'R',
-    defaultSplitMethod: 'equal',
-    taskAutoAssign: false,
-    billReminderDays: 3
-  });
 
   // Function to fetch tasks
   const fetchTasks = async () => {
@@ -708,9 +851,6 @@ function App() {
     }
   };
 
-  const [bills, setBills] = useState([]);
-  const [loadingBills, setLoadingBills] = useState(false);
-
   // Fetch bills from database
   const fetchBills = async () => {
     if (!user?.house_id) {
@@ -933,126 +1073,17 @@ function App() {
     }
   };
   
-  const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
-  const [taskFormData, setTaskFormData] = useState({
-    category: '',
-    title: '',
-    description: '',
-    location: '',
-    dueDate: '',
-    assignedTo: '',
-    createdBy: 'You',
-    priority: 'medium'
-  });
+  // Add task function (using state already declared at top level)
   
-  const [isBillFormOpen, setIsBillFormOpen] = useState(false);
-  const [billFormData, setBillFormData] = useState({
-    category: 'utilities', // Default to utilities category
-    title: '',
-    description: '',
-    amount: '',
-    dueDate: '',
-    createdBy: 'You',
-    splitMethod: 'equal',
-    customSplits: {}
-  });
+  // Add bill function (using state already declared at top level)
   
-  const [isPaymentFormOpen, setIsPaymentFormOpen] = useState(false);
-  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
-  const [selectedBillId, setSelectedBillId] = useState(null);
-  const [selectedHousemates, setSelectedHousemates] = useState([]);
-  const [isPaymentHistoryOpen, setIsPaymentHistoryOpen] = useState(false);
-  const [selectedBillForHistory, setSelectedBillForHistory] = useState(null);
-  const [paymentFormData, setPaymentFormData] = useState({
-    amount: '',
-    paymentMethod: '',
-    datePaid: new Date().toISOString().split('T')[0], // Today's date
-    notes: '',
-    payingFor: '', // Which user this payment is for
-    paidBy: '' // Who is making the payment (defaults to current user)
-  });
+  // Payment functions (using state already declared at top level)
   
-  // Schedule page state
-  const [calendarView, setCalendarView] = useState('month');
-  const [scheduleFilters, setScheduleFilters] = useState({
-    tasks: true,
-    bills: true,
-    events: true
-  });
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [isEventDetailOpen, setIsEventDetailOpen] = useState(false);
-  const [isAddEventOpen, setIsAddEventOpen] = useState(false);
-  const [hoveredItem, setHoveredItem] = useState(null);
-  const [houseEvents, setHouseEvents] = useState([
-    {
-      id: 1,
-      title: 'House Meeting',
-      description: 'Monthly house meeting to discuss bills and responsibilities',
-      date: '2024-12-20',
-      time: '19:00',
-      type: 'meeting',
-      attendees: ['Sarah M.', 'Mike R.', 'Alex K.', 'You'],
-      color: 'purple'
-    },
-    {
-      id: 2,
-      title: 'Cleaning Schedule Rotation',
-      description: 'Weekly deep cleaning rotation - Kitchen focus',
-      date: '2024-12-22',
-      time: '10:00',
-      type: 'recurring',
-      attendees: ['All'],
-      color: 'purple'
-    }
-  ]);
-  const [eventFormData, setEventFormData] = useState({
-    title: '',
-    description: '',
-    date: '',
-    time: '',
-    type: 'meeting',
-    attendees: ['All']
-  });
+  // Event and calendar functions (using state already declared at top level)
   
-  // Housemates page state
-  const [selectedHousemate, setSelectedHousemate] = useState(null);
-  const [isHousemateDetailOpen, setIsHousemateDetailOpen] = useState(false);
-  const [isInviteHousemateOpen, setIsInviteHousemateOpen] = useState(false);
-  const [isManageRolesOpen, setIsManageRolesOpen] = useState(false);
-  const [selectedActivityType, setSelectedActivityType] = useState(null);
+  // Housemate functions (using state already declared at top level)
   
-  // State for housemate detailed data
-  const [housemateCompletedTasks, setHousemateCompletedTasks] = useState([]);
-  const [housematePendingTasks, setHousematePendingTasks] = useState([]);
-  const [housemateContributedBills, setHousemateContributedBills] = useState([]);
-  const [loadingHousemateDetails, setLoadingHousemateDetails] = useState(false);
-  const [housemates, setHousemates] = useState([]);
-  const [loadingHousemates, setLoadingHousemates] = useState(false);
-  const [recentActivities, setRecentActivities] = useState([]);
-  const [loadingActivities, setLoadingActivities] = useState(false);
-  const [inviteFormData, setInviteFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    role: 'standard',
-    personalMessage: '',
-    sendEmail: true
-  });
-
-  // Settings page state
-  const [settingsTab, setSettingsTab] = useState('profile');
-  const [profileSettings, setProfileSettings] = useState({
-  name: 'You',
-  email: 'your.email@email.com',
-  phone: '', // phone is empty by default
-  bio: '', // bio is empty by default
-  preferredContact: 'email',
-  timezone: 'America/New_York',
-  language: 'en'
-  });
+  // Settings functions (using state already declared at top level)
 
   // Load signed-in user's bio from DB (if available)
   useEffect(() => {
@@ -1084,35 +1115,7 @@ function App() {
   
   // householdSettings state is now declared above and fetched dynamically
   
-  const [notificationSettings, setNotificationSettings] = useState({
-    emailNotifications: true,
-    pushNotifications: true,
-    smsNotifications: false,
-    taskReminders: true,
-    billReminders: true,
-    houseEvents: true,
-    newMemberJoined: true,
-    taskCompleted: false,
-    weeklyDigest: true
-  });
-  
-  const [privacySettings, setPrivacySettings] = useState({
-    showContactInfo: true,
-    showActivity: true,
-    shareTaskHistory: true,
-    shareBillHistory: true,
-    allowDirectMessages: true,
-    publicProfile: false
-  });
-  
-  const [appSettings, setAppSettings] = useState({
-    theme: 'light',
-    compactMode: false,
-    soundEnabled: true,
-    animationsEnabled: true,
-    autoSave: true,
-    showTips: true
-  });
+  // Sidebar navigation setup
   
   const sidebarItems = [
     { icon: <Home size={20} />, label: 'Dashboard', active: currentPage === 'Dashboard' },
