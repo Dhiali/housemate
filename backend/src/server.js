@@ -151,12 +151,20 @@ app.use((req, res, next) => {
   
   // Set CORS headers for all requests to ensure they're always present
   const origin = req.get('origin');
-  if (origin) {
-    console.log(`🔄 Setting CORS headers for origin: ${origin}`);
-    res.header('Access-Control-Allow-Origin', '*');
+  if (origin && corsOrigins.includes(origin)) {
+    console.log(`🔄 Setting CORS headers for allowed origin: ${origin}`);
+    res.header('Access-Control-Allow-Origin', origin);
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
     res.header('Access-Control-Expose-Headers', 'X-Total-Count');
+    res.header('Access-Control-Allow-Credentials', 'false');
+  } else if (origin) {
+    console.log(`⚠️ Unknown origin detected: ${origin} - Setting basic CORS headers`);
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
+    res.header('Access-Control-Expose-Headers', 'X-Total-Count');
+    res.header('Access-Control-Allow-Credentials', 'false');
   }
   
   next();
@@ -277,7 +285,17 @@ app.get('/proxy/reasonlabs', async (req, res) => {
         'Accept': 'application/json',
       },
     });
-    res.set('Access-Control-Allow-Origin', '*');
+    
+    // Set proper CORS headers based on origin
+    const origin = req.get('origin');
+    if (origin && corsOrigins.includes(origin)) {
+      res.set('Access-Control-Allow-Origin', origin);
+    } else if (origin) {
+      res.set('Access-Control-Allow-Origin', origin);
+    } else {
+      res.set('Access-Control-Allow-Origin', '*');
+    }
+    
     res.json(response.data);
   } catch (error) {
     console.error('Proxy error:', error.message);
@@ -641,9 +659,20 @@ app.options('*', (req, res) => {
   console.log(`📋 OPTIONS request for ${req.path} from origin: ${req.get('origin')}`);
   
   // Explicitly set CORS headers for preflight requests
-  res.header('Access-Control-Allow-Origin', '*');
+  const origin = req.get('origin');
+  if (origin && corsOrigins.includes(origin)) {
+    console.log(`✅ OPTIONS allowed for origin: ${origin}`);
+    res.header('Access-Control-Allow-Origin', origin);
+  } else if (origin) {
+    console.log(`⚠️ OPTIONS for unknown origin: ${origin} - allowing anyway`);
+    res.header('Access-Control-Allow-Origin', origin);
+  } else {
+    res.header('Access-Control-Allow-Origin', '*');
+  }
+  
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
+  res.header('Access-Control-Allow-Credentials', 'false');
   res.header('Access-Control-Max-Age', '86400'); // 24 hours
   
   res.status(204).send();
@@ -2981,7 +3010,7 @@ app.use((err, req, res, next) => {
   const origin = req.get('origin');
   if (origin && corsOrigins.includes(origin)) {
     res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Credentials', 'false');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
   }
