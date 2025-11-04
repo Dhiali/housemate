@@ -339,13 +339,15 @@ function App() {
       const mapped = res.data.map(task => {
         const categoryData = categories.find(cat => cat.id === task.category) || categories[categories.length - 1];
         return {
-          ...task,
+          ...task, // Keep original database values
           icon: categoryData.icon,
           avatarInitials: task.assigned_to_name ? 
             `${task.assigned_to_name[0]}${task.assigned_to_surname?.[0] || ''}`.toUpperCase() : 'UN',
           dueDate: task.due_date ? `Due ${new Date(task.due_date).toLocaleDateString()}` : 'No due date',
           assignedTo: task.assigned_to_name ? `${task.assigned_to_name} ${task.assigned_to_surname || ''}`.trim() : 'Unknown',
           priority: task.priority ? task.priority.toUpperCase() + ' PRIORITY' : 'MEDIUM PRIORITY',
+          // Keep original status for filtering, add display status for UI
+          originalStatus: task.status, // Keep original database status
           status: (() => {
             switch (task.status?.toLowerCase()) {
               case 'completed':
@@ -1882,19 +1884,29 @@ const formatDate = (date) => {
     let filtered = [];
     const now = new Date();
     
+    console.log('Filtering tasks for type:', taskType);
+    console.log('Available tasks:', tasks.map(t => ({ id: t.id, title: t.title, originalStatus: t.originalStatus, status: t.status })));
+    
     switch (taskType) {
       case 'total':
         filtered = tasks;
         break;
       case 'completed':
-        filtered = tasks.filter(task => task.status === 'completed');
+        // Use the original database status for filtering
+        filtered = tasks.filter(task => task.originalStatus?.toLowerCase() === 'completed');
         break;
       case 'pending':
-        filtered = tasks.filter(task => task.status === 'pending' || task.status === 'in_progress');
+        // Check for all pending-type statuses in their original form
+        filtered = tasks.filter(task => {
+          const status = task.originalStatus?.toLowerCase();
+          return status === 'pending' || status === 'open' || status === 'in_progress' || status === 'in progress';
+        });
         break;
       case 'overdue':
         filtered = tasks.filter(task => {
-          if (task.status === 'completed') return false;
+          const status = task.originalStatus?.toLowerCase();
+          if (status === 'completed') return false;
+          if (!task.due_date) return false;
           const dueDate = new Date(task.due_date);
           return dueDate < now;
         });
@@ -1902,6 +1914,8 @@ const formatDate = (date) => {
       default:
         filtered = [];
     }
+    
+    console.log('Filtered tasks:', filtered.map(t => ({ id: t.id, title: t.title, originalStatus: t.originalStatus })));
 
     // Enhance filtered tasks with overdue information and proper formatting
     const enhancedTasks = filtered.map(task => enhanceTaskWithOverdueInfo(task));

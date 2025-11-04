@@ -905,6 +905,14 @@ app.get('/houses/:houseId/statistics', (req, res) => {
       AND status != 'completed' 
       AND due_date < CURDATE()
     `,
+    // Debug queries to see actual data
+    allTasks: "SELECT id, title, status, due_date FROM tasks WHERE house_id = ?",
+    overdueTasks_debug: `
+      SELECT id, title, status, due_date FROM tasks 
+      WHERE house_id = ? 
+      AND status != 'completed' 
+      AND due_date < CURDATE()
+    `,
     // Bills statistics
     totalBills: "SELECT COUNT(*) as count FROM bills WHERE house_id = ?",
     unpaidBills: "SELECT COUNT(*) as count FROM bills WHERE house_id = ? AND status = 'unpaid'",
@@ -916,6 +924,7 @@ app.get('/houses/:houseId/statistics', (req, res) => {
   };
 
   const results = {};
+  const debugData = {};
   const promises = [];
 
   // Execute all queries
@@ -927,7 +936,12 @@ app.get('/houses/:houseId/statistics', (req, res) => {
             console.error(`Error in ${key} query:`, err);
             reject(err);
           } else {
-            results[key] = queryResults[0].count !== undefined ? queryResults[0].count : queryResults[0].total;
+            if (key.includes('_debug') || key === 'allTasks') {
+              // Store debug data for logging
+              debugData[key] = queryResults;
+            } else {
+              results[key] = queryResults[0].count !== undefined ? queryResults[0].count : queryResults[0].total;
+            }
             resolve();
           }
         });
@@ -937,6 +951,13 @@ app.get('/houses/:houseId/statistics', (req, res) => {
 
   Promise.all(promises)
     .then(() => {
+      // Log debug information
+      console.log('=== TASK DEBUG INFO ===');
+      console.log('All tasks:', debugData.allTasks);
+      console.log('Overdue tasks (debug):', debugData.overdueTasks_debug);
+      console.log('Statistics results:', results);
+      console.log('======================');
+      
       // Calculate additional metrics
       const completionRate = results.totalTasks > 0 ? 
         Math.round((results.completedTasks / results.totalTasks) * 100) : 0;
