@@ -2723,26 +2723,14 @@ const formatDate = (date) => {
                                 
                                 // Filter by user assignment (for dropdown)
                                 if (upcomingTasksView === 'own') {
-                                  // Show only tasks assigned to current user (by user.id or assigned_to_name)
-                                  filteredTasks = tasks.filter(task => {
-                                    // Match by user id
-                                    if (task.assigned_to === user.id || task.assigned_to_id === user.id) return true;
-                                    // Match by assigned_to_name (for legacy or string-based assignment)
-                                    const userFullName = `${user.name} ${user.surname || ''}`.trim();
-                                    if (task.assigned_to_name && task.assigned_to_name.trim().toLowerCase() === userFullName.toLowerCase()) return true;
-                                    return false;
-                                  });
+                                  // Show only tasks assigned to current user
+                                  filteredTasks = tasks.filter(task => task.assigned_to === user?.id);
                                 } else if (upcomingTasksView === 'everyone') {
                                   // Show all tasks (admin view)
                                   filteredTasks = tasks;
                                 } else {
                                   // Default fallback
-                                  filteredTasks = tasks.filter(task => {
-                                    if (task.assigned_to === user.id || task.assigned_to_id === user.id) return true;
-                                    const userFullName = `${user.name} ${user.surname || ''}`.trim();
-                                    if (task.assigned_to_name && task.assigned_to_name.trim().toLowerCase() === userFullName.toLowerCase()) return true;
-                                    return false;
-                                  });
+                                  filteredTasks = tasks.filter(task => task.assigned_to === user?.id);
                                 }
                                 
                                 // Filter by tab (today/overdue/all)
