@@ -463,13 +463,15 @@ export function SettingsContent({
                   {/* Avatar Section */}
                   <div className="flex flex-col items-center space-y-3">
                     <div className="relative">
-                      <OptimizedImage
-                        src={householdSettings.avatar ? `data:image/png;base64,${householdSettings.avatar}` : "/housemate-logo.png"}
-                        webpSrc={householdSettings.avatar ? null : "/housemate-logo.webp"}
-                        alt="House Avatar"
-                        className="w-20 h-20 rounded-full object-cover border-2 border-gray-200 flex-shrink-0"
-                        onError={e => { e.target.onerror = null; e.target.src = "/housemate-logo.png"; }}
-                      />
+                      <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border-2 border-gray-200">
+                        <OptimizedImage
+                          src={householdSettings.avatar ? `data:image/png;base64,${householdSettings.avatar}` : "/housemate-logo.png"}
+                          webpSrc={householdSettings.avatar ? null : "/housemate-logo.webp"}
+                          alt="House Avatar"
+                          className="w-12 h-12 object-cover rounded-full"
+                          onError={e => { e.target.onerror = null; e.target.src = "/housemate-logo.png"; }}
+                        />
+                      </div>
                     </div>
                     <div className="text-center">
                       <input
