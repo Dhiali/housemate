@@ -1928,8 +1928,8 @@ app.get('/schedule', authenticateToken, (req, res) => {
     }
   }
   
-  // Use actual database column names: event_date, event_time
-  query += " ORDER BY event_date ASC, event_time ASC";
+  // Use correct database column names: scheduled_date, scheduled_time
+  query += " ORDER BY scheduled_date ASC, scheduled_time ASC";
   
   console.log('🔍 Final query:', query);
   console.log('🔍 Query params:', params);
@@ -2133,15 +2133,14 @@ app.post('/schedule', authenticateToken, (req, res) => {
   
   console.log('✅ Validation passed, inserting into database...');
   
-  // Map frontend field names to actual database column names
+  // Map frontend field names to database column names
   // Frontend sends: scheduled_date, scheduled_time
-  // Database has: event_date, event_time (actual deployed schema)
-  // Now includes: type and attendees columns
+  // Database columns: scheduled_date, scheduled_time (as per CREATE TABLE)
   
   const attendeesStr = Array.isArray(attendees) ? attendees.join(',') : attendees || 'All';
   
   db.query(
-    "INSERT INTO schedule (house_id, title, description, event_date, event_time, type, attendees, recurrence, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", 
+    "INSERT INTO schedule (house_id, title, description, scheduled_date, scheduled_time, type, attendees, recurrence, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", 
     [house_id, title, description || '', scheduled_date, scheduled_time || null, type || 'meeting', attendeesStr, recurrence || 'none', finalCreatedBy], 
     (err, results) => {
       if (err) {
