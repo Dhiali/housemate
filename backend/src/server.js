@@ -1572,9 +1572,21 @@ app.get('/schedule', authenticateToken, (req, res) => {
   // Use actual database column names: event_date, event_time
   query += " ORDER BY event_date ASC, event_time ASC";
   
+  console.log('🔍 Final query:', query);
+  console.log('🔍 Query params:', params);
+  
   db.query(query, params, (err, results) => {
     if (err) {
       console.error('❌ Error fetching schedule:', err);
+      console.error('❌ Error details:', {
+        code: err.code,
+        errno: err.errno,
+        sqlMessage: err.sqlMessage,
+        sqlState: err.sqlState,
+        sql: err.sql
+      });
+      console.error('❌ Query that failed:', query);
+      console.error('❌ Query params that failed:', params);
       return res.status(500).json({ error: err.message });
     }
     
