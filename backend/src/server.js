@@ -144,6 +144,20 @@ app.use(cors({
 // Log all incoming requests for debugging
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.path} - Origin: ${req.get('origin') || 'none'}`);
+  
+  // Set CORS headers for all requests to ensure they're always present
+  const origin = req.get('origin');
+  if (corsOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
+    res.header('Access-Control-Expose-Headers', 'X-Total-Count');
+  } else if (origin) {
+    console.log(`❌ CORS blocked for origin: ${origin}`);
+    console.log(`📝 Allowed origins:`, corsOrigins);
+  }
+  
   next();
 });
 
@@ -2023,7 +2037,7 @@ app.post('/tasks', authenticateToken, requireHouseAccess(), (req, res) => {
       VALUES (?, ?, ?, NULL, ?)
     `;
 
-    db.query(historyQuery, [results.insertId, created_by, 'task_created', 'open'], (histErr) => {
+    db.query(historyQuery, [results.insertId, req.user.id, 'task_created', 'open'], (histErr) => {
       if (histErr) {
         console.error('Error logging task history:', histErr);
       }
@@ -2034,15 +2048,15 @@ app.post('/tasks', authenticateToken, requireHouseAccess(), (req, res) => {
       id: results.insertId,
       task: {
         id: results.insertId,
-        house_id,
+        house_id: req.user.house_id,
         title,
         description,
         category,
         location,
         due_date,
         priority,
-        assigned_to,
-        created_by,
+        assigned_to: finalAssignedTo,
+        created_by: req.user.id,
         status: 'open'
       }
     });
@@ -2881,6 +2895,40 @@ app.delete('/users/:userId', authenticateToken, requireAdmin, (req, res) => {
       );
     }
   );
+});
+
+// Global error handler to ensure CORS headers are always present
+app.use((err, req, res, next) => {
+  console.error('Global error handler:', err.message);
+  console.error('Error stack:', err.stack);
+  
+  // Ensure CORS headers are always present in error responses
+  const origin = req.get('origin');
+  if (origin && corsOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
+  }
+  
+  // Handle specific error types
+  if (err.message === 'Not allowed by CORS') {
+    return res.status(403).json({ error: 'CORS policy violation' });
+  }
+  
+  if (err.name === 'ValidationError') {
+    return res.status(400).json({ error: 'Validation error', details: err.message });
+  }
+  
+  if (err.name === 'UnauthorizedError' || err.message.includes('token')) {
+    return res.status(401).json({ error: 'Authentication failed' });
+  }
+  
+  // Generic server error
+  res.status(500).json({ 
+    error: 'Internal server error',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+  });
 });
 
 const PORT = process.env.PORT || 8080;
