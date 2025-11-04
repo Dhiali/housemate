@@ -14,16 +14,6 @@ const LandingPage = () => {
     navigate('/auth/signin');
   };
 
-  const clearAuthAndStart = () => {
-    // Clear any existing authentication data
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('authUser');
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    console.log('🔓 Authentication data cleared');
-    navigate('/auth/signin');
-  };
-
   return (
     <div className="App">
       {/* Header */}
@@ -33,7 +23,6 @@ const LandingPage = () => {
           <nav className="nav">
             <button className="nav-button" onClick={handleSignIn}>Sign In</button>
             <button className="nav-button primary" onClick={handleGetStarted}>Get Started</button>
-            <button className="nav-button" onClick={clearAuthAndStart} style={{background: '#ff6b6b', color: 'white'}}>🔓 Clear & Sign In</button>
           </nav>
         </div>
       </header>
