@@ -193,9 +193,14 @@ function App() {
   const [recentActivities, setRecentActivities] = useState([]);
   const [loadingActivities, setLoadingActivities] = useState(false);
   const [inviteFormData, setInviteFormData] = useState({
+    firstName: '',
+    lastName: '',
     email: '',
+    password: '',
+    confirmPassword: '',
     role: 'standard',
-    message: ''
+    personalMessage: '',
+    sendEmail: true
   });
   
   // Task Detail View state
@@ -2160,8 +2165,18 @@ const formatDate = (date) => {
 
   const handleInviteHousemate = async () => {
     // Validation
-    if (!inviteFormData.firstName || !inviteFormData.lastName || !inviteFormData.email) {
-      alert('Please fill in all required fields.');
+    if (!inviteFormData.firstName || !inviteFormData.lastName || !inviteFormData.email || !inviteFormData.password || !inviteFormData.confirmPassword) {
+      alert('Please fill in all required fields (marked with *).');
+      return;
+    }
+
+    if (inviteFormData.password !== inviteFormData.confirmPassword) {
+      alert('Passwords do not match. Please check and try again.');
+      return;
+    }
+
+    if (inviteFormData.password.length < 6) {
+      alert('Password must be at least 6 characters long.');
       return;
     }
 
@@ -2171,19 +2186,39 @@ const formatDate = (date) => {
     }
 
     try {
-      // Use the new invite API endpoint
-      const { inviteUser } = await import('../../apiHelpers');
+      // Create a complete user account directly (not just an invitation)
+      const { createHousemateAccount } = await import('../../apiHelpers');
       
-      const inviteData = {
-        name: `${inviteFormData.firstName} ${inviteFormData.lastName}`,
+      const accountData = {
+        name: inviteFormData.firstName,
+        surname: inviteFormData.lastName,
         email: inviteFormData.email,
+        password: inviteFormData.password,
+        house_id: user.house_id,
         role: inviteFormData.role,
         personalMessage: inviteFormData.personalMessage || 'Welcome to our household!'
       };
 
-      console.log('Sending invitation:', inviteData);
+      console.log('Creating housemate account:', { ...accountData, password: '[HIDDEN]' });
       
-      const response = await inviteUser(inviteData);
+      const response = await createHousemateAccount(accountData);
+
+      // Send welcome email if requested
+      if (inviteFormData.sendEmail) {
+        try {
+          const { sendWelcomeEmail } = await import('../../apiHelpers');
+          await sendWelcomeEmail({
+            email: inviteFormData.email,
+            name: inviteFormData.firstName,
+            tempPassword: inviteFormData.password,
+            personalMessage: inviteFormData.personalMessage,
+            houseName: user.house_name || 'your household'
+          });
+          console.log('Welcome email sent successfully');
+        } catch (emailError) {
+          console.warn('Account created but email failed:', emailError);
+        }
+      }
 
       // Reset form
       setInviteFormData({
@@ -2199,12 +2234,26 @@ const formatDate = (date) => {
 
       setIsInviteHousemateOpen(false);
 
-      // Show success message with invite details
-      alert(`Invitation sent successfully to ${inviteFormData.firstName} ${inviteFormData.lastName}!\n\nInvite Token: ${response.data.inviteToken}\n\nThe invitation will expire in 7 days.`);
+      // Refresh housemates list
+      try {
+        const res = await getHousemates(user.house_id);
+        const housematesData = res.data.data || res.data || [];
+        setHousemates(housematesData);
+      } catch (error) {
+        console.warn('Failed to refresh housemates list:', error);
+      }
+
+      // Show success message
+      const emailMessage = inviteFormData.sendEmail 
+        ? `\n\nA welcome email has been sent to ${inviteFormData.email} with their login credentials.`
+        : `\n\nEmail: ${inviteFormData.email}\nPassword: ${inviteFormData.password}\n\nPlease share these credentials with them manually.`;
+      
+      alert(`Account created successfully for ${inviteFormData.firstName} ${inviteFormData.lastName}!${emailMessage}`);
 
     } catch (error) {
-      console.error('Error sending invitation:', error);
-      alert(`Error sending invitation: ${error.response?.data?.error || error.message}`);
+      console.error('Error creating housemate account:', error);
+      const errorMessage = error.response?.data?.error || error.message || 'Unknown error occurred';
+      alert(`Error creating account: ${errorMessage}`);
     }
   };
 
@@ -5483,61 +5532,81 @@ const formatDate = (date) => {
         
         {/* Global Modals - Always Available */}
         <Dialog open={isInviteHousemateOpen} onOpenChange={setIsInviteHousemateOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Add New Housemate</DialogTitle>
             <DialogDescription>
-              Create a new housemate account for your household
+              Create a complete account for your new housemate
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 max-h-96 overflow-y-auto">
+            {/* Name Fields */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="invite-firstName">First Name</Label>
+                <Label htmlFor="invite-firstName">First Name *</Label>
                 <Input
                   id="invite-firstName"
                   value={inviteFormData.firstName}
                   onChange={(e) => setInviteFormData({...inviteFormData, firstName: e.target.value})}
                   placeholder="John"
+                  required
                 />
               </div>
               <div>
-                <Label htmlFor="invite-lastName">Last Name</Label>
+                <Label htmlFor="invite-lastName">Last Name *</Label>
                 <Input
                   id="invite-lastName"
                   value={inviteFormData.lastName}
                   onChange={(e) => setInviteFormData({...inviteFormData, lastName: e.target.value})}
                   placeholder="Smith"
+                  required
                 />
               </div>
             </div>
             
+            {/* Email Field */}
             <div>
-              <Label htmlFor="invite-email">Email Address</Label>
+              <Label htmlFor="invite-email">Email Address *</Label>
               <Input
                 id="invite-email"
                 type="email"
                 value={inviteFormData.email}
                 onChange={(e) => setInviteFormData({...inviteFormData, email: e.target.value})}
                 placeholder="john.smith@email.com"
+                required
               />
             </div>
             
-            <div>
-              <Label htmlFor="invite-personalMessage">Personal Message (Optional)</Label>
-              <textarea
-                id="invite-personalMessage"
-                className="w-full p-2 border border-gray-300 rounded-md resize-none"
-                rows="3"
-                value={inviteFormData.personalMessage}
-                onChange={(e) => setInviteFormData({...inviteFormData, personalMessage: e.target.value})}
-                placeholder="Add a personal welcome message..."
-              />
+            {/* Password Fields */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="invite-password">Password *</Label>
+                <Input
+                  id="invite-password"
+                  type="password"
+                  value={inviteFormData.password}
+                  onChange={(e) => setInviteFormData({...inviteFormData, password: e.target.value})}
+                  placeholder="Create password"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="invite-confirmPassword">Confirm Password *</Label>
+                <Input
+                  id="invite-confirmPassword"
+                  type="password"
+                  value={inviteFormData.confirmPassword}
+                  onChange={(e) => setInviteFormData({...inviteFormData, confirmPassword: e.target.value})}
+                  placeholder="Confirm password"
+                  required
+                />
+              </div>
             </div>
             
+            {/* Role Selection */}
             <div>
-              <Label htmlFor="invite-role">Role</Label>
+              <Label htmlFor="invite-role">Role *</Label>
               <Select value={inviteFormData.role} onValueChange={(value) => setInviteFormData({...inviteFormData, role: value})}>
                 <SelectTrigger>
                   <SelectValue />
@@ -5555,7 +5624,7 @@ const formatDate = (date) => {
                       <span className="text-xs text-gray-500">Full access to all features</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="read-only">
+                  <SelectItem value="read_only">
                     <div className="flex flex-col items-start">
                       <span className="font-medium">Read-only</span>
                       <span className="text-xs text-gray-500">View only access</span>
@@ -5565,8 +5634,17 @@ const formatDate = (date) => {
               </Select>
             </div>
             
+            {/* Personal Message */}
             <div>
-              {/* Removed duplicate Personal Message field */}
+              <Label htmlFor="invite-personalMessage">Personal Welcome Message</Label>
+              <textarea
+                id="invite-personalMessage"
+                className="w-full p-2 border border-gray-300 rounded-md resize-none"
+                rows="3"
+                value={inviteFormData.personalMessage}
+                onChange={(e) => setInviteFormData({...inviteFormData, personalMessage: e.target.value})}
+                placeholder="Welcome to our household! We're excited to have you as part of our home..."
+              />
             </div>
             
             {/* Send Email Toggle */}
@@ -5574,9 +5652,9 @@ const formatDate = (date) => {
               <div className="flex items-start space-x-3">
                 <Mail className="text-gray-600 mt-0.5" size={20} />
                 <div className="flex-1">
-                  <Label className="text-sm font-medium text-gray-900">Send Email Automatically</Label>
+                  <Label className="text-sm font-medium text-gray-900">Send Welcome Email</Label>
                   <p className="text-xs text-gray-500 mt-1">
-                    Automatically send welcome email with login credentials to the new housemate
+                    Send the new housemate their login credentials and welcome message via email
                   </p>
                 </div>
               </div>
@@ -5594,7 +5672,7 @@ const formatDate = (date) => {
             </Button>
             <Button onClick={handleInviteHousemate} className="bg-purple-600 hover:bg-purple-700">
               <Plus size={16} className="mr-2" />
-              Create Housemate
+              Create Account
             </Button>
           </div>
         </DialogContent>

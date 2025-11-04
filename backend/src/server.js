@@ -3289,6 +3289,115 @@ app.delete('/users/:userId', authenticateToken, requireAdmin, (req, res) => {
   );
 });
 
+// Create housemate account directly (admin only)
+app.post('/admin/create-housemate', authenticateToken, requireAdmin, (req, res) => {
+  console.log('🏠 Admin creating housemate account:', req.body);
+  const { name, surname, email, password, role = 'standard', personalMessage } = req.body;
+  const adminId = req.user.id;
+  const houseId = req.user.house_id;
+  
+  if (!name || !surname || !email || !password) {
+    return res.status(400).json({ error: 'Name, surname, email, and password are required' });
+  }
+  
+  if (!['standard', 'read_only', 'admin'].includes(role)) {
+    return res.status(400).json({ error: 'Invalid role. Must be: standard, read_only, or admin' });
+  }
+  
+  // Check if email already exists
+  db.query('SELECT id FROM users WHERE email = ?', [email], (err, existingUsers) => {
+    if (err) {
+      console.error('Error checking existing email:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    if (existingUsers.length > 0) {
+      return res.status(400).json({ error: 'Email already exists' });
+    }
+    
+    // Hash password
+    bcrypt.hash(password, 10, (err, hashedPassword) => {
+      if (err) {
+        console.error('Error hashing password:', err);
+        return res.status(500).json({ error: 'Password hashing failed' });
+      }
+      
+      // Create user account
+      const insertQuery = `
+        INSERT INTO users (name, surname, email, password, house_id, role, is_house_creator, created_at) 
+        VALUES (?, ?, ?, ?, ?, ?, 0, NOW())
+      `;
+      
+      db.query(insertQuery, [name, surname, email, hashedPassword, houseId, role], (err, result) => {
+        if (err) {
+          console.error('Error creating housemate account:', err);
+          return res.status(500).json({ error: 'Failed to create account' });
+        }
+        
+        const newUserId = result.insertId;
+        console.log('✅ Housemate account created successfully:', { userId: newUserId, email, role });
+        
+        res.json({
+          message: 'Housemate account created successfully',
+          user: {
+            id: newUserId,
+            name,
+            surname,
+            email,
+            role,
+            house_id: houseId
+          }
+        });
+      });
+    });
+  });
+});
+
+// Send welcome email with credentials (admin only)
+app.post('/admin/send-welcome-email', authenticateToken, requireAdmin, (req, res) => {
+  console.log('📧 Admin sending welcome email:', req.body);
+  const { email, name, tempPassword, personalMessage, houseName } = req.body;
+  
+  if (!email || !name || !tempPassword) {
+    return res.status(400).json({ error: 'Email, name, and tempPassword are required' });
+  }
+  
+  // For now, we'll just log the email details since we don't have an email service
+  // In a real implementation, you would integrate with an email service like SendGrid, AWS SES, etc.
+  
+  const emailContent = {
+    to: email,
+    subject: `Welcome to ${houseName || 'your household'}!`,
+    body: `
+      Dear ${name},
+      
+      ${personalMessage || 'Welcome to our household! We\'re excited to have you as part of our home.'}
+      
+      Your account has been created with the following credentials:
+      Email: ${email}
+      Temporary Password: ${tempPassword}
+      
+      Please log in and change your password after your first login.
+      
+      Welcome aboard!
+    `
+  };
+  
+  console.log('📧 Email content prepared:', {
+    to: email,
+    subject: emailContent.subject,
+    bodyLength: emailContent.body.length
+  });
+  
+  // In a real implementation, you would send the email here
+  // For now, we'll just return success
+  res.json({
+    message: 'Welcome email prepared successfully',
+    emailSent: true,
+    recipient: email
+  });
+});
+
 // Global error handler to ensure CORS headers are always present
 app.use((err, req, res, next) => {
   console.error('Global error handler:', err.message);

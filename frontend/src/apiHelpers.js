@@ -138,3 +138,14 @@ export const debugCreateEvent = async (eventData) => {
   const response = await API.post('/debug/create-event', eventData);
   return response;
 };
+
+// Housemate management
+export const createHousemateAccount = async (accountData) => {
+  const response = await API.post('/admin/create-housemate', accountData);
+  return response.data;
+};
+
+export const sendWelcomeEmail = async (emailData) => {
+  const response = await API.post('/admin/send-welcome-email', emailData);
+  return response.data;
+};
