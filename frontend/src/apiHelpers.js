@@ -64,3 +64,6 @@ export const addSchedule = (item) => API.post("/schedule", item);
 export const addEvent = (eventData) => API.post("/schedule", eventData);
 export const updateSchedule = (id, data) => API.put(`/schedule/${id}`, data);
 export const deleteSchedule = (id) => API.delete(`/schedule/${id}`);
+
+// Debug endpoint to check schedule table
+export const checkScheduleTable = () => API.get("/debug/schedule-table");

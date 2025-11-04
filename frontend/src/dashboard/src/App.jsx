@@ -46,7 +46,7 @@ import {
 } from 'lucide-react';
 import './index.css';
 import { useState, useEffect } from 'react';
-import { getTasks, addTask, updateTask, getHouse, getHouseStatistics, getHousemates, getUserStatistics, getUserCompletedTasks, getUserPendingTasks, getUserContributedBills, getBills, addBill, updateBill, deleteBill, payBill, addEvent, getSchedule } from '../../apiHelpers';
+import { getTasks, addTask, updateTask, getHouse, getHouseStatistics, getHousemates, getUserStatistics, getUserCompletedTasks, getUserPendingTasks, getUserContributedBills, getBills, addBill, updateBill, deleteBill, payBill, addEvent, getSchedule, checkScheduleTable } from '../../apiHelpers';
 import { updateUserBio, updateUserPhone } from '../../apiHelpers';
 import { Button } from './components/ui/button';
 import { useSEO, SEO_CONFIG } from '../../hooks/useSEO.js';
@@ -192,6 +192,21 @@ export default function App({ user }) {
     
     try {
       console.log('Fetching events for house_id:', user.house_id);
+      
+      // First check if schedule table exists
+      try {
+        const tableCheck = await checkScheduleTable();
+        console.log('Schedule table check:', tableCheck.data);
+        
+        if (!tableCheck.data.exists) {
+          console.warn('⚠️ Schedule table does not exist yet. Table creation may be in progress.');
+          setHouseEvents([]);
+          return;
+        }
+      } catch (tableCheckError) {
+        console.error('Error checking schedule table:', tableCheckError);
+      }
+      
       const res = await getSchedule(user.house_id);
       console.log('Events API response:', res.data);
       
