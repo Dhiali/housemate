@@ -366,9 +366,8 @@ function App() {
       });
       setTasks(mapped);
       
-      // Calculate and update dashboard statistics
-      const stats = calculateDashboardStats(mapped);
-      setDashboardStats(stats);
+      // Fetch real house statistics from backend instead of calculating from filtered task data
+      await fetchHouseStatistics();
     } catch (error) {
       console.error('Error fetching tasks:', error);
       setTasks([]);
@@ -670,18 +669,33 @@ function App() {
     if (!user?.house_id) return;
     
     try {
+      console.log('Fetching house statistics for house_id:', user.house_id);
       const response = await getHouseStatistics(user.house_id);
-      const stats = response.data.tasks;
+      console.log('House statistics API response:', response);
       
-      setDashboardStats({
-        totalTasks: stats.total,
-        completedTasks: stats.completed,
-        pendingTasks: stats.pending,
-        overdueTasks: stats.overdue,
-        completionRate: stats.completionRate
-      });
+      // The response structure is { data: { data: { tasks: {...}, bills: {...}, housemates: {...} } } }
+      const statisticsData = response.data.data || response.data;
+      const stats = statisticsData.tasks;
       
-      console.log('House statistics from backend:', response.data);
+      if (stats) {
+        setDashboardStats({
+          totalTasks: stats.total || 0,
+          completedTasks: stats.completed || 0,
+          pendingTasks: stats.pending || 0,
+          overdueTasks: stats.overdue || 0,
+          completionRate: stats.completionRate || 0
+        });
+        
+        console.log('Updated dashboard stats:', {
+          totalTasks: stats.total || 0,
+          completedTasks: stats.completed || 0,
+          pendingTasks: stats.pending || 0,
+          overdueTasks: stats.overdue || 0,
+          completionRate: stats.completionRate || 0
+        });
+      } else {
+        console.error('No task statistics found in response:', statisticsData);
+      }
     } catch (error) {
       console.error('Error fetching house statistics:', error);
       // Fall back to frontend calculation if backend fails
@@ -692,7 +706,7 @@ function App() {
 
   // Fetch tasks, bills, and events when user has house_id
   useEffect(() => {
-    fetchTasks();
+    fetchTasks(); // This will also fetch house statistics
     fetchBills();
     fetchEvents();
   }, [user?.house_id]);
