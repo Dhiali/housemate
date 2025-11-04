@@ -3380,16 +3380,16 @@ const formatDate = (date) => {
                   
                   {/* Admin View Toggle */}
                   {isAdmin && (
-                    <div className="flex items-center space-x-2 bg-gray-50 rounded-lg p-2">
+                    <div className="flex items-center space-x-3 bg-white rounded-lg p-3 border-2 border-purple-200 shadow-sm">
                       <Switch
                         id="bills-view-toggle"
                         checked={billsPageView === 'everyone'}
                         onCheckedChange={(checked) => {
                           setBillsPageView(checked ? 'everyone' : 'own');
                         }}
-                        className="data-[state=checked]:bg-purple-600"
+                        className="data-[state=checked]:bg-purple-600 data-[state=unchecked]:bg-blue-400 border-2 border-purple-300 data-[state=checked]:border-purple-500 data-[state=unchecked]:border-blue-500 h-6 w-12 shadow-md"
                       />
-                      <Label htmlFor="bills-view-toggle" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="bills-view-toggle" className="text-sm font-semibold text-gray-800">
                         {billsPageView === 'everyone' ? "Everyone's Bills" : 'My Bills Only'}
                       </Label>
                     </div>
