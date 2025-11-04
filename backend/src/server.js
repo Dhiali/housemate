@@ -974,7 +974,7 @@ app.delete('/houses/:id', (req, res) => {
 });
 
 // House statistics endpoint
-app.get('/houses/:houseId/statistics', async (req, res) => {
+app.get('/houses/:houseId/statistics', authenticateToken, requireHouseAccess(), async (req, res) => {
   const { houseId } = req.params;
   console.log('Fetching statistics for house_id:', houseId);
   
@@ -1069,7 +1069,7 @@ app.get('/houses/:houseId/statistics', async (req, res) => {
     })
     .catch(error => {
       console.error('Error fetching house statistics:', error);
-      res.status(500).json({ error: 'Failed to fetch house statistics' });
+      return handleDatabaseError(res, error, 'Failed to fetch house statistics');
     });
 });
 
