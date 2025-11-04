@@ -1406,9 +1406,50 @@ app.get('/schedule', (req, res) => {
   
   query += " ORDER BY scheduled_date ASC, scheduled_time ASC";
   
+  console.log('📅 Fetching schedule for house_id:', houseId);
+  
   db.query(query, params, (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) {
+      console.error('❌ Error fetching schedule:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    console.log('✅ Schedule fetched successfully, count:', results.length);
     res.json(results);
+  });
+});
+
+// Debug endpoint to check if schedule table exists
+app.get('/debug/schedule-table', (req, res) => {
+  console.log('🔍 Checking if schedule table exists...');
+  db.query("SHOW TABLES LIKE 'schedule'", (err, results) => {
+    if (err) {
+      console.error('❌ Error checking schedule table:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    
+    if (results.length === 0) {
+      console.log('❌ Schedule table does not exist');
+      return res.json({ 
+        exists: false, 
+        message: "Schedule table does not exist",
+        suggestion: "Table creation might be in progress or failed"
+      });
+    }
+    
+    // If table exists, get its structure
+    db.query("DESCRIBE schedule", (err, structure) => {
+      if (err) {
+        console.error('❌ Error describing schedule table:', err);
+        return res.status(500).json({ error: err.message });
+      }
+      
+      console.log('✅ Schedule table exists with structure:', structure);
+      res.json({ 
+        exists: true, 
+        message: "Schedule table exists",
+        structure: structure
+      });
+    });
   });
 });
 app.get('/schedule/:id', (req, res) => {
@@ -1418,6 +1459,8 @@ app.get('/schedule/:id', (req, res) => {
   });
 });
 app.post('/schedule', (req, res) => {
+  console.log('📅 Creating new schedule event:', req.body);
+  
   const { 
     house_id, 
     title, 
@@ -1432,18 +1475,31 @@ app.post('/schedule', (req, res) => {
   
   // Validate required fields
   if (!house_id || !title || !scheduled_date) {
+    console.log('❌ Validation failed - missing required fields');
     return res.status(400).json({ 
       error: "Missing required fields: house_id, title, and scheduled_date are required" 
     });
   }
   
   const attendeesStr = Array.isArray(attendees) ? attendees.join(',') : attendees || 'All';
+  console.log('✅ Validation passed, inserting into database...');
   
   db.query(
     "INSERT INTO schedule (house_id, title, description, scheduled_date, scheduled_time, type, attendees, recurrence, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())", 
     [house_id, title, description || '', scheduled_date, scheduled_time || null, type || 'meeting', attendeesStr, recurrence || 'none', created_by || null], 
     (err, results) => {
-      if (err) return res.status(500).json({ error: err.message });
+      if (err) {
+        console.error('❌ Database error when creating schedule:', err);
+        console.error('Error details:', {
+          code: err.code,
+          errno: err.errno,
+          sqlMessage: err.sqlMessage,
+          sqlState: err.sqlState
+        });
+        return res.status(500).json({ error: err.message });
+      }
+      
+      console.log('✅ Schedule event created successfully with ID:', results.insertId);
       res.json({ 
         message: "Event created successfully!", 
         id: results.insertId,
