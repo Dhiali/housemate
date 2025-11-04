@@ -5466,10 +5466,42 @@ const formatDate = (date) => {
             householdSettings={householdSettings}
             setHouseholdSettings={setHouseholdSettings}
             onSaveHouseholdSettings={async (newHouseholdSettings) => {
-              // In a real app, this would update the backend
-              console.log('Saving household settings:', newHouseholdSettings);
-              // For now, just update local state
-              setHouseholdSettings(newHouseholdSettings);
+              // Save household settings to backend
+              try {
+                console.log('Saving household settings:', newHouseholdSettings);
+                
+                const { updateHouseInformation } = await import('../../apiHelpers');
+                
+                const houseData = {
+                  name: newHouseholdSettings.houseName,
+                  address: newHouseholdSettings.address,
+                  house_rules: newHouseholdSettings.houseRules,
+                  avatar: newHouseholdSettings.avatar
+                };
+                
+                const response = await updateHouseInformation(houseData);
+                console.log('House information updated successfully:', response);
+                
+                // Update local state with the response data
+                setHouseholdSettings(prev => ({
+                  ...prev,
+                  houseName: response.house.name,
+                  address: response.house.address,
+                  houseRules: response.house.house_rules,
+                  avatar: response.house.avatar
+                }));
+                
+                // Show success message
+                alert('House information saved successfully!');
+                
+              } catch (error) {
+                console.error('Error saving household settings:', error);
+                const errorMessage = error.response?.data?.error || error.message || 'Failed to save house information';
+                alert(`Error saving house information: ${errorMessage}`);
+                
+                // Revert to previous state on error
+                // The form will handle this automatically since we don't update state on error
+              }
             }}
             onSaveProfile={async (newSettings) => {
               // Only update DB on Save

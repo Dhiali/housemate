@@ -149,3 +149,9 @@ export const sendWelcomeEmail = async (emailData) => {
   const response = await API.post('/admin/send-welcome-email', emailData);
   return response.data;
 };
+
+// House management
+export const updateHouseInformation = async (houseData) => {
+  const response = await API.put('/admin/house', houseData);
+  return response.data;
+};

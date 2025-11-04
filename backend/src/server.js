@@ -3398,6 +3398,93 @@ app.post('/admin/send-welcome-email', authenticateToken, requireAdmin, (req, res
   });
 });
 
+// Update house information (admin only)
+app.put('/admin/house', authenticateToken, requireAdmin, (req, res) => {
+  console.log('🏠 Admin updating house information:', req.body);
+  const { name, address, house_rules, avatar } = req.body;
+  const houseId = req.user.house_id;
+  const adminId = req.user.id;
+  
+  if (!houseId) {
+    return res.status(400).json({ error: 'House ID not found' });
+  }
+  
+  // Validate that at least one field is being updated
+  if (!name && !address && !house_rules && !avatar) {
+    return res.status(400).json({ error: 'At least one field must be provided for update' });
+  }
+  
+  // Build dynamic update query
+  const updateFields = [];
+  const values = [];
+  
+  if (name !== undefined) {
+    updateFields.push('name = ?');
+    values.push(name);
+  }
+  
+  if (address !== undefined) {
+    updateFields.push('address = ?');
+    values.push(address);
+  }
+  
+  if (house_rules !== undefined) {
+    updateFields.push('house_rules = ?');
+    values.push(house_rules);
+  }
+  
+  if (avatar !== undefined) {
+    updateFields.push('avatar = ?');
+    values.push(avatar);
+  }
+  
+  // Add house_id to values for WHERE clause
+  values.push(houseId);
+  
+  const updateQuery = `
+    UPDATE houses 
+    SET ${updateFields.join(', ')}, updated_at = NOW()
+    WHERE id = ?
+  `;
+  
+  console.log('🔍 Update query:', updateQuery);
+  console.log('🔍 Values:', values.map((v, i) => i === values.length - 1 ? v : (typeof v === 'string' && v.length > 50 ? `${v.substring(0, 50)}...` : v)));
+  
+  db.query(updateQuery, values, (err, result) => {
+    if (err) {
+      console.error('❌ Error updating house:', err);
+      return res.status(500).json({ error: 'Failed to update house information' });
+    }
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'House not found or no changes made' });
+    }
+    
+    console.log('✅ House information updated successfully');
+    
+    // Return the updated house information
+    db.query('SELECT id, name, address, house_rules, avatar FROM houses WHERE id = ?', [houseId], (err, houseResult) => {
+      if (err) {
+        console.error('❌ Error fetching updated house:', err);
+        return res.status(500).json({ error: 'House updated but failed to fetch updated data' });
+      }
+      
+      const updatedHouse = houseResult[0];
+      
+      res.json({
+        message: 'House information updated successfully',
+        house: {
+          id: updatedHouse.id,
+          name: updatedHouse.name,
+          address: updatedHouse.address,
+          house_rules: updatedHouse.house_rules,
+          avatar: updatedHouse.avatar
+        }
+      });
+    });
+  });
+});
+
 // Global error handler to ensure CORS headers are always present
 app.use((err, req, res, next) => {
   console.error('Global error handler:', err.message);
