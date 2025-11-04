@@ -638,21 +638,25 @@ function App() {
     const now = new Date();
     const totalTasks = tasksData.length;
     const completedTasks = tasksData.filter(task => 
-      task.status?.toLowerCase() === 'completed'
+      (task.originalStatus?.toLowerCase() || task.status?.toLowerCase()) === 'completed'
     ).length;
     
-    const pendingTasks = tasksData.filter(task => 
-      task.status?.toLowerCase() === 'open' || 
-      task.status?.toLowerCase() === 'pending' ||
-      task.status?.toLowerCase() === 'in_progress'
-    ).length;
+    const pendingTasks = tasksData.filter(task => {
+      const status = (task.originalStatus?.toLowerCase() || task.status?.toLowerCase());
+      return status === 'pending' || status === 'open' || status === 'in_progress' || status === 'in progress';
+    }).length;
     
     const overdueTasks = tasksData.filter(task => {
-      if (!task.due_date || task.status?.toLowerCase() === 'completed') {
-        return false;
+      const dbStatus = task.originalStatus?.toLowerCase() || task.status?.toLowerCase();
+      // If already marked as overdue in DB, include it
+      if (dbStatus === 'overdue') {
+        return true;
       }
-      const dueDate = new Date(task.due_date);
-      return dueDate < now;
+      // If not completed and past due date, it's overdue regardless of DB status
+      if (dbStatus !== 'completed' && isOverdue(task.due_date, task.originalStatus || task.status)) {
+        return true;
+      }
+      return false;
     }).length;
     
     const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
