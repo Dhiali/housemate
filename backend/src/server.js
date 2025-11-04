@@ -354,6 +354,52 @@ async function createDatabaseTables() {
                     reject(err);
                   } else {
                     console.log('✅ Bill share table ready');
+                    
+                    // Ensure bill_share table has all required columns (migration)
+                    const checkAndAddColumn = (columnName, columnDef, callback) => {
+                      db.query(`SHOW COLUMNS FROM bill_share LIKE '${columnName}'`, (err, results) => {
+                        if (err) {
+                          console.error(`Error checking column ${columnName}:`, err);
+                          callback();
+                          return;
+                        }
+                        
+                        if (results.length === 0) {
+                          // Column doesn't exist, add it
+                          db.query(`ALTER TABLE bill_share ADD COLUMN ${columnName} ${columnDef}`, (addErr) => {
+                            if (addErr) {
+                              console.error(`Error adding column ${columnName}:`, addErr);
+                            } else {
+                              console.log(`✅ Added column ${columnName} to bill_share`);
+                            }
+                            callback();
+                          });
+                        } else {
+                          console.log(`✅ Column ${columnName} already exists in bill_share`);
+                          callback();
+                        }
+                      });
+                    };
+                    
+                    // Check and add required columns
+                    const migrations = [
+                      { name: 'status', def: `ENUM('pending', 'paid') DEFAULT 'pending'` },
+                      { name: 'amount_paid', def: `DECIMAL(10,2) DEFAULT 0.00` },
+                      { name: 'paid_by_user_id', def: `INT NULL` },
+                      { name: 'paid_at', def: `TIMESTAMP NULL` },
+                      { name: 'payment_method', def: `VARCHAR(50) NULL` },
+                      { name: 'payment_notes', def: `TEXT NULL` }
+                    ];
+                    
+                    let completedMigrations = 0;
+                    migrations.forEach((migration) => {
+                      checkAndAddColumn(migration.name, migration.def, () => {
+                        completedMigrations++;
+                        if (completedMigrations === migrations.length) {
+                          console.log('🔄 Bill share table migrations completed');
+                        }
+                      });
+                    });
                   }
                 });
 
