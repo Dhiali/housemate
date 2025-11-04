@@ -2185,7 +2185,7 @@ const formatDate = (date) => {
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col h-full min-h-0 overflow-y-auto" role="main" aria-label="Main content area">
         {/* Page Header */}
-        <header className="bg-white border-b border-gray-200 px-8 py-6 flex items-center justify-between" role="banner">
+        <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-8 py-6 flex items-center justify-between shadow-sm" role="banner">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">{currentPage}</h1>
             <p className="text-gray-500 mt-1">
@@ -2812,7 +2812,7 @@ const formatDate = (date) => {
         {currentPage === 'Tasks' && (
           <section className="flex-1 p-8" role="region" aria-labelledby="tasks-page">
             <article className="bg-white rounded-lg border border-gray-200">
-              <header className="p-6">
+              <header className="sticky top-0 z-20 bg-white p-6 border-b border-gray-100 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
                   <div className="flex items-center space-x-4">
                     <h2 id="tasks-page" className="text-xl font-semibold text-gray-900">
@@ -3104,7 +3104,7 @@ const formatDate = (date) => {
           <section className="flex-1 p-8" role="region" aria-labelledby="bills-page">
             <div className="space-y-6">
               {/* Bills Page Header */}
-              <header className="flex justify-between items-center">
+              <header className="sticky top-0 z-20 bg-white flex justify-between items-center border-b border-gray-100 pb-4 shadow-sm">
                 <div className="flex items-center space-x-4">
                   <div>
                     <h1 id="bills-page" className="text-2xl font-bold text-gray-900">
@@ -3764,7 +3764,7 @@ const formatDate = (date) => {
             <section className="flex-1 p-8" role="region" aria-labelledby="schedule-main">
               <div className="space-y-6">
                 {/* Schedule Header with View Toggle */}
-                <header className="flex justify-between items-start">
+                <header className="sticky top-0 z-20 bg-white flex justify-between items-start border-b border-gray-100 pb-4 shadow-sm">
                   <div>
                     <h2 id="schedule-main" className="text-xl font-semibold text-gray-900">
                       {scheduleView === 'month' && selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
@@ -4361,7 +4361,7 @@ const formatDate = (date) => {
           <section className="flex-1 p-8" role="region" aria-labelledby="housemates-page">
             <div className="space-y-6">
               {/* Housemates Page Header */}
-              <header className="flex justify-between items-start">
+              <header className="sticky top-0 z-20 bg-white flex justify-between items-start border-b border-gray-100 pb-4 shadow-sm">
                 <div>
                   <h2 id="housemates-page" className="text-xl font-semibold text-gray-900">Housemates</h2>
                   <p className="text-gray-500 mt-1">
