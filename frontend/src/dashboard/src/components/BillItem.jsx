@@ -162,21 +162,34 @@ export function BillItem({
                     <h5 className="text-xs font-medium text-gray-700 mb-2">Recent Payments:</h5>
                     <div className="space-y-2">
                       {recentPayments.map((payment, index) => (
-                        <div key={index} className="flex items-center justify-between text-xs bg-green-50 p-2 rounded">
-                          <div className="flex items-center space-x-2">
-                            <CreditCard className="w-3 h-3 text-green-500" />
-                            <span className="text-gray-600">
-                              {payment.paid_by_name} paid for {payment.user_name}
-                            </span>
+                        <div key={index} className="bg-green-50 p-3 rounded-lg border border-green-100">
+                          <div className="flex items-center justify-between text-xs mb-2">
+                            <div className="flex items-center space-x-2">
+                              <CreditCard className="w-3 h-3 text-green-500" />
+                              <span className="text-gray-600">
+                                {payment.paid_by_name} paid for {payment.user_name}
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <span className="text-green-600 font-medium">
+                                R{Number(payment.amount_paid || 0).toFixed(2)}
+                              </span>
+                              {payment.payment_method && (
+                                <span className="text-gray-500">({payment.payment_method})</span>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center space-x-1">
-                            <span className="text-green-600 font-medium">
-                              R{Number(payment.amount_paid || 0).toFixed(2)}
-                            </span>
-                            {payment.payment_method && (
-                              <span className="text-gray-500">({payment.payment_method})</span>
-                            )}
-                          </div>
+                          {payment.payment_notes && (
+                            <div className="mt-2 p-2 bg-white rounded border-l-4 border-blue-300">
+                              <div className="flex items-start space-x-2">
+                                <FileText className="w-3 h-3 text-blue-500 mt-0.5" />
+                                <div>
+                                  <p className="text-xs text-gray-700 italic">"{payment.payment_notes}"</p>
+                                  <p className="text-xs text-gray-500 mt-1">— {payment.paid_by_name}</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

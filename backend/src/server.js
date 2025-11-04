@@ -1105,7 +1105,7 @@ app.get('/bills', authenticateToken, requireHouseAccess(), (req, res) => {
                       u.surname as created_by_surname
                FROM bills b
                LEFT JOIN users u ON b.created_by = u.id
-               LEFT JOIN bill_shares bs ON b.id = bs.bill_id
+               LEFT JOIN bill_share bs ON b.id = bs.bill_id
                WHERE b.house_id = ? 
                AND (b.created_by = ? OR bs.user_id = ?)`;
       values = [house_id, userId, userId];
@@ -1113,7 +1113,7 @@ app.get('/bills', authenticateToken, requireHouseAccess(), (req, res) => {
     
     console.log('Executing query:', query, 'with values:', values);
     
-    db.query(query, values, (err, results) => {
+    db.query(query, values, async (err, results) => {
       if (err) {
         console.error('Database error in bills endpoint:', err);
         console.error('Error code:', err.code);
@@ -1123,9 +1123,114 @@ app.get('/bills', authenticateToken, requireHouseAccess(), (req, res) => {
         console.log('Returning empty bills array due to database error');
         return res.json({ data: [] });
       }
+      
       console.log('Bills query successful, found', results.length, 'bills for role:', userRole, 'view:', view);
-      console.log('Bills data:', results);
-      res.json({ data: results });
+      
+      // If no bills found, return empty array
+      if (results.length === 0) {
+        return res.json({ data: [] });
+      }
+
+      // Fetch payment information for each bill
+      try {
+        const billsWithPayments = await Promise.all(results.map(async (bill) => {
+          return new Promise((resolve) => {
+            // Get payments data
+            const paymentsQuery = `
+              SELECT 
+                bs.*,
+                u.name as user_name,
+                u.surname as user_surname,
+                u.email as user_email,
+                paid_by.name as paid_by_name,
+                paid_by.surname as paid_by_surname,
+                paid_by.email as paid_by_email
+              FROM bill_share bs
+              LEFT JOIN users u ON bs.user_id = u.id
+              LEFT JOIN users paid_by ON bs.paid_by_user_id = paid_by.id
+              WHERE bs.bill_id = ? AND bs.status = 'paid'
+              ORDER BY bs.paid_at DESC
+              LIMIT 10
+            `;
+
+            // Get shares data
+            const sharesQuery = `
+              SELECT 
+                bs.*,
+                u.name as user_name,
+                u.surname as user_surname,
+                u.email as user_email,
+                paid_by.name as paid_by_name,
+                paid_by.surname as paid_by_surname,
+                paid_by.email as paid_by_email
+              FROM bill_share bs
+              LEFT JOIN users u ON bs.user_id = u.id
+              LEFT JOIN users paid_by ON bs.paid_by_user_id = paid_by.id
+              WHERE bs.bill_id = ?
+              ORDER BY u.name
+            `;
+
+            // Fetch both payments and shares
+            db.query(paymentsQuery, [bill.id], (paymentErr, paymentResults) => {
+              if (paymentErr) {
+                console.error('Error fetching payments for bill', bill.id, ':', paymentErr);
+                resolve({ ...bill, payments: [], shares: [] });
+                return;
+              }
+
+              db.query(sharesQuery, [bill.id], (sharesErr, sharesResults) => {
+                if (sharesErr) {
+                  console.error('Error fetching shares for bill', bill.id, ':', sharesErr);
+                  resolve({ ...bill, payments: [], shares: [] });
+                  return;
+                }
+
+                const payments = paymentResults.map(payment => ({
+                  id: payment.id,
+                  bill_id: payment.bill_id,
+                  user_id: payment.user_id,
+                  user_name: `${payment.user_name} ${payment.user_surname}`,
+                  user_email: payment.user_email,
+                  amount: payment.amount,
+                  amount_paid: payment.amount_paid,
+                  paid_by_user_id: payment.paid_by_user_id,
+                  paid_by_name: payment.paid_by_name ? `${payment.paid_by_name} ${payment.paid_by_surname}` : null,
+                  paid_by_email: payment.paid_by_email,
+                  paid_at: payment.paid_at,
+                  payment_method: payment.payment_method,
+                  payment_notes: payment.payment_notes,
+                  status: payment.status
+                }));
+
+                const shares = sharesResults.map(share => ({
+                  id: share.id,
+                  bill_id: share.bill_id,
+                  user_id: share.user_id,
+                  user_name: share.user_name,
+                  user_surname: share.user_surname,
+                  user_email: share.user_email,
+                  amount: share.amount,
+                  status: share.status,
+                  paid_by_user_id: share.paid_by_user_id,
+                  paid_by_name: share.paid_by_name ? `${share.paid_by_name} ${share.paid_by_surname}` : null,
+                  payment_method: share.payment_method,
+                  payment_notes: share.payment_notes,
+                  paid_at: share.paid_at
+                }));
+
+                resolve({ ...bill, payments, shares });
+              });
+            });
+          });
+        }));
+
+        console.log('Bills with payments loaded successfully');
+        res.json({ data: billsWithPayments });
+      } catch (paymentError) {
+        console.error('Error fetching payment data:', paymentError);
+        // Return bills without payment data if there's an error
+        res.json({ data: results });
+      }
     });
   } catch (error) {
     console.error('Unexpected error in bills endpoint:', error);
