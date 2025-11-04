@@ -5549,14 +5549,7 @@ const formatDate = (date) => {
             </div>
             
             <div>
-              <Label htmlFor="invite-message">Personal Message (Optional)</Label>
-              <Textarea
-                id="invite-message"
-                value={inviteFormData.personalMessage}
-                onChange={(e) => setInviteFormData({...inviteFormData, personalMessage: e.target.value})}
-                placeholder="Add a personal welcome message..."
-                rows={3}
-              />
+              {/* Removed duplicate Personal Message field */}
             </div>
             
             {/* Send Email Toggle */}
