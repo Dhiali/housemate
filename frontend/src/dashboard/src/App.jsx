@@ -806,28 +806,6 @@ export default function App({ user }) {
     }
   };
   
-  const houseEvents = [
-    {
-      id: 1,
-      title: 'House Meeting',
-      description: 'Monthly house meeting to discuss bills and responsibilities',
-      date: '2024-12-20',
-      time: '19:00',
-      type: 'meeting',
-      attendees: ['Sarah M.', 'Mike R.', 'Alex K.', 'You'],
-      color: 'purple'
-    },
-    {
-      id: 2,
-      title: 'Cleaning Schedule Rotation',
-      description: 'Weekly deep cleaning rotation - Kitchen focus',
-      date: '2024-12-22',
-      time: '10:00',
-      type: 'recurring',
-      attendees: ['All'],
-      color: 'purple'
-    }
-  ];
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [taskFormData, setTaskFormData] = useState({
     category: '',
@@ -879,6 +857,28 @@ export default function App({ user }) {
   const [isEventDetailOpen, setIsEventDetailOpen] = useState(false);
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
   const [hoveredItem, setHoveredItem] = useState(null);
+  const [houseEvents, setHouseEvents] = useState([
+    {
+      id: 1,
+      title: 'House Meeting',
+      description: 'Monthly house meeting to discuss bills and responsibilities',
+      date: '2024-12-20',
+      time: '19:00',
+      type: 'meeting',
+      attendees: ['Sarah M.', 'Mike R.', 'Alex K.', 'You'],
+      color: 'purple'
+    },
+    {
+      id: 2,
+      title: 'Cleaning Schedule Rotation',
+      description: 'Weekly deep cleaning rotation - Kitchen focus',
+      date: '2024-12-22',
+      time: '10:00',
+      type: 'recurring',
+      attendees: ['All'],
+      color: 'purple'
+    }
+  ]);
   const [eventFormData, setEventFormData] = useState({
     title: '',
     description: '',
