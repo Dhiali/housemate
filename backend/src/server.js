@@ -40,8 +40,25 @@ function isDatabaseAvailable() {
 }
 
 // Helper function to handle database errors gracefully
-function handleDatabaseError(res, error, message = 'Database connection failed') {
+function handleDatabaseError(res, error, message = 'Database connection failed', req = null) {
   console.error(`❌ ${message}:`, error);
+  
+  // Set CORS headers if request object is available
+  if (req) {
+    const origin = req.get('origin');
+    if (origin && corsOrigins.includes(origin)) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
+      res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
+      res.header('Access-Control-Allow-Credentials', 'false');
+    } else if (origin) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
+      res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
+      res.header('Access-Control-Allow-Credentials', 'false');
+    }
+  }
+  
   res.status(503).json({ 
     error: 'Service temporarily unavailable', 
     message: 'Database connection issues. Please try again later.',
@@ -177,6 +194,20 @@ const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
+  // Set CORS headers for all authentication responses
+  const origin = req.get('origin');
+  if (origin && corsOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
+    res.header('Access-Control-Allow-Credentials', 'false');
+  } else if (origin) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
+    res.header('Access-Control-Allow-Credentials', 'false');
+  }
+
   if (!token) {
     return res.status(401).json({ error: 'Access token required' });
   }
@@ -227,6 +258,20 @@ const requireRole = (allowedRoles) => {
 // Check if user belongs to a house and optionally if they can access specific house data
 const requireHouseAccess = (allowOwnHouseOnly = true) => {
   return (req, res, next) => {
+    // Set CORS headers for all house access responses
+    const origin = req.get('origin');
+    if (origin && corsOrigins.includes(origin)) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
+      res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
+      res.header('Access-Control-Allow-Credentials', 'false');
+    } else if (origin) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
+      res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
+      res.header('Access-Control-Allow-Credentials', 'false');
+    }
+
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
     }
@@ -1700,6 +1745,21 @@ app.get('/schedule', authenticateToken, (req, res) => {
 // Debug endpoint to check if schedule table exists
 app.get('/debug/schedule-table', (req, res) => {
   console.log('🔍 Checking if schedule table exists...');
+  
+  // Set CORS headers for debug endpoint
+  const origin = req.get('origin');
+  if (origin && corsOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
+    res.header('Access-Control-Allow-Credentials', 'false');
+  } else if (origin) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
+    res.header('Access-Control-Allow-Credentials', 'false');
+  }
+  
   db.query("SHOW TABLES LIKE 'schedule'", (err, results) => {
     if (err) {
       console.error('❌ Error checking schedule table:', err);
