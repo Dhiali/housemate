@@ -13,10 +13,12 @@ import {
 } from './utils/serviceWorker.js';
 import { createPerformanceDashboard } from './utils/lighthouseOptimization.js';
 import analytics from './utils/analytics.js';
+import { UserProvider } from './UserContext.jsx';
 
 // Lazy load components
 const LandingPage = lazy(() => import('./components/LandingPage.jsx'));
 const AuthApp = lazy(() => import('./Auth/src/App.jsx'));
+const DashboardApp = lazy(() => import('./dashboard/src/App.jsx'));
 
 function App() {
   // const [showSplash, setShowSplash] = useState(true);
@@ -92,9 +94,9 @@ function App() {
   );
 
   return (
-    <>
-  {/* SplashScreen removed, show app immediately */}
-  <div>
+    <UserProvider>
+      {/* SplashScreen removed, show app immediately */}
+      <div>
         <Router>
           <Suspense fallback={<LoadingSpinner />}>
             <Routes>
@@ -104,13 +106,16 @@ function App() {
               {/* Auth routes */}
               <Route path="/auth/*" element={<AuthApp />} />
               
+              {/* Dashboard routes - protected */}
+              <Route path="/dashboard/*" element={<DashboardApp />} />
+              
               {/* Redirect any unknown routes to landing page */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>
         </Router>
       </div>
-    </>
+    </UserProvider>
   );
 }
 

@@ -70,12 +70,19 @@ import { HousemateCard } from './components/HousemateCard';
 import { BillItem } from './components/BillItem';
 import { SettingsContent } from './components/SettingsContent';
 import { PaymentHistoryModal } from './components/PaymentHistoryModal';
+import { useAuth } from '../../UserContext.jsx';
+import ProtectedRoute from '../../components/ProtectedRoute';
 
-export default function App({ user }) {
+function App() {
   console.log("App component is rendering");
+  
+  // Get user data from auth context
+  const { user, isAdmin, isStandard, isReadOnly, permissions, getRoleDisplayName } = useAuth();
+  
   const [currentPage, setCurrentPage] = useState('Dashboard');
-  // Add state for upcoming tasks view dropdown
-  const [upcomingTasksView, setUpcomingTasksView] = useState('everyone');
+  // Add state for upcoming tasks view dropdown (admin only)
+  const [upcomingTasksView, setUpcomingTasksView] = useState(isAdmin ? 'everyone' : 'own');
+  const [scheduleDataView, setScheduleDataView] = useState(isAdmin ? 'everyone' : 'own');
 
   // SEO: Update page title and meta description based on current page
   const getSEOConfigForPage = () => {
@@ -861,7 +868,7 @@ export default function App({ user }) {
   });
   
   // Schedule page state
-  const [scheduleView, setScheduleView] = useState('month');
+  const [calendarView, setCalendarView] = useState('month');
   const [scheduleFilters, setScheduleFilters] = useState({
     tasks: true,
     bills: true,
@@ -4984,3 +4991,14 @@ const formatDate = (date) => {
     </div>
   );
 }
+
+// Wrap the entire app in a protected route
+const ProtectedDashboardApp = () => {
+  return (
+    <ProtectedRoute>
+      <App />
+    </ProtectedRoute>
+  );
+};
+
+export { ProtectedDashboardApp as default };

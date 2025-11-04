@@ -4,6 +4,35 @@ const API = axios.create({
   baseURL: "https://housemate-backend-234825552341.africa-south1.run.app",
 });
 
+// Add request interceptor to include auth token
+API.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor to handle auth errors
+API.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expired or invalid
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      // Redirect to login
+      window.location.href = '/auth/signin';
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Auth
 export const login = (data) => API.post('/login', data);
 export const register = (user) => API.post('/register', user);
@@ -22,8 +51,11 @@ export const addUser = (user) => API.post("/users", user);
 export const updateUser = (id, data) => API.put(`/users/${id}`, data);
 export const deleteUser = (id) => API.delete(`/users/${id}`);
 
-// Tasks
-export const getTasks = (houseId) => API.get(`/tasks?house_id=${houseId}`);
+// Tasks with role-based filtering
+export const getTasks = (options = {}) => {
+  const { viewAll = false } = options;
+  return API.get(`/tasks${viewAll ? '?view_all=true' : ''}`);
+};
 export const getTask = (id) => API.get(`/tasks/${id}`);
 export const addTask = (task) => API.post("/tasks", task);
 export const updateTask = (id, data) => API.put(`/tasks/${id}`, data);

@@ -5,8 +5,14 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Checkbox } from "./ui/checkbox";
+import { useAuth } from "../../../UserContext.jsx";
+import { useNavigate } from 'react-router-dom';
 
 export function SignInForm({ onForgotPassword, onCreateHouse, onSignInSuccess }) {
+  // Get auth context
+  const { login: authLogin } = useAuth();
+  const navigate = useNavigate();
+  
   // Validation states
   const [emailStatus, setEmailStatus] = useState(null); // 'valid', 'error', 'warning'
   const [emailMsg, setEmailMsg] = useState("");
@@ -34,12 +40,24 @@ export function SignInForm({ onForgotPassword, onCreateHouse, onSignInSuccess })
       console.log("Login response:", res);
       setError("");
       setSuccess("Login successful!");
-      if (onSignInSuccess) {
-        setError("");
-        // Expecting res.data.token and res.data.user (adjust if needed)
-        const token = res.data?.token;
-        const user = res.data?.user || res.data?.userData || res.data;
-        onSignInSuccess(token, user);
+      
+      // Extract token and user data
+      const token = res.data?.token;
+      const user = res.data?.user;
+      
+      if (token && user) {
+        // Use auth context to log in
+        authLogin(token, user);
+        
+        // Call the original callback if provided
+        if (onSignInSuccess) {
+          onSignInSuccess(token, user);
+        }
+        
+        // Navigate to dashboard
+        navigate('/dashboard');
+      } else {
+        setError("Invalid response from server. Please try again.");
       }
     } catch (err) {
       console.log("Login error:", err);
