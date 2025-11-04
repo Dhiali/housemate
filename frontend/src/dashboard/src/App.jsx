@@ -83,6 +83,8 @@ function App() {
   // Add state for upcoming tasks view dropdown (admin only)
   const [upcomingTasksView, setUpcomingTasksView] = useState(isAdmin ? 'everyone' : 'own');
   const [scheduleDataView, setScheduleDataView] = useState(isAdmin ? 'everyone' : 'own');
+  // Add state for tasks page view toggle (admin only)
+  const [tasksPageView, setTasksPageView] = useState(isAdmin ? 'everyone' : 'own');
 
   // SEO: Update page title and meta description based on current page
   const getSEOConfigForPage = () => {
@@ -140,7 +142,12 @@ function App() {
     try {
       setLoadingTasks(true);
       // Use role-based task fetching - admins can view all tasks if they choose
-      const options = { viewAll: isAdmin && upcomingTasksView === 'everyone' };
+      // Check both dashboard view and tasks page view for admin permissions
+      const shouldViewAll = isAdmin && (
+        (currentPage === 'Dashboard' && upcomingTasksView === 'everyone') ||
+        (currentPage === 'Tasks' && tasksPageView === 'everyone')
+      );
+      const options = { viewAll: shouldViewAll };
       const res = await getTasks(options);
       console.log('Tasks API response:', res.data);
       
@@ -482,6 +489,20 @@ function App() {
     fetchBills();
     fetchEvents();
   }, [user?.house_id]);
+
+  // Auto-assign tasks to current user for standard users
+  useEffect(() => {
+    if (isStandard && user && housemates.length > 0) {
+      const currentUserName = `${user.name} ${user.surname || ''}`.trim();
+      const userExists = housemates.find(hm => hm.name === currentUserName);
+      if (userExists && taskFormData.assignedTo === '') {
+        setTaskFormData(prev => ({
+          ...prev,
+          assignedTo: currentUserName
+        }));
+      }
+    }
+  }, [isStandard, user, housemates, taskFormData.assignedTo]);
 
   useEffect(() => {
     // Only fetch if user and user.house_id exist
@@ -1104,7 +1125,16 @@ function App() {
     console.log('Available housemates:', housemates);
     console.log('Current user:', user);
 
-    if (!taskFormData.category || !taskFormData.title || !taskFormData.assignedTo) {
+    // Role-based assignment logic
+    let finalAssignedTo = taskFormData.assignedTo;
+    
+    if (isStandard || isReadOnly) {
+      // Standard and read-only users can only assign to themselves
+      const currentUserName = `${user.name} ${user.surname || ''}`.trim();
+      finalAssignedTo = currentUserName;
+    }
+
+    if (!taskFormData.category || !taskFormData.title || !finalAssignedTo) {
       alert('Please fill in all required fields: category, title, and assigned to.');
       return;
     }
@@ -1116,8 +1146,8 @@ function App() {
 
     try {
       // Find the assigned housemate by name to get their ID
-      const assignedHousemate = housemates.find(hm => hm.name === taskFormData.assignedTo);
-      console.log('Looking for housemate with name:', taskFormData.assignedTo);
+      const assignedHousemate = housemates.find(hm => hm.name === finalAssignedTo);
+      console.log('Looking for housemate with name:', finalAssignedTo);
       console.log('Found assignedHousemate:', assignedHousemate);
       
       if (!assignedHousemate) {
@@ -2605,12 +2635,40 @@ const formatDate = (date) => {
             <article className="bg-white rounded-lg border border-gray-200">
               <header className="p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 id="tasks-page" className="text-xl font-semibold text-gray-900">All Tasks</h2>
+                  <div className="flex items-center space-x-4">
+                    <h2 id="tasks-page" className="text-xl font-semibold text-gray-900">
+                      {isAdmin && tasksPageView === 'everyone' ? 'All Household Tasks' : 'My Tasks'}
+                    </h2>
+                    {/* Admin-only toggle for viewing all vs own tasks */}
+                    {isAdmin && (
+                      <Select value={tasksPageView}
+                        onValueChange={(value) => {
+                          setTasksPageView(value);
+                          // Refetch tasks when view changes
+                          fetchTasks();
+                        }}
+                        aria-label="Filter tasks by person"
+                      >
+                        <SelectTrigger className="w-36">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="everyone">Everyone's Tasks</SelectItem>
+                          <SelectItem value="own">My Tasks Only</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                  {/* Create task button - disabled for read-only users */}
                   <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
                     <DialogTrigger asChild>
-                      <Button className="bg-purple-600 hover:bg-purple-700" aria-label="Create new task">
+                      <Button 
+                        className="bg-purple-600 hover:bg-purple-700" 
+                        aria-label="Create new task"
+                        disabled={isReadOnly}
+                      >
                         <Plus size={16} className="mr-2" aria-hidden="true" />
-                        Create New Task
+                        {isReadOnly ? 'Read-Only Mode' : 'Create New Task'}
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
@@ -2657,15 +2715,32 @@ const formatDate = (date) => {
                         </div>
                         
                         <div>
-                          <Label htmlFor="task-assigned">Assigned To</Label>
-                          <Select value={taskFormData.assignedTo} onValueChange={(value) => setTaskFormData({...taskFormData, assignedTo: value})}>
+                          <Label htmlFor="task-assigned">
+                            Assigned To
+                            {isStandard && <span className="text-xs text-gray-500 ml-1">(Self only)</span>}
+                          </Label>
+                          <Select 
+                            value={taskFormData.assignedTo} 
+                            onValueChange={(value) => setTaskFormData({...taskFormData, assignedTo: value})}
+                            disabled={isReadOnly}
+                          >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select housemate" />
+                              <SelectValue placeholder={isStandard ? "Assigning to yourself" : "Select housemate"} />
                             </SelectTrigger>
                             <SelectContent>
-                              {housemates.map((housemate) => (
-                                <SelectItem key={housemate.id} value={housemate.name}>{housemate.name}</SelectItem>
-                              ))}
+                              {isAdmin ? (
+                                // Admins can assign to anyone
+                                housemates.map((housemate) => (
+                                  <SelectItem key={housemate.id} value={housemate.name}>{housemate.name}</SelectItem>
+                                ))
+                              ) : (
+                                // Standard users can only assign to themselves
+                                housemates
+                                  .filter(hm => hm.id === user.id)
+                                  .map((housemate) => (
+                                    <SelectItem key={housemate.id} value={housemate.name}>{housemate.name}</SelectItem>
+                                  ))
+                              )}
                             </SelectContent>
                           </Select>
                         </div>
