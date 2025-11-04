@@ -90,7 +90,22 @@ export const updateUserEmail = (userId, email) => API.put(`/users/${userId}/emai
 export const updateUserPreferredContact = (userId, preferred_contact) => API.put(`/users/${userId}/preferred_contact`, { preferred_contact });
 
 // Schedule
-export const getSchedule = (houseId) => API.get(`/schedule${houseId ? `?house_id=${houseId}` : ''}`);
+export const getSchedule = (houseId, view = 'my') => {
+  let url = '/schedule';
+  const params = new URLSearchParams();
+  
+  if (houseId) {
+    params.append('house_id', houseId);
+  }
+  
+  params.append('view', view);
+  
+  if (params.toString()) {
+    url += `?${params.toString()}`;
+  }
+  
+  return API.get(url);
+};
 export const getScheduleItem = (id) => API.get(`/schedule/${id}`);
 export const addSchedule = (item) => API.post("/schedule", item);
 export const addEvent = (eventData) => API.post("/schedule", eventData);

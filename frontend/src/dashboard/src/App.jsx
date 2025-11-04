@@ -85,6 +85,8 @@ function App() {
   const [scheduleDataView, setScheduleDataView] = useState(isAdmin ? 'everyone' : 'own');
   // Add state for tasks page view toggle (admin only)
   const [tasksPageView, setTasksPageView] = useState(isAdmin ? 'everyone' : 'own');
+  // Add state for schedule page view toggle (admin only)  
+  const [schedulePageView, setSchedulePageView] = useState(isAdmin ? 'everyone' : 'own');
   // Add state for bills page view toggle (admin only)
   const [billsPageView, setBillsPageView] = useState(isAdmin ? 'everyone' : 'own');
 
@@ -225,7 +227,19 @@ function App() {
         console.error('Error checking schedule table:', tableCheckError);
       }
       
-      const res = await getSchedule(user.house_id);
+      // Determine which events to fetch based on role and current page view
+      let viewParam = 'my'; // Default to user's own events
+      
+      if (currentPage === 'Schedule') {
+        // On Schedule page, use the Schedule page view state
+        viewParam = isAdmin && schedulePageView === 'everyone' ? 'all' : 'my';
+      } else {
+        // On Dashboard, show user's own events for widgets
+        viewParam = 'my';
+      }
+      
+      console.log('Fetching events with viewParam:', viewParam, 'for role:', user.role);
+      const res = await getSchedule(user.house_id, viewParam);
       console.log('Events API response:', res.data);
       
       // Map backend schedule data to frontend event format
@@ -539,6 +553,13 @@ function App() {
       fetchBills();
     }
   }, [billsPageView, currentPage, user?.house_id]);
+
+  // Refetch events when schedule page view changes
+  useEffect(() => {
+    if (currentPage === 'Schedule' && user?.house_id) {
+      fetchEvents();
+    }
+  }, [schedulePageView, currentPage, user?.house_id]);
 
   // Auto-set payment form for standard users to themselves only
   useEffect(() => {
@@ -1628,6 +1649,12 @@ function App() {
   };
 
   const handleAddEvent = async () => {
+    // Role-based validation
+    if (isReadOnly) {
+      alert('You do not have permission to create events.');
+      return;
+    }
+
     if (!eventFormData.title || !eventFormData.date) {
       console.error('Missing required fields: title and date');
       return;
@@ -3470,9 +3497,12 @@ const formatDate = (date) => {
                   <nav className="space-y-3" role="navigation" aria-label="Schedule quick actions">
                     <Dialog open={isAddEventOpen} onOpenChange={setIsAddEventOpen}>
                       <DialogTrigger asChild>
-                        <Button className="w-full bg-purple-600 hover:bg-purple-700">
+                        <Button 
+                          className="w-full bg-purple-600 hover:bg-purple-700"
+                          disabled={isReadOnly}
+                        >
                           <Plus size={16} className="mr-2" />
-                          Add Event
+                          {isReadOnly ? 'Read-Only Mode' : 'Add Event'}
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="max-w-md">
