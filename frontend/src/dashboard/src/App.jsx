@@ -254,6 +254,14 @@ function App() {
     allowInvitations: true,
     dataSharing: false
   });
+  const [appSettings, setAppSettings] = useState({
+    theme: 'light',
+    compactMode: false,
+    soundEnabled: true,
+    animationsEnabled: true,
+    autoSave: true,
+    showTips: true
+  });
 
   // Update view states based on user role after user data loads
   useEffect(() => {
