@@ -140,7 +140,7 @@ app.use(cors({
     'Pragma'
   ],
   exposedHeaders: ['X-Total-Count'],
-  credentials: true,
+  credentials: false,
   preflightContinue: false,
   optionsSuccessStatus: 204
 }));
@@ -153,8 +153,7 @@ app.use((req, res, next) => {
   const origin = req.get('origin');
   if (origin) {
     console.log(`🔄 Setting CORS headers for origin: ${origin}`);
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
     res.header('Access-Control-Expose-Headers', 'X-Total-Count');
@@ -627,14 +626,10 @@ app.options('*', (req, res) => {
   console.log(`📋 OPTIONS request for ${req.path} from origin: ${req.get('origin')}`);
   
   // Explicitly set CORS headers for preflight requests
-  const origin = req.get('origin');
-  if (origin) {
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
-    res.header('Access-Control-Max-Age', '86400'); // 24 hours
-  }
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
+  res.header('Access-Control-Max-Age', '86400'); // 24 hours
   
   res.status(204).send();
 });
