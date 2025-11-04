@@ -62,7 +62,7 @@ export const updateTask = (id, data) => API.put(`/tasks/${id}`, data);
 export const deleteTask = (id) => API.delete(`/tasks/${id}`);
 
 // Bills
-export const getBills = (houseId) => API.get(`/bills?house_id=${houseId}`);
+export const getBills = (houseId, view = 'my') => API.get(`/bills?house_id=${houseId}&view=${view}`);
 export const getBill = (id) => API.get(`/bills/${id}`);
 export const addBill = (bill) => API.post("/bills", bill);
 export const updateBill = (id, data) => API.put(`/bills/${id}`, data);

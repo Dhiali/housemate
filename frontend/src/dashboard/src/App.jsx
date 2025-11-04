@@ -85,6 +85,8 @@ function App() {
   const [scheduleDataView, setScheduleDataView] = useState(isAdmin ? 'everyone' : 'own');
   // Add state for tasks page view toggle (admin only)
   const [tasksPageView, setTasksPageView] = useState(isAdmin ? 'everyone' : 'own');
+  // Add state for bills page view toggle (admin only)
+  const [billsPageView, setBillsPageView] = useState(isAdmin ? 'everyone' : 'own');
 
   // SEO: Update page title and meta description based on current page
   const getSEOConfigForPage = () => {
@@ -531,6 +533,23 @@ function App() {
     }
   }, [user]);
 
+  // Refetch bills when bills page view changes
+  useEffect(() => {
+    if (currentPage === 'Bills' && user?.house_id) {
+      fetchBills();
+    }
+  }, [billsPageView, currentPage, user?.house_id]);
+
+  // Auto-set payment form for standard users to themselves only
+  useEffect(() => {
+    if (isStandard && user && paymentFormData.payingFor === '') {
+      setPaymentFormData(prev => ({
+        ...prev,
+        payingFor: user.id?.toString() || ''
+      }));
+    }
+  }, [isStandard, user, paymentFormData.payingFor]);
+
   // Function to fetch recent activities
   const fetchRecentActivities = async (houseId) => {
     try {
@@ -657,7 +676,20 @@ function App() {
     
     try {
       setLoadingBills(true);
-      const res = await getBills(user.house_id);
+      
+      // Determine which bills to fetch based on role and current page view
+      let viewParam = 'my'; // Default to user's own bills
+      
+      if (currentPage === 'Bills') {
+        // On Bills page, use the Bills page view state
+        viewParam = isAdmin && billsPageView === 'everyone' ? 'all' : 'my';
+      } else {
+        // On Dashboard, always show user's own bills for widgets
+        viewParam = 'my';
+      }
+      
+      console.log('Fetching bills with viewParam:', viewParam, 'for role:', user.role);
+      const res = await getBills(user.house_id, viewParam);
       console.log('Bills API response:', res.data);
       
       // Extract the bills array from the response
@@ -755,6 +787,12 @@ function App() {
     console.log('handleSubmitBill called with billFormData:', billFormData);
     console.log('selectedHousemates:', selectedHousemates);
     console.log('Current user:', user);
+
+    // Role-based validation
+    if (isReadOnly) {
+      alert('You do not have permission to create bills.');
+      return;
+    }
 
     if (!billFormData.title || !billFormData.amount || !user?.id || !user?.house_id) {
       alert('Please fill in all required fields');
@@ -1237,6 +1275,12 @@ function App() {
 
 
   const handleRecordPayment = (billId) => {
+    // Role-based access control for payment recording
+    if (isReadOnly) {
+      alert('You do not have permission to record payments.');
+      return;
+    }
+
     const bill = bills.find(b => b.id === billId);
     if (bill) {
       setSelectedBillId(billId);
@@ -1265,6 +1309,18 @@ function App() {
   };
 
   const handleSubmitPayment = async () => {
+    // Role-based validation
+    if (isReadOnly) {
+      alert('You do not have permission to record payments.');
+      return;
+    }
+
+    // Standard users can only pay for themselves
+    if (isStandard && paymentFormData.payingFor !== user?.id?.toString()) {
+      alert('You can only record payments for yourself.');
+      return;
+    }
+    
     // Validation
     if (!selectedBillId) {
       alert('No bill selected');
@@ -2926,11 +2982,48 @@ const formatDate = (date) => {
             <div className="space-y-6">
               {/* Bills Page Header */}
               <header className="flex justify-between items-center">
+                <div className="flex items-center space-x-4">
+                  <div>
+                    <h1 id="bills-page" className="text-2xl font-bold text-gray-900">
+                      {isAdmin && billsPageView === 'everyone' ? 'All Household Bills' : 'My Bills'}
+                    </h1>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {isAdmin && billsPageView === 'everyone' 
+                        ? 'Manage all bills for the household' 
+                        : isReadOnly 
+                        ? 'View your bills (read-only access)'
+                        : 'Manage your bills and payments'
+                      }
+                    </p>
+                  </div>
+                  
+                  {/* Admin View Toggle */}
+                  {isAdmin && (
+                    <div className="flex items-center space-x-2 bg-gray-50 rounded-lg p-2">
+                      <Switch
+                        id="bills-view-toggle"
+                        checked={billsPageView === 'everyone'}
+                        onCheckedChange={(checked) => {
+                          setBillsPageView(checked ? 'everyone' : 'own');
+                        }}
+                        className="data-[state=checked]:bg-purple-600"
+                      />
+                      <Label htmlFor="bills-view-toggle" className="text-sm font-medium text-gray-700">
+                        {billsPageView === 'everyone' ? "Everyone's Bills" : 'My Bills Only'}
+                      </Label>
+                    </div>
+                  )}
+                </div>
+                
                 <Dialog open={isBillFormOpen} onOpenChange={setIsBillFormOpen}>
                   <DialogTrigger asChild>
-                    <Button className="bg-purple-600 hover:bg-purple-700" aria-label="Add new bill">
+                    <Button 
+                      className="bg-purple-600 hover:bg-purple-700" 
+                      aria-label="Add new bill"
+                      disabled={isReadOnly}
+                    >
                       <Plus size={16} className="mr-2" aria-hidden="true" />
-                      Add New Bill
+                      {isReadOnly ? 'Read-Only Mode' : 'Add New Bill'}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
@@ -3241,19 +3334,41 @@ const formatDate = (date) => {
                   
                   <div className="space-y-4 py-4">
                     <div>
-                      <Label htmlFor="paying-for">Who is this payment for?</Label>
-                      <Select value={paymentFormData.payingFor} onValueChange={(value) => setPaymentFormData({...paymentFormData, payingFor: value})}>
+                      <Label htmlFor="paying-for">
+                        Who is this payment for?
+                        {isStandard && (
+                          <span className="text-xs text-gray-500 ml-2">(Self only)</span>
+                        )}
+                      </Label>
+                      <Select 
+                        value={paymentFormData.payingFor} 
+                        onValueChange={(value) => setPaymentFormData({...paymentFormData, payingFor: value})}
+                        disabled={isStandard} // Standard users can only pay for themselves
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select person" />
                         </SelectTrigger>
                         <SelectContent>
-                          {housemates.map((mate) => (
-                            <SelectItem key={mate.id} value={mate.id.toString()}>
-                              {mate.name} {mate.surname}
+                          {isStandard ? (
+                            // Standard users see only themselves
+                            <SelectItem value={user?.id?.toString() || ''}>
+                              {user?.name} {user?.surname}
                             </SelectItem>
-                          ))}
+                          ) : (
+                            // Admins see all housemates
+                            housemates.map((mate) => (
+                              <SelectItem key={mate.id} value={mate.id.toString()}>
+                                {mate.name} {mate.surname}
+                              </SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
+                      {isStandard && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          Standard users can only record payments for themselves
+                        </p>
+                      )}
                     </div>
 
                     <div>
