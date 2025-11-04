@@ -157,6 +157,7 @@ function App() {
   
   // Calendar state
   const [calendarView, setCalendarView] = useState('month');
+  const [scheduleView, setScheduleView] = useState('month');
   const [scheduleFilters, setScheduleFilters] = useState({
     showPersonal: true,
     showHousehold: true,
