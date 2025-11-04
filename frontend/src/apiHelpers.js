@@ -23,7 +23,7 @@ export const updateUser = (id, data) => API.put(`/users/${id}`, data);
 export const deleteUser = (id) => API.delete(`/users/${id}`);
 
 // Tasks
-export const getTasks = () => API.get("/tasks");
+export const getTasks = (houseId) => API.get(`/tasks?house_id=${houseId}`);
 export const getTask = (id) => API.get(`/tasks/${id}`);
 export const addTask = (task) => API.post("/tasks", task);
 export const updateTask = (id, data) => API.put(`/tasks/${id}`, data);
