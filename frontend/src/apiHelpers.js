@@ -62,7 +62,18 @@ export const updateTask = (id, data) => API.put(`/tasks/${id}`, data);
 export const deleteTask = (id) => API.delete(`/tasks/${id}`);
 
 // Bills
-export const getBills = (houseId, view = 'my') => API.get(`/bills?house_id=${houseId}&view=${view}`);
+export const getBills = async (house_id, view = 'all') => {
+  console.log(`getBills called with house_id: ${house_id}, view: ${view}`);
+  const token = getAuthToken();
+  const response = await axios.get(`${API_BASE_URL}/bills`, {
+    params: { house_id, view },
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  console.log(`getBills response:`, response.data);
+  const billsArray = response.data.data || response.data || [];
+  console.log(`getBills returned ${billsArray.length} bills`);
+  return response.data;
+};
 export const getBill = (id) => API.get(`/bills/${id}`);
 export const addBill = (bill) => API.post("/bills", bill);
 export const updateBill = (id, data) => API.put(`/bills/${id}`, data);

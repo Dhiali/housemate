@@ -722,6 +722,14 @@ function App() {
     fetchEvents();
   }, [user?.house_id]);
 
+  // Re-fetch bills when billsPageView changes (admin toggle)
+  useEffect(() => {
+    if (user?.house_id && currentPage === 'Bills') {
+      console.log('Bills page view changed, re-fetching bills');
+      fetchBills();
+    }
+  }, [billsPageView, currentPage, user?.house_id]);
+
   // Auto-assign tasks to current user for standard users
   useEffect(() => {
     if (isStandard && user && housemates.length > 0) {
@@ -931,10 +939,10 @@ function App() {
       
       console.log('Fetching bills with viewParam:', viewParam, 'for role:', user.role);
       const res = await getBills(user.house_id, viewParam);
-      console.log('Bills API response:', res.data);
+      console.log('Bills API response:', res);
       
       // Extract the bills array from the response
-      const billsData = res.data.data || res.data || [];
+      const billsData = res.data || res || [];
       console.log('Bills data array:', billsData);
       
       // Map backend data to frontend format
@@ -3385,7 +3393,9 @@ const formatDate = (date) => {
                         id="bills-view-toggle"
                         checked={billsPageView === 'everyone'}
                         onCheckedChange={(checked) => {
-                          setBillsPageView(checked ? 'everyone' : 'own');
+                          const newView = checked ? 'everyone' : 'own';
+                          console.log(`Bills view toggle changed to: ${newView}`);
+                          setBillsPageView(newView);
                         }}
                         className="data-[state=checked]:bg-purple-600 data-[state=unchecked]:bg-blue-400 border-2 border-purple-300 data-[state=checked]:border-purple-500 data-[state=unchecked]:border-blue-500 h-6 w-12 shadow-md"
                       />

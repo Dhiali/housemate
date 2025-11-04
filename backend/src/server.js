@@ -1097,6 +1097,7 @@ app.get('/bills', authenticateToken, requireHouseAccess(), (req, res) => {
                LEFT JOIN users u ON b.created_by = u.id
                WHERE b.house_id = ?`;
       values = [house_id];
+      console.log('Admin viewing ALL bills in house');
     } else {
       // Standard users and read-only users see only bills they're involved in
       // Admins see only their bills when view=my
@@ -1109,6 +1110,7 @@ app.get('/bills', authenticateToken, requireHouseAccess(), (req, res) => {
                WHERE b.house_id = ? 
                AND (b.created_by = ? OR bs.user_id = ?)`;
       values = [house_id, userId, userId];
+      console.log('Filtering to show only bills where user is creator OR participant');
     }
     
     console.log('Executing query:', query, 'with values:', values);
