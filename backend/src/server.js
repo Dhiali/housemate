@@ -1547,7 +1547,7 @@ app.get('/schedule', authenticateToken, (req, res) => {
   // Role-based filtering for schedule events
   if (userRole === 'admin' && view === 'all') {
     // Admins can see all events in the house when view=all
-    query = "SELECT s.*, u.first_name as created_by_name, u.last_name as created_by_surname FROM schedule s LEFT JOIN users u ON s.created_by = u.id";
+    query = "SELECT s.*, u.name as created_by_name, u.surname as created_by_surname FROM schedule s LEFT JOIN users u ON s.created_by = u.id";
     params = [];
     
     if (houseId) {
@@ -1557,7 +1557,7 @@ app.get('/schedule', authenticateToken, (req, res) => {
   } else {
     // Standard users and read-only users see only events they created or are attending
     // Admins see only their events when view=my
-    query = `SELECT s.*, u.first_name as created_by_name, u.last_name as created_by_surname 
+    query = `SELECT s.*, u.name as created_by_name, u.surname as created_by_surname 
              FROM schedule s 
              LEFT JOIN users u ON s.created_by = u.id
              WHERE (s.created_by = ? OR s.attendees = 'All' OR FIND_IN_SET(?, REPLACE(s.attendees, ' ', '')))`;
