@@ -76,8 +76,22 @@ import ProtectedRoute from '../../components/ProtectedRoute';
 function App() {
   console.log("App component is rendering");
   
-  // Get user data from auth context
-  const { user, isAdmin, isStandard, isReadOnly, permissions, getRoleDisplayName } = useAuth();
+  // Add error boundary and early return for debugging
+  try {
+    // Get user data from auth context
+    const { user, isAdmin, isStandard, isReadOnly, permissions, getRoleDisplayName } = useAuth();
+    
+    // Early return if user data is not available
+    if (!user) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 text-lg">Loading user data...</p>
+          </div>
+        </div>
+      );
+    }
   
   const [currentPage, setCurrentPage] = useState('Dashboard');
   // Add state for upcoming tasks view dropdown (admin only)
@@ -5304,6 +5318,24 @@ const formatDate = (date) => {
 
     </div>
   );
+  
+  } catch (error) {
+    console.error("Dashboard rendering error:", error);
+    return (
+      <div className="min-h-screen bg-red-50 flex items-center justify-center">
+        <div className="text-center p-8 bg-white rounded-lg shadow-lg">
+          <h2 className="text-xl font-semibold text-red-600 mb-4">Dashboard Error</h2>
+          <p className="text-gray-600 mb-4">There was an error loading the dashboard.</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Reload Page
+          </button>
+        </div>
+      </div>
+    );
+  }
 }
 
 // Wrap the entire app in a protected route
