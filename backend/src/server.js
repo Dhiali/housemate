@@ -149,6 +149,108 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: '10mb' }));
 
+// Authentication middleware
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' });
+  }
+
+  const jwtSecret = process.env.JWT_SECRET || 'fallback-jwt-secret-change-in-production';
+  
+  jwt.verify(token, jwtSecret, (err, user) => {
+    if (err) {
+      console.log('❌ Token verification failed:', err.message);
+      return res.status(403).json({ error: 'Invalid token' });
+    }
+    
+    // Get full user data from database
+    db.query(
+      'SELECT id, name, surname, email, role, house_id, is_house_creator, status FROM users WHERE id = ?', 
+      [user.id], 
+      (dbErr, results) => {
+        if (dbErr || results.length === 0) {
+          return res.status(403).json({ error: 'User not found' });
+        }
+        
+        req.user = results[0];
+        next();
+      }
+    );
+  });
+};
+
+// Authorization middleware for different roles
+const requireRole = (allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ 
+        error: 'Insufficient permissions', 
+        required: allowedRoles,
+        current: req.user.role 
+      });
+    }
+    
+    next();
+  };
+};
+
+// Check if user belongs to a house and optionally if they can access specific house data
+const requireHouseAccess = (allowOwnHouseOnly = true) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    
+    if (!req.user.house_id) {
+      return res.status(403).json({ error: 'User must belong to a house' });
+    }
+    
+    // For requests with house_id parameter, check if user has access
+    const requestedHouseId = req.params.house_id || req.query.house_id || req.body.house_id;
+    
+    if (requestedHouseId && allowOwnHouseOnly) {
+      if (parseInt(requestedHouseId) !== req.user.house_id) {
+        return res.status(403).json({ error: 'Access denied to this house data' });
+      }
+    }
+    
+    next();
+  };
+};
+
+// Admin-only actions (admins can access any house data)
+const requireAdmin = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  
+  next();
+};
+
+// House creator only actions
+const requireHouseCreator = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  if (!req.user.is_house_creator) {
+    return res.status(403).json({ error: 'House creator access required' });
+  }
+  
+  next();
+};
+
 // Proxy endpoint for ReasonLabs API to bypass CORS
 app.get('/proxy/reasonlabs', async (req, res) => {
   try {
@@ -229,7 +331,8 @@ async function createDatabaseTables() {
       preferred_contact ENUM('email', 'phone', 'app') DEFAULT 'app',
       avatar VARCHAR(500),
       house_id INT,
-      role ENUM('admin', 'member', 'guest') DEFAULT 'member',
+      role ENUM('admin', 'standard', 'read_only') DEFAULT 'standard',
+      is_house_creator BOOLEAN DEFAULT FALSE,
       status ENUM('active', 'inactive', 'pending') DEFAULT 'active',
       last_login TIMESTAMP NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -566,12 +669,29 @@ app.post('/login',
       
       // Generate JWT with environment variable
       const jwtSecret = process.env.JWT_SECRET || 'fallback-jwt-secret-change-in-production';
-      const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, jwtSecret, { expiresIn: '7d' });
+      const token = jwt.sign({ 
+        id: user.id, 
+        email: user.email, 
+        role: user.role,
+        house_id: user.house_id,
+        is_house_creator: user.is_house_creator 
+      }, jwtSecret, { expiresIn: '7d' });
       
       // Update last_login
       db.query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
       
-      res.json({ token, user: { id: user.id, name: user.name, surname: user.surname, email: user.email, role: user.role, house_id: user.house_id } });
+      res.json({ 
+        token, 
+        user: { 
+          id: user.id, 
+          name: user.name, 
+          surname: user.surname, 
+          email: user.email, 
+          role: user.role, 
+          house_id: user.house_id,
+          is_house_creator: user.is_house_creator 
+        } 
+      });
     });
   } catch (err) {
     console.error('❌ Unexpected error during login:', err.message);
@@ -681,9 +801,9 @@ app.post('/houses', (req, res) => {
     (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
       const houseId = results.insertId;
-      // Update the user to set their house_id to the new house's ID
+      // Update the user to set their house_id to the new house's ID and make them admin/house creator
       db.query(
-        "UPDATE users SET house_id = ? WHERE id = ?",
+        "UPDATE users SET house_id = ?, role = 'admin', is_house_creator = TRUE WHERE id = ?",
         [houseId, created_by],
         (err2) => {
           if (err2) return res.status(500).json({ error: err2.message });
@@ -1670,30 +1790,52 @@ app.put('/houses/:id/avatar', upload.single('avatar'), processHouseAvatar, async
   });
 });
 
-// Get all tasks for a house
-app.get('/tasks', (req, res) => {
-  const { house_id } = req.query;
+// Get all tasks for a house with role-based filtering
+app.get('/tasks', authenticateToken, requireHouseAccess(), (req, res) => {
+  const { view_all } = req.query; // admin can request to see all tasks
+  const userHouseId = req.user.house_id;
   
-  if (!house_id) {
-    return res.status(400).json({ error: 'house_id is required' });
+  let query;
+  let queryParams;
+  
+  // Role-based filtering
+  if (req.user.role === 'admin' && view_all === 'true') {
+    // Admin viewing all house tasks
+    query = `
+      SELECT 
+        t.*,
+        u_assigned.name as assigned_to_name,
+        u_assigned.surname as assigned_to_surname,
+        u_assigned.avatar as assigned_to_avatar,
+        u_created.name as created_by_name,
+        u_created.surname as created_by_surname
+      FROM tasks t
+      LEFT JOIN users u_assigned ON t.assigned_to = u_assigned.id
+      LEFT JOIN users u_created ON t.created_by = u_created.id
+      WHERE t.house_id = ?
+      ORDER BY t.created_at DESC
+    `;
+    queryParams = [userHouseId];
+  } else {
+    // Standard users or admin viewing only their tasks
+    query = `
+      SELECT 
+        t.*,
+        u_assigned.name as assigned_to_name,
+        u_assigned.surname as assigned_to_surname,
+        u_assigned.avatar as assigned_to_avatar,
+        u_created.name as created_by_name,
+        u_created.surname as created_by_surname
+      FROM tasks t
+      LEFT JOIN users u_assigned ON t.assigned_to = u_assigned.id
+      LEFT JOIN users u_created ON t.created_by = u_created.id
+      WHERE t.house_id = ? AND (t.assigned_to = ? OR t.created_by = ?)
+      ORDER BY t.created_at DESC
+    `;
+    queryParams = [userHouseId, req.user.id, req.user.id];
   }
 
-  const query = `
-    SELECT 
-      t.*,
-      u_assigned.name as assigned_to_name,
-      u_assigned.surname as assigned_to_surname,
-      u_assigned.avatar as assigned_to_avatar,
-      u_created.name as created_by_name,
-      u_created.surname as created_by_surname
-    FROM tasks t
-    LEFT JOIN users u_assigned ON t.assigned_to = u_assigned.id
-    LEFT JOIN users u_created ON t.created_by = u_created.id
-    WHERE t.house_id = ?
-    ORDER BY t.created_at DESC
-  `;
-
-  db.query(query, [house_id], (err, results) => {
+  db.query(query, queryParams, (err, results) => {
     if (err) {
       console.error('Error fetching tasks:', err);
       return res.status(500).json({ error: err.message });
@@ -1734,43 +1876,69 @@ app.get('/tasks/:id', (req, res) => {
   });
 });
 
-// Create a new task
-app.post('/tasks', (req, res) => {
+// Create a new task with role-based permissions
+app.post('/tasks', authenticateToken, requireHouseAccess(), (req, res) => {
   const { 
-    house_id, 
     title, 
     description, 
     category, 
     location, 
     due_date, 
     priority, 
-    assigned_to, 
-    created_by 
+    assigned_to
   } = req.body;
 
   // Validate required fields
-  if (!house_id || !title || !assigned_to || !created_by) {
+  if (!title) {
     return res.status(400).json({ 
-      error: 'Missing required fields: house_id, title, assigned_to, created_by' 
+      error: 'Missing required fields: title' 
     });
+  }
+
+  // Role-based assignment validation
+  let finalAssignedTo = assigned_to;
+  
+  if (req.user.role === 'read_only') {
+    return res.status(403).json({ error: 'Read-only users cannot create tasks' });
+  }
+  
+  if (req.user.role === 'standard') {
+    // Standard users can only assign tasks to themselves
+    finalAssignedTo = req.user.id;
+  } else if (req.user.role === 'admin') {
+    // Admins can assign to anyone in their house, but default to themselves if not specified
+    if (!assigned_to) {
+      finalAssignedTo = req.user.id;
+    }
+    
+    // Verify the assigned user is in the same house
+    if (assigned_to && assigned_to !== req.user.id) {
+      // We'll check this in the query by joining with users table
+    }
   }
 
   const query = `
     INSERT INTO tasks 
     (house_id, title, description, category, location, due_date, priority, assigned_to, created_by, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'open')
+    SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open'
+    WHERE EXISTS (
+      SELECT 1 FROM users 
+      WHERE id = ? AND house_id = ?
+    )
   `;
 
   const values = [
-    house_id,
+    req.user.house_id,
     title,
     description || null,
     category || 'other',
     location || null,
     due_date || null,
     priority || 'medium',
-    assigned_to,
-    created_by
+    finalAssignedTo,
+    req.user.id,
+    finalAssignedTo,
+    req.user.house_id
   ];
 
   db.query(query, values, (err, results) => {
