@@ -2723,14 +2723,17 @@ const formatDate = (date) => {
                                 
                                 // Filter by user assignment (for dropdown)
                                 if (upcomingTasksView === 'own') {
-                                  // Show only tasks assigned to current user
-                                  filteredTasks = tasks.filter(task => task.assigned_to === user?.id);
+                                  // Show only tasks assigned to current user (by user.id)
+                                  filteredTasks = tasks.filter(task => {
+                                    // Some tasks may use assigned_to or assigned_to_id
+                                    return task.assigned_to === user.id || task.assigned_to_id === user.id;
+                                  });
                                 } else if (upcomingTasksView === 'everyone') {
                                   // Show all tasks (admin view)
                                   filteredTasks = tasks;
                                 } else {
                                   // Default fallback
-                                  filteredTasks = tasks.filter(task => task.assigned_to === user?.id);
+                                  filteredTasks = tasks.filter(task => task.assigned_to === user.id || task.assigned_to_id === user.id);
                                 }
                                 
                                 // Filter by tab (today/overdue/all)
