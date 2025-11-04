@@ -59,17 +59,46 @@ export default function App() {
 
   // If authenticated, show dashboard
   if (showDashboard && authToken && authUser) {
+    console.log('🎯 Attempting to load dashboard with:', { authToken: !!authToken, authUser });
     return (
-      <Suspense fallback={
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 text-lg">Loading Dashboard...</p>
-          </div>
+      <div style={{ minHeight: '100vh', background: 'red', padding: '20px' }}>
+        <div style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          background: 'rgba(255,0,0,0.9)', 
+          color: 'white', 
+          padding: '10px', 
+          fontSize: '14px',
+          zIndex: 1000
+        }}>
+          🚀 DASHBOARD MODE: Loading dashboard for authenticated user
         </div>
-      }>
-        <DashboardApp user={authUser} token={authToken} />
-      </Suspense>
+        <div style={{ paddingTop: '50px', color: 'white', textAlign: 'center' }}>
+          <h1>🔄 Loading Dashboard...</h1>
+          <p>User: {authUser?.name || authUser?.email || 'Unknown'}</p>
+          <p>Token: {authToken ? 'Present' : 'Missing'}</p>
+          <button 
+            onClick={() => {
+              localStorage.removeItem('authToken');
+              localStorage.removeItem('authUser');
+              window.location.reload();
+            }}
+            style={{ padding: '10px 20px', margin: '20px', fontSize: '16px' }}
+          >
+            🔓 Clear Auth & Reset
+          </button>
+        </div>
+        <Suspense fallback={
+          <div style={{ padding: '50px', background: 'yellow', color: 'black', margin: '20px' }}>
+            <h2>⏳ Dashboard Loading...</h2>
+            <p>Suspense fallback active</p>
+          </div>
+        }>
+          <DashboardApp user={authUser} token={authToken} />
+        </Suspense>
+      </div>
     );
   }
 
