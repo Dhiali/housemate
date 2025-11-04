@@ -64,10 +64,8 @@ export const deleteTask = (id) => API.delete(`/tasks/${id}`);
 // Bills
 export const getBills = async (house_id, view = 'all') => {
   console.log(`getBills called with house_id: ${house_id}, view: ${view}`);
-  const token = getAuthToken();
-  const response = await axios.get(`${API_BASE_URL}/bills`, {
-    params: { house_id, view },
-    headers: { Authorization: `Bearer ${token}` }
+  const response = await API.get('/bills', {
+    params: { house_id, view }
   });
   console.log(`getBills response:`, response.data);
   const billsArray = response.data.data || response.data || [];
