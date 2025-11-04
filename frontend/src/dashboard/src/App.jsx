@@ -2200,16 +2200,14 @@ const formatDate = (date) => {
           {/* House avatar and name on far right */}
           {currentPage === 'Dashboard' && (
             <div className="flex items-center space-x-3" role="complementary" aria-label="House information">
-              <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border-2 border-purple-500 shadow">
-                <OptimizedImage
-                  src={householdSettings.avatar ? `data:image/png;base64,${householdSettings.avatar}` : "/housemate-logo.png"}
-                  webpSrc={householdSettings.avatar ? null : "/housemate-logo.webp"}
-                  alt="House Avatar"
-                  className="w-12 h-12 object-cover rounded-full"
-                  style={{background: 'white'}}
-                  onError={e => { e.target.onerror = null; e.target.src = "/housemate-logo.png"; }}
-                />
-              </div>
+              <OptimizedImage
+                src={householdSettings.avatar ? `data:image/png;base64,${householdSettings.avatar}` : "/housemate-logo.png"}
+                webpSrc={householdSettings.avatar ? null : "/housemate-logo.webp"}
+                alt="House Avatar"
+                className="w-12 h-12 rounded-full object-cover border-2 border-purple-500 shadow"
+                style={{background: 'white'}}
+                onError={e => { e.target.onerror = null; e.target.src = "/housemate-logo.png"; }}
+              />
               <span className="font-semibold text-lg text-gray-900">{householdSettings.houseName}</span>
             </div>
           )}
