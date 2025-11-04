@@ -410,9 +410,38 @@ async function createDatabaseTables() {
                     reject(err);
                   } else {
                     console.log('✅ Bill history table ready');
-                    console.log('🎉 All database tables created successfully!');
-                    dbAvailable = true;
-                    resolve();
+                    
+                    // Create schedule table for events
+                    const createScheduleQuery = `
+                      CREATE TABLE IF NOT EXISTS schedule (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        house_id INT NOT NULL,
+                        title VARCHAR(255) NOT NULL,
+                        description TEXT,
+                        scheduled_date DATE NOT NULL,
+                        scheduled_time TIME,
+                        type ENUM('meeting', 'recurring', 'social', 'maintenance') DEFAULT 'meeting',
+                        attendees TEXT,
+                        recurrence ENUM('none', 'daily', 'weekly', 'monthly') DEFAULT 'none',
+                        created_by INT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        FOREIGN KEY (house_id) REFERENCES houses(id) ON DELETE CASCADE,
+                        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+                      )
+                    `;
+                    
+                    db.query(createScheduleQuery, (err) => {
+                      if (err) {
+                        console.error('❌ Error creating schedule table:', err);
+                        reject(err);
+                      } else {
+                        console.log('✅ Schedule table ready');
+                        console.log('🎉 All database tables created successfully!');
+                        dbAvailable = true;
+                        resolve();
+                      }
+                    });
                   }
                 });
               }
