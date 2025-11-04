@@ -1404,7 +1404,8 @@ app.get('/schedule', (req, res) => {
     params.push(houseId);
   }
   
-  query += " ORDER BY scheduled_date ASC, scheduled_time ASC";
+  // Use actual database column names: event_date, event_time
+  query += " ORDER BY event_date ASC, event_time ASC";
   
   console.log('📅 Fetching schedule for house_id:', houseId);
   
@@ -1413,8 +1414,24 @@ app.get('/schedule', (req, res) => {
       console.error('❌ Error fetching schedule:', err);
       return res.status(500).json({ error: err.message });
     }
-    console.log('✅ Schedule fetched successfully, count:', results.length);
-    res.json(results);
+    
+    // Map database column names to frontend expected format
+    const mappedResults = results.map(event => ({
+      id: event.id,
+      house_id: event.house_id,
+      title: event.title,
+      description: event.description,
+      scheduled_date: event.event_date, // Map event_date to scheduled_date
+      scheduled_time: event.event_time, // Map event_time to scheduled_time
+      type: event.type || 'meeting', // Now uses actual column
+      attendees: event.attendees || 'All', // Now uses actual column
+      recurrence: event.recurrence,
+      created_by: event.created_by,
+      created_at: event.created_at
+    }));
+    
+    console.log('✅ Schedule fetched successfully, count:', mappedResults.length);
+    res.json(mappedResults);
   });
 });
 
@@ -1481,11 +1498,17 @@ app.post('/schedule', (req, res) => {
     });
   }
   
-  const attendeesStr = Array.isArray(attendees) ? attendees.join(',') : attendees || 'All';
   console.log('✅ Validation passed, inserting into database...');
   
+  // Map frontend field names to actual database column names
+  // Frontend sends: scheduled_date, scheduled_time
+  // Database has: event_date, event_time
+  // Now includes: type and attendees columns
+  
+  const attendeesStr = Array.isArray(attendees) ? attendees.join(',') : attendees || 'All';
+  
   db.query(
-    "INSERT INTO schedule (house_id, title, description, scheduled_date, scheduled_time, type, attendees, recurrence, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())", 
+    "INSERT INTO schedule (house_id, title, description, event_date, event_time, type, attendees, recurrence, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", 
     [house_id, title, description || '', scheduled_date, scheduled_time || null, type || 'meeting', attendeesStr, recurrence || 'none', created_by || null], 
     (err, results) => {
       if (err) {
