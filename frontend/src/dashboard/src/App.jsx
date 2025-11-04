@@ -1903,9 +1903,19 @@ const formatDate = (date) => {
         });
         break;
       case 'overdue':
-        // Now that we auto-update overdue status in the backend, 
-        // filter by the 'overdue' status directly
-        filtered = tasks.filter(task => task.originalStatus?.toLowerCase() === 'overdue');
+        // Filter for overdue tasks - either those marked as overdue in DB OR those past due date
+        filtered = tasks.filter(task => {
+          const dbStatus = task.originalStatus?.toLowerCase();
+          // If already marked as overdue in database, include it
+          if (dbStatus === 'overdue') {
+            return true;
+          }
+          // If not completed and past due date, it's overdue regardless of DB status
+          if (dbStatus !== 'completed' && isOverdue(task.due_date, task.originalStatus)) {
+            return true;
+          }
+          return false;
+        });
         break;
       default:
         filtered = [];
