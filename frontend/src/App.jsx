@@ -17,7 +17,7 @@ import { UserProvider } from './UserContext.jsx';
 
 // Lazy load components
 const LandingPage = lazy(() => import('./components/LandingPage.jsx'));
-const AuthApp = lazy(() => import('./Auth/src/App.jsx'));
+const AuthApp = lazy(() => import('./Auth/src/App-debug.jsx'));
 const DashboardApp = lazy(() => import('./dashboard/src/App.jsx'));
 
 function App() {
