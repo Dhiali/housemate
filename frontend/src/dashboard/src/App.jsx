@@ -1497,6 +1497,91 @@ function App() {
   };
 
   // Helper functions for schedule
+  // Get today's schedule items for dashboard (ignores schedule page filters)
+  const getTodaysScheduleItems = () => {
+    const items = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Add ALL tasks (ignore schedule page filters)
+    tasks.forEach(task => {
+      if (!task.due_date) return;
+      const taskDue = new Date(task.due_date);
+      taskDue.setHours(0, 0, 0, 0);
+      if (taskDue.getTime() === today.getTime()) {
+        const isOverdue = taskDue < today && task.originalStatus !== 'completed';
+        items.push({
+          id: `task-${task.id}`,
+          title: task.title,
+          description: task.description || '',
+          date: task.due_date,
+          type: 'task',
+          assignedTo: task.assignedTo,
+          status: task.status,
+          priority: task.priority,
+          color: isOverdue ? 'red' : 'blue',
+          icon: task.icon,
+          isOverdue: isOverdue,
+          originalDueDate: task.dueDate
+        });
+      }
+    });
+
+    // Add ALL bills (ignore schedule page filters)
+    bills.forEach(bill => {
+      if (!bill.due_date) return;
+      const billDue = new Date(bill.due_date);
+      billDue.setHours(0, 0, 0, 0);
+      if (billDue.getTime() === today.getTime()) {
+        const isOverdue = billDue < today && bill.status !== 'paid' && bill.status !== 'Paid';
+        items.push({
+          id: `bill-${bill.id}`,
+          title: bill.title,
+          description: bill.description || `Amount: $${bill.amount}`,
+          date: bill.due_date,
+          type: 'bill',
+          assignedTo: 'Everyone',
+          status: bill.status,
+          amount: bill.amount,
+          color: isOverdue ? 'red' : 'green',
+          icon: bill.icon,
+          isOverdue: isOverdue
+        });
+      }
+    });
+
+    // Add ALL events (ignore schedule page filters)
+    houseEvents.forEach(event => {
+      if (!event.date) return;
+      const eventDate = new Date(event.date);
+      eventDate.setHours(0, 0, 0, 0);
+      if (eventDate.getTime() === today.getTime()) {
+        items.push({
+          id: `event-${event.id}`,
+          title: event.title,
+          description: event.description || '',
+          date: event.date,
+          time: event.time || '',
+          type: 'event',
+          assignedTo: event.attendees ? event.attendees.join(', ') : 'Unknown',
+          color: 'purple',
+          icon: <Calendar size={16} className="text-purple-600" />
+        });
+      }
+    });
+
+    // Sort by time if available, otherwise by type priority
+    return items.sort((a, b) => {
+      if (a.time && b.time) {
+        return a.time.localeCompare(b.time);
+      }
+      if (a.time && !b.time) return -1;
+      if (!a.time && b.time) return 1;
+      const typeOrder = { task: 1, bill: 2, event: 3 };
+      return typeOrder[a.type] - typeOrder[b.type];
+    });
+  };
+
   const getAllScheduleItems = () => {
     const items = [];
     const today = new Date();
@@ -2703,8 +2788,8 @@ const formatDate = (date) => {
                     
                     <div className="space-y-3">
                       {(() => {
-                        const today = new Date().toISOString().split('T')[0];
-                        const todayItems = getAllScheduleItems().filter(item => item.date === today);
+                        // Get today's schedule items (ignores schedule page filters)
+                        const todayItems = getTodaysScheduleItems();
                         
                         if (todayItems.length === 0) {
                           return (
