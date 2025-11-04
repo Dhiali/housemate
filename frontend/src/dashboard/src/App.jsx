@@ -47,6 +47,7 @@ import {
 import './index.css';
 import { useState, useEffect } from 'react';
 import { getTasks, addTask, updateTask, getHouse, getHouseStatistics, getHousemates, getUserStatistics, getUserCompletedTasks, getUserPendingTasks, getUserContributedBills, getBills, addBill, updateBill, deleteBill, payBill, addEvent, getSchedule, checkScheduleTable } from '../../apiHelpers';
+import { getPublicHouseStatistics } from '../../publicApi';
 import { updateUserBio, updateUserPhone } from '../../apiHelpers';
 import { Button } from './components/ui/button';
 import { useSEO, SEO_CONFIG } from '../../hooks/useSEO.js';
@@ -672,10 +673,15 @@ function App() {
 
   // Function to fetch house statistics from backend (alternative to frontend calculations)
   const fetchHouseStatistics = async () => {
-    if (!user?.house_id) return;
+    // Only fetch if user is logged in and has a house_id
+    if (!user?.house_id) {
+      console.log('No user or house_id available, skipping statistics fetch');
+      return;
+    }
     
     try {
       console.log('Fetching house statistics for house_id:', user.house_id);
+      // Use authenticated API with the user's actual house
       const response = await getHouseStatistics(user.house_id);
       console.log('House statistics API response:', response);
       
