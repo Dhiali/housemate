@@ -1211,23 +1211,30 @@ app.get('/bills', authenticateToken, requireHouseAccess(), (req, res) => {
               status: payment.status
             }));
 
-            const shares = sharesResults.map(share => ({
-              id: share.id,
-              bill_id: share.bill_id,
-              user_id: share.user_id,
-              user_name: share.user_name,
-              user_surname: share.user_surname,
-              user_email: share.user_email,
-              amount: parseFloat(share.amount) || 0,
-              amount_paid: parseFloat(share.amount_paid) || 0,
-              remaining_amount: Math.max(0, (parseFloat(share.amount) || 0) - (parseFloat(share.amount_paid) || 0)),
-              status: share.status,
-              paid_by_user_id: share.paid_by_user_id,
-              paid_by_name: share.paid_by_name ? `${share.paid_by_name} ${share.paid_by_surname}` : null,
-              payment_method: share.payment_method,
-              payment_notes: share.payment_notes,
-              paid_at: share.paid_at
-            }));
+            const shares = sharesResults.map(share => {
+              const shareAmount = parseFloat(share.amount) || 0;
+              const amountPaid = parseFloat(share.amount_paid) || 0;
+              const remainingAmount = Math.max(0, shareAmount - amountPaid);
+              const shareStatus = remainingAmount === 0 ? 'paid' : 'pending';
+              
+              return {
+                id: share.id,
+                bill_id: share.bill_id,
+                user_id: share.user_id,
+                user_name: share.user_name,
+                user_surname: share.user_surname,
+                user_email: share.user_email,
+                amount: shareAmount,
+                amount_paid: amountPaid,
+                remaining_amount: remainingAmount,
+                status: shareStatus, // Use calculated status instead of database status
+                paid_by_user_id: share.paid_by_user_id,
+                paid_by_name: share.paid_by_name ? `${share.paid_by_name} ${share.paid_by_surname}` : null,
+                payment_method: share.payment_method,
+                payment_notes: share.payment_notes,
+                paid_at: share.paid_at
+              };
+            });
 
             // Calculate payment totals and status
             const totalBillAmount = parseFloat(bill.amount) || 0;
@@ -1329,23 +1336,30 @@ app.get('/bills/:id', (req, res) => {
       const bill = billResults[0];
       
       // Enhanced shares with payment calculations
-      const shares = sharesResults.map(share => ({
-        id: share.id,
-        bill_id: share.bill_id,
-        user_id: share.user_id,
-        user_name: share.user_name,
-        user_surname: share.user_surname,
-        user_email: share.user_email,
-        amount: parseFloat(share.amount) || 0,
-        amount_paid: parseFloat(share.amount_paid) || 0,
-        remaining_amount: Math.max(0, (parseFloat(share.amount) || 0) - (parseFloat(share.amount_paid) || 0)),
-        status: share.status,
-        paid_by_user_id: share.paid_by_user_id,
-        paid_by_name: share.paid_by_name ? `${share.paid_by_name} ${share.paid_by_surname}` : null,
-        payment_method: share.payment_method,
-        payment_notes: share.payment_notes,
-        paid_at: share.paid_at
-      }));
+      const shares = sharesResults.map(share => {
+        const shareAmount = parseFloat(share.amount) || 0;
+        const amountPaid = parseFloat(share.amount_paid) || 0;
+        const remainingAmount = Math.max(0, shareAmount - amountPaid);
+        const shareStatus = remainingAmount === 0 ? 'paid' : 'pending';
+        
+        return {
+          id: share.id,
+          bill_id: share.bill_id,
+          user_id: share.user_id,
+          user_name: share.user_name,
+          user_surname: share.user_surname,
+          user_email: share.user_email,
+          amount: shareAmount,
+          amount_paid: amountPaid,
+          remaining_amount: remainingAmount,
+          status: shareStatus, // Use calculated status instead of database status
+          paid_by_user_id: share.paid_by_user_id,
+          paid_by_name: share.paid_by_name ? `${share.paid_by_name} ${share.paid_by_surname}` : null,
+          payment_method: share.payment_method,
+          payment_notes: share.payment_notes,
+          paid_at: share.paid_at
+        };
+      });
 
       // Calculate payment totals and status
       const totalBillAmount = parseFloat(bill.amount) || 0;

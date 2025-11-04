@@ -162,6 +162,8 @@ export function BillItem({
                           ? share.remaining_amount 
                           : Math.max(0, (share.amount || 0) - (share.amount_paid || 0));
                         const isPaid = remainingAmount === 0;
+                        const shareAmount = share.amount || 0;
+                        const amountPaid = share.amount_paid || 0;
                         
                         return (
                           <div key={index} className="flex items-center justify-between text-xs">
@@ -173,18 +175,22 @@ export function BillItem({
                             </div>
                             <div className="flex items-center space-x-2">
                               {isPaid ? (
-                                <span className="text-green-600 font-medium">Paid in full</span>
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-green-600 font-medium">✓ Paid in full</span>
+                                  <Badge variant="success" className="text-xs">
+                                    Complete
+                                  </Badge>
+                                </div>
                               ) : (
-                                <span className="text-red-600">
-                                  R{Number(remainingAmount).toFixed(2)} remaining
-                                </span>
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-orange-600 font-medium">
+                                    Owes R{Number(remainingAmount).toFixed(2)}
+                                  </span>
+                                  <span className="text-gray-500 text-xs">
+                                    (R{Number(amountPaid).toFixed(2)} / R{Number(shareAmount).toFixed(2)})
+                                  </span>
+                                </div>
                               )}
-                              <Badge 
-                                variant={isPaid ? 'success' : 'secondary'}
-                                className="text-xs"
-                              >
-                                {isPaid ? 'Paid' : 'Pending'}
-                              </Badge>
                               {isPaid && share.paid_by_name && (
                                 <span className="text-xs text-green-600">
                                   by {share.paid_by_name}
