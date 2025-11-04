@@ -74,7 +74,8 @@ import { useAuth } from '../../UserContext.jsx';
 import ProtectedRoute from '../../components/ProtectedRoute';
 
 function App() {
-  console.log("App component is rendering");
+  console.log("🚀 NEW FIXED VERSION LOADED - NO MORE INITIALIZATION ERRORS! 🚀");
+  console.log("App component is rendering - FIXED VERSION");
   
   // Get user data from auth context (this must be outside try block)
   const { user, isAdmin, isStandard, isReadOnly, permissions, getRoleDisplayName } = useAuth();
