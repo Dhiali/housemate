@@ -1259,42 +1259,85 @@ export default function App({ user }) {
 
   // Helper functions for schedule
   const getAllScheduleItems = () => {
-  const items = [];
+    const items = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     
     // Add tasks if filter is enabled
     if (scheduleFilters.tasks) {
       tasks.forEach(task => {
-        if (task.dueDate !== 'No due date') {
-          let dueDate = '';
+        let dueDate = '';
+        let dueDateObj = null;
+        
+        // Parse task due date
+        if (task.dueDate && task.dueDate !== 'No due date') {
           if (task.dueDate.includes('Today')) {
             dueDate = new Date().toISOString().split('T')[0];
+            dueDateObj = new Date();
           } else if (task.dueDate.includes('Tomorrow')) {
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             dueDate = tomorrow.toISOString().split('T')[0];
+            dueDateObj = tomorrow;
+          } else if (task.dueDate.includes('Yesterday')) {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            dueDate = yesterday.toISOString().split('T')[0];
+            dueDateObj = yesterday;
           } else {
-            // Extract date from "Due Dec 18" format
-            const match = task.dueDate.match(/Due (\w+ \d+)/);
-            if (match) {
-              const currentYear = new Date().getFullYear();
-              dueDate = new Date(`${match[1]} ${currentYear}`).toISOString().split('T')[0];
+            // Handle various date formats
+            try {
+              // Try parsing the due date directly
+              if (task.dueDate.includes('/')) {
+                // Format: MM/DD/YYYY or DD/MM/YYYY
+                const dateParts = task.dueDate.replace('Due ', '').split('/');
+                if (dateParts.length === 3) {
+                  dueDateObj = new Date(dateParts[2], dateParts[0] - 1, dateParts[1]);
+                  dueDate = dueDateObj.toISOString().split('T')[0];
+                }
+              } else if (task.dueDate.includes('Due ')) {
+                // Format: "Due Dec 18" or "Due December 18, 2024"
+                const dateStr = task.dueDate.replace('Due ', '');
+                const currentYear = new Date().getFullYear();
+                
+                // Add current year if not present
+                const fullDateStr = dateStr.includes(currentYear.toString()) ? dateStr : `${dateStr} ${currentYear}`;
+                dueDateObj = new Date(fullDateStr);
+                
+                if (!isNaN(dueDateObj.getTime())) {
+                  dueDate = dueDateObj.toISOString().split('T')[0];
+                }
+              } else {
+                // Try parsing as is
+                dueDateObj = new Date(task.dueDate);
+                if (!isNaN(dueDateObj.getTime())) {
+                  dueDate = dueDateObj.toISOString().split('T')[0];
+                }
+              }
+            } catch (error) {
+              console.log('Error parsing task date:', task.dueDate, error);
             }
           }
+        }
+        
+        if (dueDate && dueDateObj) {
+          dueDateObj.setHours(0, 0, 0, 0);
+          const isOverdue = dueDateObj < today && task.status !== 'completed';
           
-          if (dueDate) {
-            items.push({
-              id: `task-${items.length}`,
-              title: task.title,
-              description: task.description,
-              date: dueDate,
-              type: 'task',
-              assignedTo: task.assignedTo,
-              status: task.status,
-              priority: task.priority,
-              color: 'blue',
-              icon: task.icon
-            });
-          }
+          items.push({
+            id: `task-${task.id || items.length}`,
+            title: task.title,
+            description: task.description || '',
+            date: dueDate,
+            type: 'task',
+            assignedTo: task.assignedTo,
+            status: task.status,
+            priority: task.priority,
+            color: isOverdue ? 'red' : 'blue', // Red for overdue, blue for upcoming
+            icon: task.icon || <CheckSquare size={16} className={isOverdue ? "text-red-600" : "text-blue-600"} />,
+            isOverdue: isOverdue,
+            originalDueDate: task.dueDate
+          });
         }
       });
     }
@@ -1302,35 +1345,73 @@ export default function App({ user }) {
     // Add bills if filter is enabled
     if (scheduleFilters.bills) {
       bills.forEach(bill => {
-        items.push({
-          id: `bill-${bill.id}`,
-          title: bill.title,
-          description: bill.description,
-          date: bill.dueDate,
-          type: 'bill',
-          amount: bill.amount,
-          status: bill.status,
-          isOverdue: bill.isOverdue,
-          color: 'green',
-          icon: bill.icon
-        });
+        let dueDateObj = null;
+        let billDate = '';
+        
+        // Parse bill due date
+        if (bill.dueDate && bill.dueDate !== 'No due date') {
+          try {
+            if (typeof bill.dueDate === 'string') {
+              // Handle various date formats
+              if (bill.dueDate.includes('/')) {
+                // MM/DD/YYYY format
+                dueDateObj = new Date(bill.dueDate);
+              } else if (bill.dueDate.includes('-')) {
+                // YYYY-MM-DD format
+                dueDateObj = new Date(bill.dueDate);
+              } else {
+                // Try parsing as is
+                dueDateObj = new Date(bill.dueDate);
+              }
+            } else {
+              dueDateObj = new Date(bill.dueDate);
+            }
+            
+            if (!isNaN(dueDateObj.getTime())) {
+              billDate = dueDateObj.toISOString().split('T')[0];
+            }
+          } catch (error) {
+            console.log('Error parsing bill date:', bill.dueDate, error);
+          }
+        }
+        
+        if (billDate && dueDateObj) {
+          dueDateObj.setHours(0, 0, 0, 0);
+          const isOverdue = dueDateObj < today && bill.status !== 'paid' && bill.status !== 'Paid';
+          
+          items.push({
+            id: `bill-${bill.id}`,
+            title: bill.title,
+            description: bill.description || '',
+            date: billDate,
+            type: 'bill',
+            amount: bill.amount,
+            status: bill.status,
+            isOverdue: isOverdue,
+            color: isOverdue ? 'red' : 'green', // Red for overdue, green for upcoming
+            icon: bill.icon || <CreditCard size={16} className={isOverdue ? "text-red-600" : "text-green-600"} />,
+            originalDueDate: bill.dueDate
+          });
+        }
       });
     }
     
     // Add house events if filter is enabled
     if (scheduleFilters.events) {
       houseEvents.forEach(event => {
-        items.push({
-          id: `event-${event.id}`,
-          title: event.title,
-          description: event.description,
-          date: event.date,
-          time: event.time,
-          type: 'event',
-          attendees: event.attendees,
-          color: 'purple',
-          icon: <Calendar size={16} className="text-purple-600" />
-        });
+        if (event.date) {
+          items.push({
+            id: `event-${event.id}`,
+            title: event.title,
+            description: event.description || '',
+            date: event.date,
+            time: event.time,
+            type: 'event',
+            attendees: event.attendees,
+            color: 'purple',
+            icon: <Calendar size={16} className="text-purple-600" />
+          });
+        }
       });
     }
     
@@ -1340,6 +1421,56 @@ export default function App({ user }) {
   const getItemsForDate = (date) => {
     const dateStr = date.toISOString().split('T')[0];
     return getAllScheduleItems().filter(item => item.date === dateStr);
+  };
+
+  // Calendar helper functions
+  const getDaysInMonth = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+    
+    const days = [];
+    
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(null);
+    }
+    
+    // Add all days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push(new Date(year, month, day));
+    }
+    
+    return days;
+  };
+
+  const getWeekDays = (date) => {
+    const startOfWeek = new Date(date);
+    const dayOfWeek = startOfWeek.getDay();
+    startOfWeek.setDate(startOfWeek.getDate() - dayOfWeek);
+    
+    const weekDays = [];
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(startOfWeek);
+      day.setDate(startOfWeek.getDate() + i);
+      weekDays.push(day);
+    }
+    
+    return weekDays;
+  };
+
+  const isSameMonth = (date1, date2) => {
+    return date1.getMonth() === date2.getMonth() && date1.getFullYear() === date2.getFullYear();
+  };
+
+  const isTodayCalendar = (date) => {
+    const today = new Date();
+    return date.getDate() === today.getDate() && 
+           date.getMonth() === today.getMonth() && 
+           date.getFullYear() === today.getFullYear();
   };
 
   const toggleFilter = (filterType) => {
@@ -3357,23 +3488,45 @@ export default function App({ user }) {
                               </div>
                               
                               <div className="space-y-1">
-                                {dayItems.slice(0, 3).map((item) => (
-                                  <div
-                                    key={item.id}
-                                    className={`text-xs p-1 rounded cursor-pointer hover:opacity-80 transition-opacity ${
-                                      item.type === 'task' ? 'bg-blue-100 text-blue-700' :
-                                      item.type === 'bill' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'
-                                    } ${item.isOverdue ? 'bg-red-100 text-red-700' : ''}`}
-                                    onClick={() => handleEventClick(item)}
-                                    onMouseEnter={() => setHoveredItem(item)}
-                                    onMouseLeave={() => setHoveredItem(null)}
-                                    title={`${item.title} - ${item.description}`}
-                                  >
-                                    {item.title.length > 15 ? `${item.title.substring(0, 15)}...` : item.title}
-                                  </div>
-                                ))}
+                                {dayItems.slice(0, 3).map((item) => {
+                                  // Color coding: Red for overdue, Blue for upcoming tasks, Green for upcoming bills
+                                  let itemClasses = 'text-xs p-1 rounded cursor-pointer hover:opacity-80 transition-opacity ';
+                                  
+                                  if (item.color === 'red' || item.isOverdue) {
+                                    itemClasses += 'bg-red-100 text-red-700 border border-red-200';
+                                  } else if (item.type === 'task') {
+                                    itemClasses += 'bg-blue-100 text-blue-700 border border-blue-200';
+                                  } else if (item.type === 'bill') {
+                                    itemClasses += 'bg-green-100 text-green-700 border border-green-200';
+                                  } else if (item.type === 'event') {
+                                    itemClasses += 'bg-purple-100 text-purple-700 border border-purple-200';
+                                  }
+                                  
+                                  return (
+                                    <div
+                                      key={item.id}
+                                      className={itemClasses}
+                                      onClick={() => handleEventClick(item)}
+                                      onMouseEnter={() => setHoveredItem(item)}
+                                      onMouseLeave={() => setHoveredItem(null)}
+                                      title={`${item.title} - ${item.description || ''} ${item.isOverdue ? '(OVERDUE)' : ''}`}
+                                    >
+                                      <div className="flex items-center space-x-1">
+                                        {item.icon && <span className="inline-block">{item.icon}</span>}
+                                        <span className="truncate">
+                                          {item.title.length > 12 ? `${item.title.substring(0, 12)}...` : item.title}
+                                        </span>
+                                      </div>
+                                      {item.amount && (
+                                        <div className="text-xs opacity-75">
+                                          R{Number(item.amount || 0).toFixed(0)}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
                                 {dayItems.length > 3 && (
-                                  <div className="text-xs text-gray-500 text-center">
+                                  <div className="text-xs text-gray-500 text-center bg-gray-100 p-1 rounded">
                                     +{dayItems.length - 3} more
                                   </div>
                                 )}
@@ -3417,24 +3570,47 @@ export default function App({ user }) {
                               }`}
                             >
                               <div className="space-y-2">
-                                {dayItems.map((item) => (
-                                  <div
-                                    key={item.id}
-                                    className={`text-sm p-2 rounded cursor-pointer hover:opacity-80 transition-opacity ${
-                                      item.type === 'task' ? 'bg-blue-100 text-blue-700' :
-                                      item.type === 'bill' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'
-                                    } ${item.isOverdue ? 'bg-red-100 text-red-700' : ''}`}
-                                    onClick={() => handleEventClick(item)}
-                                    onMouseEnter={() => setHoveredItem(item)}
-                                    onMouseLeave={() => setHoveredItem(null)}
-                                    title={`${item.title} - ${item.description}`}
-                                  >
-                                    <div className="font-medium">{item.title}</div>
-                                    {item.time && (
-                                      <div className="text-xs opacity-75">{item.time}</div>
-                                    )}
-                                  </div>
-                                ))}
+                                {dayItems.map((item) => {
+                                  // Color coding: Red for overdue, Blue for upcoming tasks, Green for upcoming bills
+                                  let itemClasses = 'text-sm p-2 rounded cursor-pointer hover:opacity-80 transition-opacity ';
+                                  
+                                  if (item.color === 'red' || item.isOverdue) {
+                                    itemClasses += 'bg-red-100 text-red-700 border border-red-200';
+                                  } else if (item.type === 'task') {
+                                    itemClasses += 'bg-blue-100 text-blue-700 border border-blue-200';
+                                  } else if (item.type === 'bill') {
+                                    itemClasses += 'bg-green-100 text-green-700 border border-green-200';
+                                  } else if (item.type === 'event') {
+                                    itemClasses += 'bg-purple-100 text-purple-700 border border-purple-200';
+                                  }
+                                  
+                                  return (
+                                    <div
+                                      key={item.id}
+                                      className={itemClasses}
+                                      onClick={() => handleEventClick(item)}
+                                      onMouseEnter={() => setHoveredItem(item)}
+                                      onMouseLeave={() => setHoveredItem(null)}
+                                      title={`${item.title} - ${item.description || ''} ${item.isOverdue ? '(OVERDUE)' : ''}`}
+                                    >
+                                      <div className="flex items-center space-x-2">
+                                        {item.icon && <span className="inline-block">{item.icon}</span>}
+                                        <div className="font-medium truncate">{item.title}</div>
+                                      </div>
+                                      {item.time && (
+                                        <div className="text-xs opacity-75 mt-1">{item.time}</div>
+                                      )}
+                                      {item.amount && (
+                                        <div className="text-xs opacity-75 mt-1">
+                                          R{Number(item.amount || 0).toFixed(0)}
+                                        </div>
+                                      )}
+                                      {item.isOverdue && (
+                                        <div className="text-xs font-bold text-red-800 mt-1">OVERDUE</div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </div>
                           );
@@ -3454,48 +3630,77 @@ export default function App({ user }) {
                             <p className="text-gray-500">Add tasks, bills, or events to see them here</p>
                           </div>
                         ) : (
-                          getAllScheduleItems().map((item) => (
-                            <div
-                              key={item.id}
-                              className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                              onClick={() => handleEventClick(item)}
-                            >
-                              <div className="flex items-center space-x-4">
-                                <div className={`w-3 h-3 rounded-full ${
-                                  item.type === 'task' ? 'bg-blue-500' :
-                                  item.type === 'bill' ? 'bg-green-500' : 'bg-purple-500'
-                                } ${item.isOverdue ? 'bg-red-500' : ''}`}></div>
-                                <div className="flex items-center space-x-3">
-                                  {item.icon}
-                                  <div>
-                                    <div className="font-medium text-gray-900">{item.title}</div>
-                                    <div className="text-sm text-gray-500">{item.description}</div>
+                          getAllScheduleItems().map((item) => {
+                            // Color coding for the indicator dot
+                            let indicatorColor = '';
+                            if (item.color === 'red' || item.isOverdue) {
+                              indicatorColor = 'bg-red-500';
+                            } else if (item.type === 'task') {
+                              indicatorColor = 'bg-blue-500';
+                            } else if (item.type === 'bill') {
+                              indicatorColor = 'bg-green-500';
+                            } else if (item.type === 'event') {
+                              indicatorColor = 'bg-purple-500';
+                            }
+                            
+                            return (
+                              <div
+                                key={item.id}
+                                className={`flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors ${
+                                  item.isOverdue ? 'border-red-300 bg-red-50' : ''
+                                }`}
+                                onClick={() => handleEventClick(item)}
+                              >
+                                <div className="flex items-center space-x-4">
+                                  <div className={`w-3 h-3 rounded-full ${indicatorColor}`}></div>
+                                  <div className="flex items-center space-x-3">
+                                    {item.icon}
+                                    <div>
+                                      <div className={`font-medium ${item.isOverdue ? 'text-red-900' : 'text-gray-900'}`}>
+                                        {item.title}
+                                        {item.isOverdue && <span className="ml-2 text-xs font-bold text-red-600">(OVERDUE)</span>}
+                                      </div>
+                                      <div className="text-sm text-gray-500">{item.description}</div>
+                                      {item.originalDueDate && (
+                                        <div className="text-xs text-gray-400 mt-1">
+                                          Due: {item.originalDueDate}
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-sm font-medium text-gray-900">
-                                  {new Date(item.date).toLocaleDateString()}
-                                </div>
-                                {item.time && (
-                                  <div className="text-sm text-gray-500">{item.time}</div>
-                                )}
-                                {item.amount && (
-                                  <div className="text-sm font-medium text-green-600">
-                                    ${Number(item.amount || 0).toFixed(2)}
+                                <div className="text-right">
+                                  <div className={`text-sm font-medium ${item.isOverdue ? 'text-red-700' : 'text-gray-900'}`}>
+                                    {new Date(item.date).toLocaleDateString()}
                                   </div>
-                                )}
-                                {item.assignedTo && (
-                                  <div className="text-sm text-gray-600">{item.assignedTo}</div>
-                                )}
-                                {item.isOverdue && (
-                                  <Badge variant="destructive" className="text-xs mt-1">
-                                    Overdue
-                                  </Badge>
-                                )}
+                                  {item.time && (
+                                    <div className="text-sm text-gray-500">{item.time}</div>
+                                  )}
+                                  {item.amount && (
+                                    <div className={`text-sm font-medium ${item.isOverdue ? 'text-red-600' : 'text-green-600'}`}>
+                                      R{Number(item.amount || 0).toFixed(2)}
+                                    </div>
+                                  )}
+                                  {item.assignedTo && (
+                                    <div className="text-sm text-gray-600">{item.assignedTo}</div>
+                                  )}
+                                  {item.status && (
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      Status: {item.status}
+                                    </div>
+                                  )}
+                                  {item.priority && (
+                                    <div className={`text-xs mt-1 ${
+                                      item.priority === 'high' ? 'text-red-600' :
+                                      item.priority === 'medium' ? 'text-yellow-600' : 'text-green-600'
+                                    }`}>
+                                      {item.priority} priority
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          ))
+                            );
+                          })
                         )}
                       </div>
                     </div>

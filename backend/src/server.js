@@ -1047,52 +1047,131 @@ app.put('/bills/:id/pay', (req, res) => {
     });
   };
 
-  // First, check if a bill_share record exists
-  const checkShareQuery = 'SELECT * FROM bill_share WHERE bill_id = ? AND user_id = ?';
-  
-  db.query(checkShareQuery, [billId, user_id], (err, existingShares) => {
+  // First, check what columns exist in bill_share table
+  db.query('SHOW COLUMNS FROM bill_share', (err, columns) => {
     if (err) {
-      console.error('Error checking bill share:', err);
+      console.error('Error checking bill_share columns:', err);
       return res.status(500).json({ error: err.message });
     }
 
-    if (existingShares.length > 0) {
-      // Update existing bill_share record
-      const updateQuery = `
-        UPDATE bill_share 
-        SET status = 'paid', 
-            amount_paid = ?, 
-            paid_by_user_id = ?,
-            paid_at = NOW(),
-            payment_method = ?,
-            payment_notes = ?
-        WHERE bill_id = ? AND user_id = ?
-      `;
+    const columnNames = columns.map(col => col.Field);
+    const hasStatus = columnNames.includes('status');
+    const hasAmountPaid = columnNames.includes('amount_paid');
+    const hasPaidBy = columnNames.includes('paid_by_user_id');
+    const hasPaidAt = columnNames.includes('paid_at');
+    const hasPaymentMethod = columnNames.includes('payment_method');
+    const hasPaymentNotes = columnNames.includes('payment_notes');
 
-      db.query(updateQuery, [amount_paid || null, paid_by_user_id, payment_method || null, payment_notes || null, billId, user_id], (err, results) => {
-        if (err) {
-          console.error('Error updating bill payment:', err);
-          return res.status(500).json({ error: err.message });
+    console.log('Available columns in bill_share:', columnNames);
+
+    // Check if a bill_share record exists
+    const checkShareQuery = 'SELECT * FROM bill_share WHERE bill_id = ? AND user_id = ?';
+    
+    db.query(checkShareQuery, [billId, user_id], (err, existingShares) => {
+      if (err) {
+        console.error('Error checking bill share:', err);
+        return res.status(500).json({ error: err.message });
+      }
+
+      if (existingShares.length > 0) {
+        // Build update query based on available columns
+        const updateFields = [];
+        const updateValues = [];
+
+        if (hasStatus) {
+          updateFields.push('status = ?');
+          updateValues.push('paid');
+        }
+        if (hasAmountPaid) {
+          updateFields.push('amount_paid = ?');
+          updateValues.push(amount_paid || null);
+        }
+        if (hasPaidBy) {
+          updateFields.push('paid_by_user_id = ?');
+          updateValues.push(paid_by_user_id);
+        }
+        if (hasPaidAt) {
+          updateFields.push('paid_at = NOW()');
+        }
+        if (hasPaymentMethod) {
+          updateFields.push('payment_method = ?');
+          updateValues.push(payment_method || null);
+        }
+        if (hasPaymentNotes) {
+          updateFields.push('payment_notes = ?');
+          updateValues.push(payment_notes || null);
         }
 
-        logPaymentHistory(billId, user_id, paid_by_user_id, amount_paid, payment_method, payment_notes, res);
-      });
-    } else {
-      // Create a new bill_share record if it doesn't exist
-      const insertQuery = `
-        INSERT INTO bill_share (bill_id, user_id, amount, amount_paid, status, paid_by_user_id, paid_at, payment_method, payment_notes)
-        VALUES (?, ?, ?, ?, 'paid', ?, NOW(), ?, ?)
-      `;
-
-      db.query(insertQuery, [billId, user_id, amount_paid || 0, amount_paid || 0, paid_by_user_id, payment_method || null, payment_notes || null], (err, results) => {
-        if (err) {
-          console.error('Error creating bill share payment:', err);
-          return res.status(500).json({ error: err.message });
+        if (updateFields.length === 0) {
+          // No payment-related columns available, just log to history
+          console.log('No payment columns available in bill_share, logging to history only');
+          logPaymentHistory(billId, user_id, paid_by_user_id, amount_paid, payment_method, payment_notes, res);
+          return;
         }
 
-        logPaymentHistory(billId, user_id, paid_by_user_id, amount_paid, payment_method, payment_notes, res);
-      });
-    }
+        const updateQuery = `UPDATE bill_share SET ${updateFields.join(', ')} WHERE bill_id = ? AND user_id = ?`;
+        updateValues.push(billId, user_id);
+
+        db.query(updateQuery, updateValues, (err, results) => {
+          if (err) {
+            console.error('Error updating bill payment:', err);
+            return res.status(500).json({ error: err.message });
+          }
+
+          logPaymentHistory(billId, user_id, paid_by_user_id, amount_paid, payment_method, payment_notes, res);
+        });
+      } else {
+        // Build insert query based on available columns
+        const insertFields = ['bill_id', 'user_id', 'amount'];
+        const insertValues = [billId, user_id, amount_paid || 0];
+        const insertPlaceholders = ['?', '?', '?'];
+
+        if (hasAmountPaid) {
+          insertFields.push('amount_paid');
+          insertValues.push(amount_paid || 0);
+          insertPlaceholders.push('?');
+        }
+        if (hasStatus) {
+          insertFields.push('status');
+          insertValues.push('paid');
+          insertPlaceholders.push('?');
+        }
+        if (hasPaidBy) {
+          insertFields.push('paid_by_user_id');
+          insertValues.push(paid_by_user_id);
+          insertPlaceholders.push('?');
+        }
+        if (hasPaidAt) {
+          insertFields.push('paid_at');
+          insertValues.push(new Date());
+          insertPlaceholders.push('NOW()');
+        }
+        if (hasPaymentMethod) {
+          insertFields.push('payment_method');
+          insertValues.push(payment_method || null);
+          insertPlaceholders.push('?');
+        }
+        if (hasPaymentNotes) {
+          insertFields.push('payment_notes');
+          insertValues.push(payment_notes || null);
+          insertPlaceholders.push('?');
+        }
+
+        const insertQuery = `INSERT INTO bill_share (${insertFields.join(', ')}) VALUES (${insertPlaceholders.join(', ')})`;
+        
+        // Remove NOW() from values array since it's a SQL function
+        const finalValues = insertValues.filter((val, index) => insertPlaceholders[index] !== 'NOW()');
+
+        db.query(insertQuery, finalValues, (err, results) => {
+          if (err) {
+            console.error('Error creating bill share payment:', err);
+            return res.status(500).json({ error: err.message });
+          }
+
+          logPaymentHistory(billId, user_id, paid_by_user_id, amount_paid, payment_method, payment_notes, res);
+        });
+      }
+    });
   });
 });
 
