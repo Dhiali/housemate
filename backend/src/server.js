@@ -1628,9 +1628,9 @@ app.put('/bills/:id/pay', (req, res) => {
         });
       } else {
         // Build insert query based on available columns
-        const insertFields = ['bill_id', 'user_id', 'amount'];
-        const insertValues = [billId, user_id, amount_paid || 0];
-        const insertPlaceholders = ['?', '?', '?'];
+        const insertFields = ['bill_id', 'user_id'];
+        const insertValues = [billId, user_id];
+        const insertPlaceholders = ['?', '?'];
 
         if (hasAmountPaid) {
           insertFields.push('amount_paid');
