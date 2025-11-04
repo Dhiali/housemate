@@ -42,6 +42,7 @@ export const getBillPayments = (billId) => API.get(`/bills/${billId}/payments`);
 export const getHouseStatistics = (houseId) => API.get(`/houses/${houseId}/statistics`);
 export const getHousemates = (houseId) => API.get(`/houses/${houseId}/users`);
 export const getHouseActivities = (houseId) => API.get(`/houses/${houseId}/activities`);
+export const getRecentActivities = (houseId) => API.get(`/houses/${houseId}/activities`);
 
 // User-specific endpoints  
 export const getUserStatistics = (userId) => API.get(`/users/${userId}/statistics`);

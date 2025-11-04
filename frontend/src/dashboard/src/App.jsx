@@ -652,8 +652,8 @@ export default function App({ user }) {
           ...bill,
           icon: categoryData.icon,
           dueDate: bill.due_date ? new Date(bill.due_date).toLocaleDateString() : 'No due date',
-          perPerson: perPerson.toFixed(2),
-          paid: totalPaidAmount.toFixed(2),
+          perPerson: (perPerson || 0).toFixed(2),
+          paid: (totalPaidAmount || 0).toFixed(2),
           status: status,
           isOverdue: status === 'Overdue',
           paymentProgress: totalShares > 0 && billAmount > 0 ? Math.round((totalPaidAmount / billAmount) * 100) : 0,
@@ -2126,7 +2126,7 @@ export default function App({ user }) {
                               )}
                               {item.amount && (
                                 <div className="text-sm font-medium text-green-600">
-                                  ${item.amount.toFixed(2)}
+                                  ${(item.amount || 0).toFixed(2)}
                                 </div>
                               )}
                               {item.type === 'task' && item.priority && (
@@ -3432,7 +3432,7 @@ export default function App({ user }) {
                                 )}
                                 {item.amount && (
                                   <div className="text-sm font-medium text-green-600">
-                                    ${item.amount.toFixed(2)}
+                                    ${(item.amount || 0).toFixed(2)}
                                   </div>
                                 )}
                                 {item.assignedTo && (
@@ -3647,7 +3647,7 @@ export default function App({ user }) {
                           <div>
                             <Label className="text-sm font-medium text-gray-900">Amount</Label>
                             <p className="text-lg font-semibold text-green-600 mt-1">
-                              ${selectedEvent.amount?.toFixed(2)}
+                              ${(selectedEvent.amount || 0).toFixed(2)}
                             </p>
                           </div>
                           {selectedEvent.status && (
@@ -4224,7 +4224,7 @@ export default function App({ user }) {
                         >
                           <div className="text-2xl font-semibold text-blue-700">
                             {selectedHousemate.totalBillsPaid > 0 ? 
-                              `R${selectedHousemate.totalBillsPaid.toFixed(0)}` : 
+                              `R${(selectedHousemate.totalBillsPaid || 0).toFixed(0)}` : 
                               <span className="text-gray-400 text-lg">N/A</span>
                             }
                           </div>
@@ -4327,7 +4327,7 @@ export default function App({ user }) {
                                     </div>
                                   </div>
                                   <div className="text-right">
-                                    <div className="font-semibold text-blue-900">${payment.amount.toFixed(2)}</div>
+                                    <div className="font-semibold text-blue-900">${(payment.amount || 0).toFixed(2)}</div>
                                     <div className="text-sm text-blue-600">
                                       {new Date(payment.paidDate).toLocaleDateString()}
                                     </div>
@@ -4354,7 +4354,7 @@ export default function App({ user }) {
                               <>Showing {housematePendingTasks.length} pending tasks</>
                             )}
                             {selectedActivityType === 'bills' && (
-                              <>Total contributed: ${housemateContributedBills.reduce((sum, payment) => sum + payment.amount, 0).toFixed(2)} across {housemateContributedBills.length} payments</>
+                              <>Total contributed: ${housemateContributedBills.reduce((sum, payment) => sum + (payment.amount || 0), 0).toFixed(2)} across {housemateContributedBills.length} payments</>
                             )}
                           </div>
                         </div>
