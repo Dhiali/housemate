@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 
-export function StatsCard({ title, amount, subtitle, icon, variant }) {
+export function StatsCard({ title, amount, subtitle, icon, variant, onClick }) {
   const variants = {
     default: 'bg-purple-100 text-purple-600',
     success: 'bg-green-100 text-green-600', 
@@ -8,8 +8,17 @@ export function StatsCard({ title, amount, subtitle, icon, variant }) {
     danger: 'bg-red-100 text-red-600'
   };
 
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+    }
+  };
+
   return (
-    <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-1">
+    <div 
+      className={`bg-white p-8 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-1 ${onClick ? 'cursor-pointer' : ''}`}
+      onClick={handleClick}
+    >
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
         <div className={`p-3 rounded-lg ${variants[variant]}`}>

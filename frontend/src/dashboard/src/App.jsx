@@ -198,6 +198,11 @@ function App() {
     message: ''
   });
   
+  // Task Detail View state
+  const [isTaskDetailOpen, setIsTaskDetailOpen] = useState(false);
+  const [selectedTaskType, setSelectedTaskType] = useState(null); // 'total', 'completed', 'pending', 'overdue'
+  const [filteredTasks, setFilteredTasks] = useState([]);
+  
   // Settings state
   const [settingsTab, setSettingsTab] = useState('profile');
   const [profileSettings, setProfileSettings] = useState({
@@ -1849,6 +1854,56 @@ const formatDate = (date) => {
     }
   };
 
+  // Function to handle task card clicks for dashboard stats
+  const handleTaskCardClick = (taskType) => {
+    if (selectedTaskType === taskType && isTaskDetailOpen) {
+      // If same card is clicked and detail view is open, close it
+      setIsTaskDetailOpen(false);
+      setSelectedTaskType(null);
+      setFilteredTasks([]);
+      return;
+    }
+
+    // Filter tasks based on the card clicked
+    let filtered = [];
+    const now = new Date();
+    
+    switch (taskType) {
+      case 'total':
+        filtered = tasks;
+        break;
+      case 'completed':
+        filtered = tasks.filter(task => task.status === 'completed');
+        break;
+      case 'pending':
+        filtered = tasks.filter(task => task.status === 'pending' || task.status === 'in_progress');
+        break;
+      case 'overdue':
+        filtered = tasks.filter(task => {
+          if (task.status === 'completed') return false;
+          const dueDate = new Date(task.due_date);
+          return dueDate < now;
+        });
+        break;
+      default:
+        filtered = [];
+    }
+
+    // Enhance filtered tasks with overdue information and proper formatting
+    const enhancedTasks = filtered.map(task => enhanceTaskWithOverdueInfo(task));
+
+    setSelectedTaskType(taskType);
+    setFilteredTasks(enhancedTasks);
+    setIsTaskDetailOpen(true);
+  };
+
+  // Function to close task detail view
+  const closeTaskDetailView = () => {
+    setIsTaskDetailOpen(false);
+    setSelectedTaskType(null);
+    setFilteredTasks([]);
+  };
+
   // Function to fetch housemate's completed tasks
   const fetchHousemateCompletedTasks = async (housemateId) => {
     try {
@@ -2261,6 +2316,7 @@ const formatDate = (date) => {
                   subtitle={isAdmin ? "All household tasks" : "Your tasks"}
                   icon={<CheckSquare size={20} />}
                   variant="default"
+                  onClick={() => handleTaskCardClick('total')}
                 />
                 <StatsCard
                   title="Completed"
@@ -2268,6 +2324,7 @@ const formatDate = (date) => {
                   subtitle={`${dashboardStats.completionRate}% completion rate`}
                   icon={<CheckCircle size={20} />}
                   variant="success"
+                  onClick={() => handleTaskCardClick('completed')}
                 />
                 <StatsCard
                   title="Pending"
@@ -2275,6 +2332,7 @@ const formatDate = (date) => {
                   subtitle={`${dashboardStats.pendingTasks} tasks in progress`}
                   icon={<Clock size={20} />}
                   variant="warning"
+                  onClick={() => handleTaskCardClick('pending')}
                 />
                 <StatsCard
                   title="Overdue"
@@ -2282,9 +2340,71 @@ const formatDate = (date) => {
                   subtitle={dashboardStats.overdueTasks > 0 ? `${dashboardStats.overdueTasks} ${dashboardStats.overdueTasks === 1 ? 'task needs' : 'tasks need'} attention` : 'All tasks on time'}
                   icon={<AlertTriangle size={20} />}
                   variant="danger"
+                  onClick={() => handleTaskCardClick('overdue')}
                 />
               </div>
             </section>
+
+            {/* Task Detail View - appears when a stats card is clicked */}
+            {isTaskDetailOpen && (
+              <section className="px-8 pb-6" role="region" aria-labelledby="task-detail-view">
+                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                  {/* Header */}
+                  <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 capitalize">
+                        {selectedTaskType} Tasks
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        {filteredTasks.length} {filteredTasks.length === 1 ? 'task' : 'tasks'} found
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={closeTaskDetailView}
+                      className="h-8 w-8 p-0"
+                    >
+                      <span className="sr-only">Close task details</span>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </Button>
+                  </div>
+                  
+                  {/* Task List */}
+                  <div className="p-4">
+                    {filteredTasks.length === 0 ? (
+                      <div className="text-center py-8">
+                        <div className="text-gray-500">
+                          No {selectedTaskType} tasks found.
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {filteredTasks.map((task) => (
+                          <TaskItem
+                            key={task.id}
+                            id={task.id}
+                            title={task.title}
+                            description={task.description}
+                            category={task.category}
+                            priority={task.priority}
+                            dueDate={task.due_date}
+                            status={task.status}
+                            assignedTo={task.assigned_to_name}
+                            avatarInitials={task.assigned_to_name ? task.assigned_to_name.split(' ').map(n => n[0]).join('') : ''}
+                            onStatusChange={(newStatus) => handleTaskStatusChange(task.id, newStatus)}
+                            isOverdue={task.isOverdue}
+                            overdueDays={task.overdueDays}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </section>
+            )}
 
             {/* Task Creation Dialog for Dashboard */}
             <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
