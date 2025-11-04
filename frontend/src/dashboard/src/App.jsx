@@ -1514,64 +1514,12 @@ export default function App({ user }) {
       attendees: ['All']
     });
     
-    setIsAddEventOpen(false);
-  };
+  setIsAddEventOpen(false);
+};
 
-  // Calendar helper functions
-  const getDaysInMonth = (date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
-    
-    const days = [];
-    
-    // Add empty cells for days before the first day of the month
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(null);
-    }
-    
-    // Add all days of the month
-    for (let day = 1; day <= daysInMonth; day++) {
-      days.push(new Date(year, month, day));
-    }
-    
-    return days;
-  };
-
-  const getWeekDays = (date) => {
-    const startOfWeek = new Date(date);
-    const day = startOfWeek.getDay();
-    const diff = startOfWeek.getDate() - day;
-    startOfWeek.setDate(diff);
-    
-    const days = [];
-    for (let i = 0; i < 7; i++) {
-      const day = new Date(startOfWeek);
-      day.setDate(startOfWeek.getDate() + i);
-      days.push(day);
-    }
-    
-    return days;
-  };
-
-  const formatDate = (date) => {
-    return date.toISOString().split('T')[0];
-  };
-
-  const isTodayCalendar = (date) => {
-    const today = new Date();
-    return formatDate(date) === formatDate(today);
-  };
-
-  const isSameMonth = (date, referenceDate) => {
-    return date.getMonth() === referenceDate.getMonth() && 
-           date.getFullYear() === referenceDate.getFullYear();
-  };
-
-  // Helper functions for housemates
+const formatDate = (date) => {
+  return date.toISOString().split('T')[0];
+};  // Helper functions for housemates
   const getRoleColor = (role) => {
     switch (role) {
       case 'admin':
