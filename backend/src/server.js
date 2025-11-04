@@ -946,21 +946,40 @@ app.get('/houses/:houseId/statistics', (req, res) => {
 // Bills endpoints
 
 // Get all bills for a house with sharing information
-app.get('/bills', (req, res) => {
-  const { house_id } = req.query;
-  console.log('Fetching bills for house_id:', house_id);
+app.get('/bills', authenticateToken, (req, res) => {
+  const { house_id, view = 'my' } = req.query;
+  const userId = req.user.id;
+  const userRole = req.user.role;
+  
+  console.log('Fetching bills for house_id:', house_id, 'user:', userId, 'role:', userRole, 'view:', view);
   
   try {
-    let query = `SELECT * FROM bills`;
-    const values = [];
+    let query;
+    let values;
     
-    if (house_id) {
-      query += ' WHERE house_id = ?';
-      values.push(house_id);
+    // Role-based filtering for bills
+    if (userRole === 'admin' && view === 'all') {
+      // Admins can see all bills in the house when view=all
+      query = `SELECT b.*, 
+                      u.first_name as created_by_name, 
+                      u.last_name as created_by_surname
+               FROM bills b
+               LEFT JOIN users u ON b.created_by = u.id
+               WHERE b.house_id = ?`;
+      values = [house_id];
+    } else {
+      // Standard users and read-only users see only bills they're involved in
+      // Admins see only their bills when view=my
+      query = `SELECT DISTINCT b.*, 
+                      u.first_name as created_by_name, 
+                      u.last_name as created_by_surname
+               FROM bills b
+               LEFT JOIN users u ON b.created_by = u.id
+               LEFT JOIN bill_shares bs ON b.id = bs.bill_id
+               WHERE b.house_id = ? 
+               AND (b.created_by = ? OR bs.user_id = ?)`;
+      values = [house_id, userId, userId];
     }
-    
-    // Temporarily remove ORDER BY to fix the unknown column error
-    // query += ' ORDER BY created_at DESC';
     
     console.log('Executing query:', query, 'with values:', values);
     
@@ -974,7 +993,7 @@ app.get('/bills', (req, res) => {
         console.log('Returning empty bills array due to database error');
         return res.json({ data: [] });
       }
-      console.log('Bills query successful, found', results.length, 'bills');
+      console.log('Bills query successful, found', results.length, 'bills for role:', userRole, 'view:', view);
       console.log('Bills data:', results);
       res.json({ data: results });
     });
@@ -1514,20 +1533,44 @@ app.get('/bills/:id/payments', (req, res) => {
 });
 
 // Schedule endpoints
-app.get('/schedule', (req, res) => {
+app.get('/schedule', authenticateToken, (req, res) => {
   const houseId = req.query.house_id;
-  let query = "SELECT * FROM schedule";
-  let params = [];
+  const { view = 'my' } = req.query;
+  const userId = req.user.id;
+  const userRole = req.user.role;
   
-  if (houseId) {
-    query += " WHERE house_id = ?";
-    params.push(houseId);
+  console.log('📅 Fetching schedule for house_id:', houseId, 'user:', userId, 'role:', userRole, 'view:', view);
+  
+  let query;
+  let params;
+  
+  // Role-based filtering for schedule events
+  if (userRole === 'admin' && view === 'all') {
+    // Admins can see all events in the house when view=all
+    query = "SELECT s.*, u.first_name as created_by_name, u.last_name as created_by_surname FROM schedule s LEFT JOIN users u ON s.created_by = u.id";
+    params = [];
+    
+    if (houseId) {
+      query += " WHERE s.house_id = ?";
+      params.push(houseId);
+    }
+  } else {
+    // Standard users and read-only users see only events they created or are attending
+    // Admins see only their events when view=my
+    query = `SELECT s.*, u.first_name as created_by_name, u.last_name as created_by_surname 
+             FROM schedule s 
+             LEFT JOIN users u ON s.created_by = u.id
+             WHERE (s.created_by = ? OR s.attendees = 'All' OR FIND_IN_SET(?, REPLACE(s.attendees, ' ', '')))`;
+    params = [userId, userId];
+    
+    if (houseId) {
+      query += " AND s.house_id = ?";
+      params.push(houseId);
+    }
   }
   
   // Use actual database column names: event_date, event_time
   query += " ORDER BY event_date ASC, event_time ASC";
-  
-  console.log('📅 Fetching schedule for house_id:', houseId);
   
   db.query(query, params, (err, results) => {
     if (err) {
@@ -1547,10 +1590,12 @@ app.get('/schedule', (req, res) => {
       attendees: event.attendees || 'All', // Now uses actual column
       recurrence: event.recurrence,
       created_by: event.created_by,
+      created_by_name: event.created_by_name,
+      created_by_surname: event.created_by_surname,
       created_at: event.created_at
     }));
     
-    console.log('✅ Schedule fetched successfully, count:', mappedResults.length);
+    console.log('✅ Schedule fetched successfully for role:', userRole, 'view:', view, 'count:', mappedResults.length);
     res.json(mappedResults);
   });
 });
@@ -1664,8 +1709,18 @@ app.get('/schedule/:id', (req, res) => {
     res.json(results[0] || null);
   });
 });
-app.post('/schedule', (req, res) => {
+app.post('/schedule', authenticateToken, (req, res) => {
   console.log('📅 Creating new schedule event:', req.body);
+  const userId = req.user.id;
+  const userRole = req.user.role;
+  
+  // Role-based validation for event creation
+  if (userRole === 'read_only') {
+    console.log('❌ Access denied - read-only user cannot create events');
+    return res.status(403).json({ 
+      error: "Read-only users cannot create events" 
+    });
+  }
   
   const { 
     house_id, 
@@ -1687,6 +1742,9 @@ app.post('/schedule', (req, res) => {
     });
   }
   
+  // Ensure created_by is set to the authenticated user
+  const finalCreatedBy = created_by || userId;
+  
   console.log('✅ Validation passed, inserting into database...');
   
   // Map frontend field names to actual database column names
@@ -1698,7 +1756,7 @@ app.post('/schedule', (req, res) => {
   
   db.query(
     "INSERT INTO schedule (house_id, title, description, event_date, event_time, type, attendees, recurrence, created_by, task_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
-    [house_id, title, description || '', scheduled_date, scheduled_time || null, type || 'meeting', attendeesStr, recurrence || 'none', created_by || null, null], 
+    [house_id, title, description || '', scheduled_date, scheduled_time || null, type || 'meeting', attendeesStr, recurrence || 'none', finalCreatedBy, null], 
     (err, results) => {
       if (err) {
         console.error('❌ Database error when creating schedule:', err);
@@ -2637,6 +2695,180 @@ app.get('/health', (req, res) => {
     database: 'connected',
     timestamp: new Date().toISOString()
   });
+});
+
+// Admin-only user management endpoints
+
+// Invite a new user to the house (admin only)
+app.post('/users/invite', authenticateToken, requireAdmin, (req, res) => {
+  const { email, name, role = 'standard', personalMessage } = req.body;
+  const inviterId = req.user.id;
+  const houseId = req.user.house_id;
+  
+  if (!email || !name) {
+    return res.status(400).json({ error: 'Email and name are required' });
+  }
+  
+  if (!['standard', 'read_only'].includes(role)) {
+    return res.status(400).json({ error: 'Invalid role. Can only invite standard or read_only users' });
+  }
+  
+  // Check if user already exists
+  db.query('SELECT id FROM users WHERE email = ?', [email], (err, existingUsers) => {
+    if (err) {
+      console.error('Error checking existing user:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    if (existingUsers.length > 0) {
+      return res.status(409).json({ error: 'User with this email already exists' });
+    }
+    
+    // Generate a temporary invitation token
+    const inviteToken = jwt.sign(
+      { email, name, role, houseId, inviterId },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '7d' } // Invitation expires in 7 days
+    );
+    
+    // In a real application, you would send an email here
+    // For now, we'll just return the invitation details
+    res.json({
+      message: 'Invitation created successfully',
+      inviteToken,
+      email,
+      name,
+      role,
+      expiresIn: '7 days',
+      personalMessage
+    });
+  });
+});
+
+// Update user role (admin only)
+app.put('/users/:userId/role', authenticateToken, requireAdmin, (req, res) => {
+  const { role } = req.body;
+  const { userId } = req.params;
+  const adminId = req.user.id;
+  
+  if (!['admin', 'standard', 'read_only'].includes(role)) {
+    return res.status(400).json({ error: 'Invalid role' });
+  }
+  
+  // Prevent admins from changing their own role
+  if (parseInt(userId) === adminId) {
+    return res.status(403).json({ error: 'Cannot change your own role' });
+  }
+  
+  // Check if the user being modified is in the same house
+  db.query(
+    'SELECT house_id, is_house_creator FROM users WHERE id = ?',
+    [userId],
+    (err, userResults) => {
+      if (err) {
+        console.error('Error checking user house:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      if (userResults.length === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      const user = userResults[0];
+      
+      // Prevent changing house creator's role
+      if (user.is_house_creator) {
+        return res.status(403).json({ error: 'Cannot change house creator role' });
+      }
+      
+      // Ensure user is in the same house
+      if (user.house_id !== req.user.house_id) {
+        return res.status(403).json({ error: 'Can only manage users in your own house' });
+      }
+      
+      // Update the role
+      db.query(
+        'UPDATE users SET role = ? WHERE id = ?',
+        [role, userId],
+        (updateErr, updateResults) => {
+          if (updateErr) {
+            console.error('Error updating user role:', updateErr);
+            return res.status(500).json({ error: 'Failed to update role' });
+          }
+          
+          if (updateResults.affectedRows === 0) {
+            return res.status(404).json({ error: 'User not found' });
+          }
+          
+          res.json({
+            message: 'Role updated successfully',
+            userId,
+            newRole: role
+          });
+        }
+      );
+    }
+  );
+});
+
+// Remove user from house (admin only)
+app.delete('/users/:userId', authenticateToken, requireAdmin, (req, res) => {
+  const { userId } = req.params;
+  const adminId = req.user.id;
+  
+  // Prevent admins from removing themselves
+  if (parseInt(userId) === adminId) {
+    return res.status(403).json({ error: 'Cannot remove yourself' });
+  }
+  
+  // Check if the user being removed is in the same house
+  db.query(
+    'SELECT house_id, is_house_creator FROM users WHERE id = ?',
+    [userId],
+    (err, userResults) => {
+      if (err) {
+        console.error('Error checking user house:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      if (userResults.length === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      const user = userResults[0];
+      
+      // Prevent removing house creator
+      if (user.is_house_creator) {
+        return res.status(403).json({ error: 'Cannot remove house creator' });
+      }
+      
+      // Ensure user is in the same house
+      if (user.house_id !== req.user.house_id) {
+        return res.status(403).json({ error: 'Can only remove users from your own house' });
+      }
+      
+      // Remove user from house (set house_id to NULL)
+      db.query(
+        'UPDATE users SET house_id = NULL WHERE id = ?',
+        [userId],
+        (updateErr, updateResults) => {
+          if (updateErr) {
+            console.error('Error removing user from house:', updateErr);
+            return res.status(500).json({ error: 'Failed to remove user' });
+          }
+          
+          if (updateResults.affectedRows === 0) {
+            return res.status(404).json({ error: 'User not found' });
+          }
+          
+          res.json({
+            message: 'User removed from house successfully',
+            userId
+          });
+        }
+      );
+    }
+  );
 });
 
 const PORT = process.env.PORT || 8080;

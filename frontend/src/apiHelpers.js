@@ -112,6 +112,11 @@ export const addEvent = (eventData) => API.post("/schedule", eventData);
 export const updateSchedule = (id, data) => API.put(`/schedule/${id}`, data);
 export const deleteSchedule = (id) => API.delete(`/schedule/${id}`);
 
+// Admin user management endpoints
+export const inviteUser = (inviteData) => API.post("/users/invite", inviteData);
+export const updateUserRole = (userId, role) => API.put(`/users/${userId}/role`, { role });
+export const removeUser = (userId) => API.delete(`/users/${userId}`);
+
 // Debug endpoint to check schedule table
 // Debug helpers
 export const checkScheduleTable = async () => {

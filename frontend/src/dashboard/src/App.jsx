@@ -1903,18 +1903,8 @@ const formatDate = (date) => {
 
   const handleInviteHousemate = async () => {
     // Validation
-    if (!inviteFormData.firstName || !inviteFormData.lastName || !inviteFormData.email || !inviteFormData.password) {
+    if (!inviteFormData.firstName || !inviteFormData.lastName || !inviteFormData.email) {
       alert('Please fill in all required fields.');
-      return;
-    }
-
-    if (inviteFormData.password !== inviteFormData.confirmPassword) {
-      alert('Passwords do not match.');
-      return;
-    }
-
-    if (inviteFormData.password.length < 6) {
-      alert('Password must be at least 6 characters long.');
       return;
     }
 
@@ -1924,25 +1914,19 @@ const formatDate = (date) => {
     }
 
     try {
-      // Create new housemate in the database
-      const { register } = await import('../../apiHelpers');
+      // Use the new invite API endpoint
+      const { inviteUser } = await import('../../apiHelpers');
       
-      const newHousemateData = {
-        name: inviteFormData.firstName,
-        surname: inviteFormData.lastName,
+      const inviteData = {
+        name: `${inviteFormData.firstName} ${inviteFormData.lastName}`,
         email: inviteFormData.email,
-        password: inviteFormData.password,
-        bio: inviteFormData.personalMessage || 'New housemate - welcome to the household!',
-        phone: '', // Will be updated by the user later
-        preferred_contact: 'email',
-        avatar: null,
-        house_id: user.house_id, // Use the admin's house_id
-        role: inviteFormData.role
+        role: inviteFormData.role,
+        personalMessage: inviteFormData.personalMessage || 'Welcome to our household!'
       };
 
-      console.log('Creating new housemate:', newHousemateData);
+      console.log('Sending invitation:', inviteData);
       
-      await register(newHousemateData);
+      const response = await inviteUser(inviteData);
 
       // Reset form
       setInviteFormData({
@@ -1958,37 +1942,103 @@ const formatDate = (date) => {
 
       setIsInviteHousemateOpen(false);
 
-      // Refresh the housemates list
-      await refreshHousemates();
-
-      // Show success message
-      alert(`Housemate ${inviteFormData.firstName} ${inviteFormData.lastName} has been created successfully!`);
+      // Show success message with invite details
+      alert(`Invitation sent successfully to ${inviteFormData.firstName} ${inviteFormData.lastName}!\n\nInvite Token: ${response.data.inviteToken}\n\nThe invitation will expire in 7 days.`);
 
     } catch (error) {
-      console.error('Error creating housemate:', error);
-      alert(`Error creating housemate: ${error.response?.data?.error || error.message}`);
+      console.error('Error sending invitation:', error);
+      alert(`Error sending invitation: ${error.response?.data?.error || error.message}`);
     }
   };
 
-  const handleRoleChange = (housemateId, newRole) => {
-    // In a real app, this would update the backend
-    const housemate = housemates.find(h => h.id === housemateId);
-    if (housemate) {
+  const handleRoleChange = async (housemateId, newRole) => {
+    try {
+      // In a real app, this would update the backend
+      const housemate = housemates.find(h => h.id === housemateId);
+      if (!housemate) {
+        alert('Housemate not found.');
+        return;
+      }
+
       // Prevent changing house creator's role
       if (housemate.isHouseCreator) {
         alert('Cannot change the role of the house creator. House creators must remain as Admin.');
         return;
       }
+
+      // Prevent users from changing their own role
+      if (housemate.id === user.id) {
+        alert('You cannot change your own role.');
+        return;
+      }
+
+      // Confirm the role change
+      if (!confirm(`Are you sure you want to change ${housemate.name}'s role to ${newRole.charAt(0).toUpperCase() + newRole.slice(1)}?`)) {
+        return;
+      }
+
+      // Use the new role update API
+      const { updateUserRole } = await import('../../apiHelpers');
       
-      console.log(`Changing ${housemate.name}'s role from ${housemate.role} to ${newRole}`);
-      
+      console.log(`Updating role for housemate ${housemateId} to ${newRole}`);
+      await updateUserRole(housemateId, newRole);
+
       // Update local state
       setHousemates(prev => prev.map(h => 
         h.id === housemateId ? { ...h, role: newRole } : h
       ));
       
-      // Show confirmation (in a real app, you'd show a toast notification)
-      alert(`${housemate.name}'s role has been updated to ${newRole.charAt(0).toUpperCase() + newRole.slice(1)}`);
+      // Show confirmation
+      alert(`${housemate.name}'s role has been successfully updated to ${newRole.charAt(0).toUpperCase() + newRole.slice(1)}`);
+
+    } catch (error) {
+      console.error('Error updating role:', error);
+      alert(`Error updating role: ${error.response?.data?.error || error.message}`);
+    }
+  };
+
+  const handleRemoveUser = async (housemateId) => {
+    try {
+      const housemate = housemates.find(h => h.id === housemateId);
+      if (!housemate) {
+        alert('Housemate not found.');
+        return;
+      }
+
+      // Prevent removing house creator
+      if (housemate.isHouseCreator) {
+        alert('Cannot remove the house creator.');
+        return;
+      }
+
+      // Prevent users from removing themselves
+      if (housemate.id === user.id) {
+        alert('You cannot remove yourself.');
+        return;
+      }
+
+      // Confirm the removal
+      if (!confirm(`Are you sure you want to remove ${housemate.name} from the household? This action cannot be undone.`)) {
+        return;
+      }
+
+      // Use the new remove user API
+      const { removeUser } = await import('../../apiHelpers');
+      
+      console.log(`Removing housemate ${housemateId}`);
+      await removeUser(housemateId);
+
+      // Update local state
+      setHousemates(prevHousemates =>
+        prevHousemates.filter(h => h.id !== housemateId)
+      );
+      
+      // Show confirmation
+      alert(`${housemate.name} has been successfully removed from the household.`);
+
+    } catch (error) {
+      console.error('Error removing user:', error);
+      alert(`Error removing user: ${error.response?.data?.error || error.message}`);
     }
   };
 
@@ -4268,16 +4318,26 @@ const formatDate = (date) => {
               <header className="flex justify-between items-start">
                 <div>
                   <h2 id="housemates-page" className="text-xl font-semibold text-gray-900">Housemates</h2>
-                  <p className="text-gray-500 mt-1">Manage your household members and their information</p>
+                  <p className="text-gray-500 mt-1">
+                    {isAdmin 
+                      ? 'Manage your household members and their information'
+                      : isReadOnly
+                      ? 'View household members (read-only access)'
+                      : 'View your household members'
+                    }
+                  </p>
                 </div>
-                <nav className="flex space-x-3" role="navigation" aria-label="Housemate management actions">
-                  <Button variant="outline" onClick={() => setIsInviteHousemateOpen(true)} aria-label="Invite new housemate">
-                    <Plus size={16} className="mr-2" aria-hidden="true" />
-                    Invite Housemate
-                  </Button>
-                  
-                  <Dialog open={isManageRolesOpen} onOpenChange={setIsManageRolesOpen}>
-                    <DialogTrigger asChild>
+                
+                {/* Admin-only controls */}
+                {isAdmin ? (
+                  <nav className="flex space-x-3" role="navigation" aria-label="Housemate management actions">
+                    <Button variant="outline" onClick={() => setIsInviteHousemateOpen(true)} aria-label="Invite new housemate">
+                      <Plus size={16} className="mr-2" aria-hidden="true" />
+                      Invite Housemate
+                    </Button>
+                    
+                    <Dialog open={isManageRolesOpen} onOpenChange={setIsManageRolesOpen}>
+                      <DialogTrigger asChild>
                       <Button variant="outline">
                         <Settings size={16} className="mr-2" />
                         Manage Roles
@@ -4419,19 +4479,30 @@ const formatDate = (date) => {
                                       </Badge>
                                       
                                       {housemate.name !== 'You' && !housemate.isHouseCreator && (
-                                        <Select 
-                                          value={housemate.role} 
-                                          onValueChange={(value) => handleRoleChange(housemate.id, value)}
-                                        >
-                                          <SelectTrigger className="w-32">
-                                            <SelectValue />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            <SelectItem value="admin">Admin</SelectItem>
-                                            <SelectItem value="standard">Standard</SelectItem>
-                                            <SelectItem value="read-only">Read-only</SelectItem>
-                                          </SelectContent>
-                                        </Select>
+                                        <div className="flex items-center space-x-2">
+                                          <Select 
+                                            value={housemate.role} 
+                                            onValueChange={(value) => handleRoleChange(housemate.id, value)}
+                                          >
+                                            <SelectTrigger className="w-32">
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="admin">Admin</SelectItem>
+                                              <SelectItem value="standard">Standard</SelectItem>
+                                              <SelectItem value="read-only">Read-only</SelectItem>
+                                            </SelectContent>
+                                          </Select>
+                                          
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleRemoveUser(housemate.id)}
+                                            className="text-red-600 hover:text-red-700 hover:border-red-300"
+                                          >
+                                            <Trash2 size={14} />
+                                          </Button>
+                                        </div>
                                       )}
                                       
                                       {housemate.isHouseCreator && (
@@ -4528,6 +4599,11 @@ const formatDate = (date) => {
                     </DialogContent>
                   </Dialog>
                 </nav>
+                ) : (
+                  <div className="text-gray-500 text-sm">
+                    {isReadOnly ? 'View-only access' : 'Limited access - contact admin for changes'}
+                  </div>
+                )}
               </header>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -5134,27 +5210,16 @@ const formatDate = (date) => {
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="invite-password">Password</Label>
-                <Input
-                  id="invite-password"
-                  type="password"
-                  value={inviteFormData.password}
-                  onChange={(e) => setInviteFormData({...inviteFormData, password: e.target.value})}
-                  placeholder="Create password"
-                />
-              </div>
-              <div>
-                <Label htmlFor="invite-confirmPassword">Confirm Password</Label>
-                <Input
-                  id="invite-confirmPassword"
-                  type="password"
-                  value={inviteFormData.confirmPassword}
-                  onChange={(e) => setInviteFormData({...inviteFormData, confirmPassword: e.target.value})}
-                  placeholder="Confirm password"
-                />
-              </div>
+            <div>
+              <Label htmlFor="invite-personalMessage">Personal Message (Optional)</Label>
+              <textarea
+                id="invite-personalMessage"
+                className="w-full p-2 border border-gray-300 rounded-md resize-none"
+                rows="3"
+                value={inviteFormData.personalMessage}
+                onChange={(e) => setInviteFormData({...inviteFormData, personalMessage: e.target.value})}
+                placeholder="Add a personal welcome message..."
+              />
             </div>
             
             <div>
