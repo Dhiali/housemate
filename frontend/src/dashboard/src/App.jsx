@@ -821,6 +821,7 @@ export default function App({ user }) {
   });
   
   const [isPaymentFormOpen, setIsPaymentFormOpen] = useState(false);
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
   const [selectedBillId, setSelectedBillId] = useState(null);
   const [selectedHousemates, setSelectedHousemates] = useState([]);
   const [isPaymentHistoryOpen, setIsPaymentHistoryOpen] = useState(false);
@@ -1153,8 +1154,12 @@ export default function App({ user }) {
     const bill = bills.find(b => b.id === billId);
     if (bill) {
       setSelectedBillId(billId);
+      
+      // Calculate default amount (per person share)
+      const defaultAmount = bill.perPerson ? Number(bill.perPerson).toFixed(2) : '0.00';
+      
       setPaymentFormData({
-        amount: bill.perPerson || '0.00', // Default to per person amount
+        amount: defaultAmount, // Default to per person amount
         paymentMethod: '',
         datePaid: new Date().toISOString().split('T')[0],
         notes: '',
@@ -1174,12 +1179,43 @@ export default function App({ user }) {
   };
 
   const handleSubmitPayment = async () => {
-    if (!selectedBillId || !paymentFormData.amount || !paymentFormData.paymentMethod || !paymentFormData.payingFor || !paymentFormData.paidBy) {
-      alert('Please fill in all required fields');
+    // Validation
+    if (!selectedBillId) {
+      alert('No bill selected');
+      return;
+    }
+    
+    if (!paymentFormData.payingFor) {
+      alert('Please select who this payment is for');
+      return;
+    }
+    
+    if (!paymentFormData.paidBy) {
+      alert('Please select who is making this payment');
+      return;
+    }
+    
+    if (!paymentFormData.amount || parseFloat(paymentFormData.amount) <= 0) {
+      alert('Please enter a valid payment amount greater than 0');
+      return;
+    }
+    
+    if (!paymentFormData.paymentMethod) {
+      alert('Please select a payment method');
       return;
     }
 
+    setIsSubmittingPayment(true);
+
     try {
+      console.log('Submitting payment with data:', {
+        billId: selectedBillId,
+        payingFor: paymentFormData.payingFor,
+        paidBy: paymentFormData.paidBy,
+        amount: paymentFormData.amount,
+        method: paymentFormData.paymentMethod
+      });
+
       const paymentData = {
         user_id: parseInt(paymentFormData.payingFor), // Who this payment is for
         paid_by_user_id: parseInt(paymentFormData.paidBy), // Who is making the payment
@@ -1188,7 +1224,9 @@ export default function App({ user }) {
         payment_notes: paymentFormData.notes || null
       };
 
-      await payBill(selectedBillId, paymentData);
+      console.log('Sending payment data to API:', paymentData);
+      const response = await payBill(selectedBillId, paymentData);
+      console.log('Payment API response:', response);
       
       // Reset form and close modal
       setPaymentFormData({
@@ -1203,15 +1241,19 @@ export default function App({ user }) {
       setIsPaymentFormOpen(false);
       
       // Refresh bills and statistics
-      fetchBills();
+      await fetchBills();
       if (user?.house_id) {
         fetchHousemateStatistics(housemates);
       }
       
+      alert('Payment recorded successfully!');
       console.log('Payment recorded successfully');
     } catch (error) {
       console.error('Error recording payment:', error);
-      alert('Error recording payment. Please try again.');
+      console.error('Error details:', error.response?.data || error.message);
+      alert(`Error recording payment: ${error.response?.data?.error || error.message || 'Unknown error'}. Please try again.`);
+    } finally {
+      setIsSubmittingPayment(false);
     }
   };
 
@@ -2989,11 +3031,19 @@ export default function App({ user }) {
                   </div>
                   
                   <div className="flex justify-end space-x-3">
-                    <Button variant="outline" onClick={() => setIsPaymentFormOpen(false)}>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsPaymentFormOpen(false)}
+                      disabled={isSubmittingPayment}
+                    >
                       Cancel
                     </Button>
-                    <Button onClick={handleSubmitPayment} className="bg-purple-600 hover:bg-purple-700">
-                      Record Payment
+                    <Button 
+                      onClick={handleSubmitPayment} 
+                      className="bg-purple-600 hover:bg-purple-700"
+                      disabled={isSubmittingPayment}
+                    >
+                      {isSubmittingPayment ? 'Recording...' : 'Record Payment'}
                     </Button>
                   </div>
                 </DialogContent>

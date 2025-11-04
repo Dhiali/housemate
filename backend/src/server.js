@@ -973,29 +973,56 @@ app.put('/bills/:id/pay', (req, res) => {
 
   console.log(`Recording payment: Bill ${billId}, User ${user_id}, Paid by ${paid_by_user_id}, Amount ${amount_paid}`);
 
-  // Update bill_share status with payment details
-  const updateQuery = `
-    UPDATE bill_share 
-    SET status = 'paid', 
-        amount_paid = ?, 
-        paid_by_user_id = ?,
-        paid_at = NOW(),
-        payment_method = ?,
-        payment_notes = ?
-    WHERE bill_id = ? AND user_id = ?
-  `;
-
-  db.query(updateQuery, [amount_paid || null, paid_by_user_id, payment_method || null, payment_notes || null, billId, user_id], (err, results) => {
+  // First, check if a bill_share record exists
+  const checkShareQuery = 'SELECT * FROM bill_share WHERE bill_id = ? AND user_id = ?';
+  
+  db.query(checkShareQuery, [billId, user_id], (err, existingShares) => {
     if (err) {
-      console.error('Error updating bill payment:', err);
+      console.error('Error checking bill share:', err);
       return res.status(500).json({ error: err.message });
     }
 
-    if (results.affectedRows === 0) {
-      return res.status(404).json({ error: 'Bill share not found' });
-    }
+    if (existingShares.length > 0) {
+      // Update existing bill_share record
+      const updateQuery = `
+        UPDATE bill_share 
+        SET status = 'paid', 
+            amount_paid = ?, 
+            paid_by_user_id = ?,
+            paid_at = NOW(),
+            payment_method = ?,
+            payment_notes = ?
+        WHERE bill_id = ? AND user_id = ?
+      `;
 
-    // Log to bill_history with who made the payment
+      db.query(updateQuery, [amount_paid || null, paid_by_user_id, payment_method || null, payment_notes || null, billId, user_id], (err, results) => {
+        if (err) {
+          console.error('Error updating bill payment:', err);
+          return res.status(500).json({ error: err.message });
+        }
+
+        logPaymentHistory(billId, user_id, paid_by_user_id, amount_paid, payment_method, payment_notes, res);
+      });
+    } else {
+      // Create a new bill_share record if it doesn't exist
+      const insertQuery = `
+        INSERT INTO bill_share (bill_id, user_id, amount, amount_paid, status, paid_by_user_id, paid_at, payment_method, payment_notes)
+        VALUES (?, ?, ?, ?, 'paid', ?, NOW(), ?, ?)
+      `;
+
+      db.query(insertQuery, [billId, user_id, amount_paid || 0, amount_paid || 0, paid_by_user_id, payment_method || null, payment_notes || null], (err, results) => {
+        if (err) {
+          console.error('Error creating bill share payment:', err);
+          return res.status(500).json({ error: err.message });
+        }
+
+        logPaymentHistory(billId, user_id, paid_by_user_id, amount_paid, payment_method, payment_notes, res);
+      });
+    }
+  });
+
+  // Helper function to log payment history
+  function logPaymentHistory(billId, user_id, paid_by_user_id, amount_paid, payment_method, payment_notes, res) {
     const historyQuery = `
       INSERT INTO bill_history (bill_id, user_id, action, amount, notes, created_at)
       VALUES (?, ?, 'payment', ?, ?, NOW())
@@ -1020,7 +1047,7 @@ app.put('/bills/:id/pay', (req, res) => {
         }
       });
     });
-  });
+  }
 });
 
 // Update bill details
