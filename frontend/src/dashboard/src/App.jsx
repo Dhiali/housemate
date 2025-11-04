@@ -2216,42 +2216,8 @@ const formatDate = (date) => {
         {/* Page Content */}
         {currentPage === 'Dashboard' && (
           <>
-            {/* Dashboard Statistics Overview */}
-            <section className="p-8 pb-4" role="region" aria-labelledby="dashboard-stats">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" role="group" aria-label="Dashboard statistics">
-                <StatsCard
-                  title="Total Tasks"
-                  amount={dashboardStats.totalTasks.toString()}
-                  subtitle={isAdmin ? "All household tasks" : "Your tasks"}
-                  icon={<CheckSquare size={20} />}
-                  variant="default"
-                />
-                <StatsCard
-                  title="Completed"
-                  amount={dashboardStats.completedTasks.toString()}
-                  subtitle={`${dashboardStats.completionRate}% completion rate`}
-                  icon={<CheckCircle size={20} />}
-                  variant="success"
-                />
-                <StatsCard
-                  title="Pending"
-                  amount={dashboardStats.pendingTasks.toString()}
-                  subtitle={`${dashboardStats.pendingTasks} tasks in progress`}
-                  icon={<Clock size={20} />}
-                  variant="warning"
-                />
-                <StatsCard
-                  title="Overdue"
-                  amount={dashboardStats.overdueTasks.toString()}
-                  subtitle={dashboardStats.overdueTasks > 0 ? `${dashboardStats.overdueTasks} ${dashboardStats.overdueTasks === 1 ? 'task needs' : 'tasks need'} attention` : 'All tasks on time'}
-                  icon={<AlertTriangle size={20} />}
-                  variant="danger"
-                />
-              </div>
-            </section>
-
             {/* House Information Section */}
-            <section className="px-8 pb-4" role="region" aria-labelledby="house-info">
+            <section className="p-8 pb-4" role="region" aria-labelledby="house-info">
               <article className="bg-white rounded-lg border border-gray-200 p-6">
                 <h3 id="house-info" className="text-lg font-semibold text-gray-900 mb-4">House Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -2284,6 +2250,40 @@ const formatDate = (date) => {
                   </div>
                 </div>
               </article>
+            </section>
+
+            {/* Dashboard Statistics Overview */}
+            <section className="px-8 pb-4" role="region" aria-labelledby="dashboard-stats">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" role="group" aria-label="Dashboard statistics">
+                <StatsCard
+                  title="Total Tasks"
+                  amount={dashboardStats.totalTasks.toString()}
+                  subtitle={isAdmin ? "All household tasks" : "Your tasks"}
+                  icon={<CheckSquare size={20} />}
+                  variant="default"
+                />
+                <StatsCard
+                  title="Completed"
+                  amount={dashboardStats.completedTasks.toString()}
+                  subtitle={`${dashboardStats.completionRate}% completion rate`}
+                  icon={<CheckCircle size={20} />}
+                  variant="success"
+                />
+                <StatsCard
+                  title="Pending"
+                  amount={dashboardStats.pendingTasks.toString()}
+                  subtitle={`${dashboardStats.pendingTasks} tasks in progress`}
+                  icon={<Clock size={20} />}
+                  variant="warning"
+                />
+                <StatsCard
+                  title="Overdue"
+                  amount={dashboardStats.overdueTasks.toString()}
+                  subtitle={dashboardStats.overdueTasks > 0 ? `${dashboardStats.overdueTasks} ${dashboardStats.overdueTasks === 1 ? 'task needs' : 'tasks need'} attention` : 'All tasks on time'}
+                  icon={<AlertTriangle size={20} />}
+                  variant="danger"
+                />
+              </div>
             </section>
 
             {/* Task Creation Dialog for Dashboard */}
