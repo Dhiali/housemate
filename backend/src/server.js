@@ -890,29 +890,27 @@ app.delete('/houses/:id', (req, res) => {
 });
 
 // House statistics endpoint
-app.get('/houses/:houseId/statistics', (req, res) => {
+app.get('/houses/:houseId/statistics', async (req, res) => {
   const { houseId } = req.params;
   console.log('Fetching statistics for house_id:', houseId);
+  
+  try {
+    // First, automatically update any overdue tasks
+    await updateOverdueTasks(houseId);
+  } catch (error) {
+    console.error('Error updating overdue tasks in statistics:', error);
+    // Continue with statistics fetching even if update fails
+  }
   
   const queries = {
     // Tasks statistics
     totalTasks: "SELECT COUNT(*) as count FROM tasks WHERE house_id = ?",
     completedTasks: "SELECT COUNT(*) as count FROM tasks WHERE house_id = ? AND status = 'completed'",
     pendingTasks: "SELECT COUNT(*) as count FROM tasks WHERE house_id = ? AND status IN ('open', 'pending', 'in_progress')",
-    overdueTasks: `
-      SELECT COUNT(*) as count FROM tasks 
-      WHERE house_id = ? 
-      AND status != 'completed' 
-      AND due_date < CURDATE()
-    `,
+    overdueTasks: "SELECT COUNT(*) as count FROM tasks WHERE house_id = ? AND status = 'overdue'",
     // Debug queries to see actual data
     allTasks: "SELECT id, title, status, due_date FROM tasks WHERE house_id = ?",
-    overdueTasks_debug: `
-      SELECT id, title, status, due_date FROM tasks 
-      WHERE house_id = ? 
-      AND status != 'completed' 
-      AND due_date < CURDATE()
-    `,
+    overdueTasks_debug: "SELECT id, title, status, due_date FROM tasks WHERE house_id = ? AND status = 'overdue'",
     // Bills statistics
     totalBills: "SELECT COUNT(*) as count FROM bills WHERE house_id = ?",
     unpaidBills: "SELECT COUNT(*) as count FROM bills WHERE house_id = ? AND status = 'unpaid'",
@@ -1908,10 +1906,43 @@ app.put('/houses/:id/avatar', upload.single('avatar'), processHouseAvatar, async
   });
 });
 
+// Helper function to automatically update overdue tasks
+const updateOverdueTasks = async (houseId) => {
+  return new Promise((resolve, reject) => {
+    const updateQuery = `
+      UPDATE tasks 
+      SET status = 'overdue' 
+      WHERE house_id = ? 
+      AND status IN ('open', 'pending', 'in_progress') 
+      AND due_date < CURDATE()
+    `;
+    
+    db.query(updateQuery, [houseId], (err, result) => {
+      if (err) {
+        console.error('Error updating overdue tasks:', err);
+        reject(err);
+      } else {
+        if (result.affectedRows > 0) {
+          console.log(`✅ Updated ${result.affectedRows} tasks to overdue status for house ${houseId}`);
+        }
+        resolve(result.affectedRows);
+      }
+    });
+  });
+};
+
 // Get all tasks for a house with role-based filtering
-app.get('/tasks', authenticateToken, requireHouseAccess(), (req, res) => {
+app.get('/tasks', authenticateToken, requireHouseAccess(), async (req, res) => {
   const { view_all } = req.query; // admin can request to see all tasks
   const userHouseId = req.user.house_id;
+  
+  try {
+    // First, automatically update any overdue tasks
+    await updateOverdueTasks(userHouseId);
+  } catch (error) {
+    console.error('Error updating overdue tasks:', error);
+    // Continue with task fetching even if update fails
+  }
   
   let query;
   let queryParams;

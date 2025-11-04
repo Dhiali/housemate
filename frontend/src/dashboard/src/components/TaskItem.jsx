@@ -107,9 +107,17 @@ export function TaskItem({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Pending">Pending</SelectItem>
-                <SelectItem value="In Progress">In Progress</SelectItem>
-                <SelectItem value="Completed">Completed</SelectItem>
+                {status === 'Overdue' ? (
+                  // For overdue tasks, only allow completion
+                  <SelectItem value="Completed">Completed</SelectItem>
+                ) : (
+                  // For other tasks, show all options
+                  <>
+                    <SelectItem value="Pending">Pending</SelectItem>
+                    <SelectItem value="In Progress">In Progress</SelectItem>
+                    <SelectItem value="Completed">Completed</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>
