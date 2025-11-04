@@ -973,6 +973,34 @@ app.put('/bills/:id/pay', (req, res) => {
 
   console.log(`Recording payment: Bill ${billId}, User ${user_id}, Paid by ${paid_by_user_id}, Amount ${amount_paid}`);
 
+  // Helper function to log payment history
+  const logPaymentHistory = (billId, user_id, paid_by_user_id, amount_paid, payment_method, payment_notes, res) => {
+    const historyQuery = `
+      INSERT INTO bill_history (bill_id, user_id, action, amount, notes, created_at)
+      VALUES (?, ?, 'payment', ?, ?, NOW())
+    `;
+
+    const historyNotes = `Payment of ${amount_paid || 'full amount'} made by user ${paid_by_user_id} for user ${user_id}${payment_method ? ` via ${payment_method}` : ''}${payment_notes ? `. Notes: ${payment_notes}` : ''}`;
+
+    db.query(historyQuery, [billId, paid_by_user_id, amount_paid, historyNotes], (err2) => {
+      if (err2) {
+        console.error('Error logging payment history:', err2);
+      }
+
+      res.json({ 
+        message: "Payment recorded successfully!",
+        payment_details: {
+          bill_id: billId,
+          user_id: user_id,
+          paid_by_user_id: paid_by_user_id,
+          amount_paid: amount_paid,
+          payment_method: payment_method,
+          payment_notes: payment_notes
+        }
+      });
+    });
+  };
+
   // First, check if a bill_share record exists
   const checkShareQuery = 'SELECT * FROM bill_share WHERE bill_id = ? AND user_id = ?';
   
@@ -1020,34 +1048,6 @@ app.put('/bills/:id/pay', (req, res) => {
       });
     }
   });
-
-  // Helper function to log payment history
-  function logPaymentHistory(billId, user_id, paid_by_user_id, amount_paid, payment_method, payment_notes, res) {
-    const historyQuery = `
-      INSERT INTO bill_history (bill_id, user_id, action, amount, notes, created_at)
-      VALUES (?, ?, 'payment', ?, ?, NOW())
-    `;
-
-    const historyNotes = `Payment of ${amount_paid || 'full amount'} made by user ${paid_by_user_id} for user ${user_id}${payment_method ? ` via ${payment_method}` : ''}${payment_notes ? `. Notes: ${payment_notes}` : ''}`;
-
-    db.query(historyQuery, [billId, paid_by_user_id, amount_paid, historyNotes], (err2) => {
-      if (err2) {
-        console.error('Error logging payment history:', err2);
-      }
-
-      res.json({ 
-        message: "Payment recorded successfully!",
-        payment_details: {
-          bill_id: billId,
-          user_id: user_id,
-          paid_by_user_id: paid_by_user_id,
-          amount_paid: amount_paid,
-          payment_method: payment_method,
-          payment_notes: payment_notes
-        }
-      });
-    });
-  }
 });
 
 // Update bill details
