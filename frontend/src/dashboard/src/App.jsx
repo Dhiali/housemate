@@ -1498,75 +1498,88 @@ function App() {
 
   // Helper functions for schedule
   // Get today's schedule items for dashboard (ignores schedule page filters)
+  // Get today's schedule items for dashboard (dropdown functional)
   const getTodaysScheduleItems = () => {
     const items = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Add ALL tasks (ignore schedule page filters)
+    // Dropdown: 'everyone' or 'own'
+    const view = scheduleDataView;
+
+    // Add tasks
     tasks.forEach(task => {
       if (!task.due_date) return;
       const taskDue = new Date(task.due_date);
       taskDue.setHours(0, 0, 0, 0);
       if (taskDue.getTime() === today.getTime()) {
-        const isOverdue = taskDue < today && task.originalStatus !== 'completed';
-        items.push({
-          id: `task-${task.id}`,
-          title: task.title,
-          description: task.description || '',
-          date: task.due_date,
-          type: 'task',
-          assignedTo: task.assignedTo,
-          status: task.status,
-          priority: task.priority,
-          color: isOverdue ? 'red' : 'blue',
-          icon: task.icon,
-          isOverdue: isOverdue,
-          originalDueDate: task.dueDate
-        });
+        // Filter by assignment
+        if (view === 'everyone' || (view === 'own' && task.assigned_to === user?.id)) {
+          const isOverdue = taskDue < today && task.originalStatus !== 'completed';
+          items.push({
+            id: `task-${task.id}`,
+            title: task.title,
+            description: task.description || '',
+            date: task.due_date,
+            type: 'task',
+            assignedTo: task.assignedTo,
+            status: task.status,
+            priority: task.priority,
+            color: isOverdue ? 'red' : 'blue',
+            icon: task.icon,
+            isOverdue: isOverdue,
+            originalDueDate: task.dueDate
+          });
+        }
       }
     });
 
-    // Add ALL bills (ignore schedule page filters)
+    // Add bills
     bills.forEach(bill => {
       if (!bill.due_date) return;
       const billDue = new Date(bill.due_date);
       billDue.setHours(0, 0, 0, 0);
       if (billDue.getTime() === today.getTime()) {
-        const isOverdue = billDue < today && bill.status !== 'paid' && bill.status !== 'Paid';
-        items.push({
-          id: `bill-${bill.id}`,
-          title: bill.title,
-          description: bill.description || `Amount: $${bill.amount}`,
-          date: bill.due_date,
-          type: 'bill',
-          assignedTo: 'Everyone',
-          status: bill.status,
-          amount: bill.amount,
-          color: isOverdue ? 'red' : 'green',
-          icon: bill.icon,
-          isOverdue: isOverdue
-        });
+        // Filter by assignment (for now, bills are for everyone, but you can add logic for personal bills)
+        if (view === 'everyone' || view === 'own') {
+          const isOverdue = billDue < today && bill.status !== 'paid' && bill.status !== 'Paid';
+          items.push({
+            id: `bill-${bill.id}`,
+            title: bill.title,
+            description: bill.description || `Amount: $${bill.amount}`,
+            date: bill.due_date,
+            type: 'bill',
+            assignedTo: 'Everyone',
+            status: bill.status,
+            amount: bill.amount,
+            color: isOverdue ? 'red' : 'green',
+            icon: bill.icon,
+            isOverdue: isOverdue
+          });
+        }
       }
     });
 
-    // Add ALL events (ignore schedule page filters)
+    // Add events
     houseEvents.forEach(event => {
       if (!event.date) return;
       const eventDate = new Date(event.date);
       eventDate.setHours(0, 0, 0, 0);
       if (eventDate.getTime() === today.getTime()) {
-        items.push({
-          id: `event-${event.id}`,
-          title: event.title,
-          description: event.description || '',
-          date: event.date,
-          time: event.time || '',
-          type: 'event',
-          assignedTo: event.attendees ? event.attendees.join(', ') : 'Unknown',
-          color: 'purple',
-          icon: <Calendar size={16} className="text-purple-600" />
-        });
+        // Filter by attendees
+        if (view === 'everyone' || (view === 'own' && event.attendees && (event.attendees.includes(user?.name) || event.attendees.includes('All')))) {
+          items.push({
+            id: `event-${event.id}`,
+            title: event.title,
+            description: event.description || '',
+            date: event.date,
+            time: event.time || '',
+            type: 'event',
+            assignedTo: event.attendees ? event.attendees.join(', ') : 'Unknown',
+            color: 'purple',
+            icon: <Calendar size={16} className="text-purple-600" />
+          });
+        }
       }
     });
 
