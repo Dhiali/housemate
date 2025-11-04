@@ -1212,10 +1212,22 @@ app.get('/bills', authenticateToken, requireHouseAccess(), (req, res) => {
             }));
 
             const shares = sharesResults.map(share => {
-              const shareAmount = parseFloat(share.amount) || 0;
+              // Use share_amount if available, fallback to amount
+              const shareAmount = parseFloat(share.share_amount || share.amount) || 0;
               const amountPaid = parseFloat(share.amount_paid) || 0;
               const remainingAmount = Math.max(0, shareAmount - amountPaid);
               const shareStatus = remainingAmount === 0 ? 'paid' : 'pending';
+              
+              // Debug logging for share calculations
+              console.log(`Share calculation for ${share.user_name}:`, {
+                share_amount: share.share_amount,
+                amount: share.amount,
+                amount_paid: share.amount_paid,
+                calculated_shareAmount: shareAmount,
+                calculated_amountPaid: amountPaid,
+                calculated_remainingAmount: remainingAmount,
+                calculated_status: shareStatus
+              });
               
               return {
                 id: share.id,
@@ -1224,7 +1236,7 @@ app.get('/bills', authenticateToken, requireHouseAccess(), (req, res) => {
                 user_name: share.user_name,
                 user_surname: share.user_surname,
                 user_email: share.user_email,
-                amount: shareAmount,
+                amount: shareAmount, // This should represent the user's share amount
                 amount_paid: amountPaid,
                 remaining_amount: remainingAmount,
                 status: shareStatus, // Use calculated status instead of database status
@@ -1337,7 +1349,8 @@ app.get('/bills/:id', (req, res) => {
       
       // Enhanced shares with payment calculations
       const shares = sharesResults.map(share => {
-        const shareAmount = parseFloat(share.amount) || 0;
+        // Use share_amount if available, fallback to amount
+        const shareAmount = parseFloat(share.share_amount || share.amount) || 0;
         const amountPaid = parseFloat(share.amount_paid) || 0;
         const remainingAmount = Math.max(0, shareAmount - amountPaid);
         const shareStatus = remainingAmount === 0 ? 'paid' : 'pending';
@@ -1349,7 +1362,7 @@ app.get('/bills/:id', (req, res) => {
           user_name: share.user_name,
           user_surname: share.user_surname,
           user_email: share.user_email,
-          amount: shareAmount,
+          amount: shareAmount, // This should represent the user's share amount
           amount_paid: amountPaid,
           remaining_amount: remainingAmount,
           status: shareStatus, // Use calculated status instead of database status
