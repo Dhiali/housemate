@@ -58,8 +58,9 @@ export const updateUserEmail = (userId, email) => API.put(`/users/${userId}/emai
 export const updateUserPreferredContact = (userId, preferred_contact) => API.put(`/users/${userId}/preferred_contact`, { preferred_contact });
 
 // Schedule
-export const getSchedule = () => API.get("/schedule");
+export const getSchedule = (houseId) => API.get(`/schedule${houseId ? `?house_id=${houseId}` : ''}`);
 export const getScheduleItem = (id) => API.get(`/schedule/${id}`);
 export const addSchedule = (item) => API.post("/schedule", item);
+export const addEvent = (eventData) => API.post("/schedule", eventData);
 export const updateSchedule = (id, data) => API.put(`/schedule/${id}`, data);
 export const deleteSchedule = (id) => API.delete(`/schedule/${id}`);

@@ -1366,7 +1366,18 @@ app.get('/bills/:id/payments', (req, res) => {
 
 // Schedule endpoints
 app.get('/schedule', (req, res) => {
-  db.query("SELECT * FROM schedule", (err, results) => {
+  const houseId = req.query.house_id;
+  let query = "SELECT * FROM schedule";
+  let params = [];
+  
+  if (houseId) {
+    query += " WHERE house_id = ?";
+    params.push(houseId);
+  }
+  
+  query += " ORDER BY scheduled_date ASC, scheduled_time ASC";
+  
+  db.query(query, params, (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(results);
   });
@@ -1378,11 +1389,50 @@ app.get('/schedule/:id', (req, res) => {
   });
 });
 app.post('/schedule', (req, res) => {
-  const { house_id, scheduled_date, scheduled_time, recurrence } = req.body;
-  db.query("INSERT INTO schedule (house_id, scheduled_date, scheduled_time, recurrence) VALUES (?, ?, ?, ?)", [house_id, scheduled_date, scheduled_time, recurrence], (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: "Schedule created!", id: results.insertId });
-  });
+  const { 
+    house_id, 
+    title, 
+    description, 
+    scheduled_date, 
+    scheduled_time, 
+    type, 
+    attendees, 
+    recurrence,
+    created_by 
+  } = req.body;
+  
+  // Validate required fields
+  if (!house_id || !title || !scheduled_date) {
+    return res.status(400).json({ 
+      error: "Missing required fields: house_id, title, and scheduled_date are required" 
+    });
+  }
+  
+  const attendeesStr = Array.isArray(attendees) ? attendees.join(',') : attendees || 'All';
+  
+  db.query(
+    "INSERT INTO schedule (house_id, title, description, scheduled_date, scheduled_time, type, attendees, recurrence, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())", 
+    [house_id, title, description || '', scheduled_date, scheduled_time || null, type || 'meeting', attendeesStr, recurrence || 'none', created_by || null], 
+    (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ 
+        message: "Event created successfully!", 
+        id: results.insertId,
+        event: {
+          id: results.insertId,
+          house_id,
+          title,
+          description: description || '',
+          scheduled_date,
+          scheduled_time: scheduled_time || null,
+          type: type || 'meeting',
+          attendees: attendeesStr,
+          recurrence: recurrence || 'none',
+          created_by: created_by || null
+        }
+      });
+    }
+  );
 });
 app.put('/schedule/:id', (req, res) => {
   db.query("UPDATE schedule SET ? WHERE id = ?", [req.body, req.params.id], (err, results) => {

@@ -46,7 +46,7 @@ import {
 } from 'lucide-react';
 import './index.css';
 import { useState, useEffect } from 'react';
-import { getTasks, addTask, updateTask, getHouse, getHouseStatistics, getHousemates, getUserStatistics, getUserCompletedTasks, getUserPendingTasks, getUserContributedBills, getBills, addBill, updateBill, deleteBill, payBill } from '../../apiHelpers';
+import { getTasks, addTask, updateTask, getHouse, getHouseStatistics, getHousemates, getUserStatistics, getUserCompletedTasks, getUserPendingTasks, getUserContributedBills, getBills, addBill, updateBill, deleteBill, payBill, addEvent, getSchedule } from '../../apiHelpers';
 import { updateUserBio, updateUserPhone } from '../../apiHelpers';
 import { Button } from './components/ui/button';
 import { useSEO, SEO_CONFIG } from '../../hooks/useSEO.js';
@@ -181,6 +181,37 @@ export default function App({ user }) {
       });
     } finally {
       setLoadingTasks(false);
+    }
+  };
+
+  // Function to fetch events
+  const fetchEvents = async () => {
+    if (!user || !user.house_id) {
+      return;
+    }
+    
+    try {
+      console.log('Fetching events for house_id:', user.house_id);
+      const res = await getSchedule(user.house_id);
+      console.log('Events API response:', res.data);
+      
+      // Map backend schedule data to frontend event format
+      const mappedEvents = res.data.map(event => ({
+        id: event.id,
+        title: event.title,
+        description: event.description || '',
+        date: event.scheduled_date,
+        time: event.scheduled_time || '',
+        type: event.type || 'meeting',
+        attendees: typeof event.attendees === 'string' ? event.attendees.split(',') : (event.attendees || ['All']),
+        color: 'purple'
+      }));
+      
+      setHouseEvents(mappedEvents);
+      console.log('Events loaded successfully:', mappedEvents);
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      setHouseEvents([]);
     }
   };
 
@@ -421,10 +452,11 @@ export default function App({ user }) {
     }
   };
 
-  // Fetch tasks and bills when user has house_id
+  // Fetch tasks, bills, and events when user has house_id
   useEffect(() => {
     fetchTasks();
     fetchBills();
+    fetchEvents();
   }, [user?.house_id]);
 
   useEffect(() => {
@@ -1485,37 +1517,71 @@ export default function App({ user }) {
     setIsEventDetailOpen(true);
   };
 
-  const handleAddEvent = () => {
+  const handleAddEvent = async () => {
     if (!eventFormData.title || !eventFormData.date) {
+      console.error('Missing required fields: title and date');
       return;
     }
 
-    const newEvent = {
-      id: houseEvents.length + 1,
-      title: eventFormData.title,
-      description: eventFormData.description,
-      date: eventFormData.date,
-      time: eventFormData.time,
-  type: eventFormData.type,
-      attendees: eventFormData.attendees,
-      color: 'purple'
-    };
+    if (!user?.house_id) {
+      console.error('User house_id not found');
+      return;
+    }
 
-    // In a real app, this would update the backend
-    console.log('Adding new event:', newEvent);
-    
-    // Reset form
-    setEventFormData({
-      title: '',
-      description: '',
-      date: '',
-      time: '',
-      type: 'meeting',
-      attendees: ['All']
-    });
-    
-  setIsAddEventOpen(false);
-};
+    try {
+      // Format the event data for the API
+      const eventData = {
+        house_id: user.house_id,
+        title: eventFormData.title,
+        description: eventFormData.description,
+        scheduled_date: eventFormData.date,
+        scheduled_time: eventFormData.time,
+        type: eventFormData.type,
+        attendees: eventFormData.attendees,
+        recurrence: 'none', // For now, default to no recurrence
+        created_by: user.id
+      };
+
+      console.log('Creating event:', eventData);
+      
+      // Call the API to create the event
+      const response = await addEvent(eventData);
+      console.log('Event created successfully:', response.data);
+
+      // Create the new event object for local state
+      const newEvent = {
+        id: response.data.id,
+        title: eventFormData.title,
+        description: eventFormData.description,
+        date: eventFormData.date,
+        time: eventFormData.time,
+        type: eventFormData.type,
+        attendees: eventFormData.attendees,
+        color: 'purple'
+      };
+
+      // Update the local state to include the new event
+      setHouseEvents(prev => [...prev, newEvent]);
+      
+      // Reset form
+      setEventFormData({
+        title: '',
+        description: '',
+        date: '',
+        time: '',
+        type: 'meeting',
+        attendees: ['All']
+      });
+      
+      setIsAddEventOpen(false);
+      console.log('Event added to calendar successfully');
+      
+    } catch (error) {
+      console.error('Error creating event:', error);
+      // You could add user-friendly error handling here
+      // For now, we'll just log the error
+    }
+  };
 
 const formatDate = (date) => {
   return date.toISOString().split('T')[0];
