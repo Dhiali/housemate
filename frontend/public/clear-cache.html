@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear HouseMate Cache</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 40px; text-align: center; }
+        .button { padding: 15px 30px; font-size: 16px; background: #6366f1; color: white; border: none; border-radius: 8px; cursor: pointer; margin: 10px; }
+        .button:hover { background: #4f46e5; }
+        .status { margin: 20px 0; padding: 15px; border-radius: 8px; }
+        .success { background: #d1fae5; color: #065f46; border: 1px solid #10b981; }
+        .info { background: #dbeafe; color: #1e40af; border: 1px solid #3b82f6; }
+    </style>
+</head>
+<body>
+    <h1>🧹 Clear HouseMate Cache</h1>
+    <p>This will clear all service worker caches and reload the app with the latest code.</p>
+    
+    <button class="button" onclick="clearAllCaches()">Clear All Caches</button>
+    <button class="button" onclick="unregisterServiceWorker()">Unregister Service Worker</button>
+    <button class="button" onclick="reloadApp()">Reload App</button>
+    
+    <div id="status"></div>
+
+    <script>
+        function showStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.className = `status ${type}`;
+            status.innerHTML = message;
+        }
+
+        async function clearAllCaches() {
+            try {
+                showStatus('🧹 Clearing all caches...', 'info');
+                
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    console.log('Found caches:', cacheNames);
+                    
+                    await Promise.all(
+                        cacheNames.map(cacheName => {
+                            console.log('Deleting cache:', cacheName);
+                            return caches.delete(cacheName);
+                        })
+                    );
+                    showStatus(`✅ Cleared ${cacheNames.length} cache(s) successfully!`, 'success');
+                } else {
+                    showStatus('ℹ️ Cache API not supported in this browser.', 'info');
+                }
+            } catch (error) {
+                showStatus(`❌ Error clearing caches: ${error.message}`, 'error');
+                console.error('Cache clearing error:', error);
+            }
+        }
+
+        async function unregisterServiceWorker() {
+            try {
+                showStatus('🔧 Unregistering service worker...', 'info');
+                
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    console.log('Found service workers:', registrations);
+                    
+                    await Promise.all(
+                        registrations.map(registration => {
+                            console.log('Unregistering SW:', registration);
+                            return registration.unregister();
+                        })
+                    );
+                    showStatus(`✅ Unregistered ${registrations.length} service worker(s)!`, 'success');
+                } else {
+                    showStatus('ℹ️ Service Workers not supported in this browser.', 'info');
+                }
+            } catch (error) {
+                showStatus(`❌ Error unregistering service worker: ${error.message}`, 'error');
+                console.error('SW unregistration error:', error);
+            }
+        }
+
+        async function reloadApp() {
+            showStatus('🔄 Reloading application...', 'info');
+            // Clear localStorage for good measure
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Go to main app with cache buster
+            window.location.href = '/?nocache=' + Date.now();
+        }
+
+        // Auto-clear on page load
+        window.addEventListener('load', () => {
+            showStatus('👋 Ready to clear caches. Click buttons above.', 'info');
+        });
+    </script>
+</body>
+</html>
