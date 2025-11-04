@@ -76,33 +76,41 @@ import ProtectedRoute from '../../components/ProtectedRoute';
 function App() {
   console.log("App component is rendering");
   
-  // Add error boundary and early return for debugging
-  try {
-    // Get user data from auth context
-    const { user, isAdmin, isStandard, isReadOnly, permissions, getRoleDisplayName } = useAuth();
-    
-    // Early return if user data is not available
-    if (!user) {
-      return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 text-lg">Loading user data...</p>
-          </div>
-        </div>
-      );
-    }
+  // Get user data from auth context (this must be outside try block)
+  const { user, isAdmin, isStandard, isReadOnly, permissions, getRoleDisplayName } = useAuth();
   
+  // All React hooks must be at the top level
   const [currentPage, setCurrentPage] = useState('Dashboard');
-  // Add state for upcoming tasks view dropdown (admin only)
-  const [upcomingTasksView, setUpcomingTasksView] = useState(isAdmin ? 'everyone' : 'own');
-  const [scheduleDataView, setScheduleDataView] = useState(isAdmin ? 'everyone' : 'own');
-  // Add state for tasks page view toggle (admin only)
-  const [tasksPageView, setTasksPageView] = useState(isAdmin ? 'everyone' : 'own');
-  // Add state for schedule page view toggle (admin only)  
-  const [schedulePageView, setSchedulePageView] = useState(isAdmin ? 'everyone' : 'own');
-  // Add state for bills page view toggle (admin only)
-  const [billsPageView, setBillsPageView] = useState(isAdmin ? 'everyone' : 'own');
+  const [upcomingTasksView, setUpcomingTasksView] = useState('own');
+  const [scheduleDataView, setScheduleDataView] = useState('own');
+  const [tasksPageView, setTasksPageView] = useState('own');
+  const [schedulePageView, setSchedulePageView] = useState('own');
+  const [billsPageView, setBillsPageView] = useState('own');
+
+  // Update view states based on user role after user data loads
+  useEffect(() => {
+    if (user && isAdmin) {
+      setUpcomingTasksView('everyone');
+      setScheduleDataView('everyone');
+      setTasksPageView('everyone');
+      setSchedulePageView('everyone');
+      setBillsPageView('everyone');
+    }
+  }, [user, isAdmin]);
+
+  // Early return if user data is not available
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg">Loading user data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  try {
 
   // SEO: Update page title and meta description based on current page
   const getSEOConfigForPage = () => {
