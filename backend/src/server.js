@@ -365,7 +365,7 @@ async function createDatabaseTables() {
       assigned_to INT,
       created_by INT NOT NULL,
       house_id INT NOT NULL,
-      status ENUM('open', 'pending', 'in_progress', 'completed') DEFAULT 'open',
+      status ENUM('open', 'pending', 'in_progress', 'completed', 'overdue') DEFAULT 'open',
       priority ENUM('low', 'medium', 'high') DEFAULT 'medium',
       due_date DATE,
       category VARCHAR(100) DEFAULT 'general',
@@ -454,6 +454,21 @@ async function createDatabaseTables() {
                 reject(err);
               } else {
                 console.log('✅ Tasks table ready');
+                
+                // Update tasks table status enum to include 'overdue' (migration)
+                const updateTaskStatusEnumQuery = `
+                  ALTER TABLE tasks 
+                  MODIFY COLUMN status ENUM('open', 'pending', 'in_progress', 'completed', 'overdue') DEFAULT 'open'
+                `;
+                
+                db.query(updateTaskStatusEnumQuery, (err) => {
+                  if (err) {
+                    // This might fail if the enum already includes 'overdue', which is fine
+                    console.log('ℹ️ Tasks status enum migration (may already be applied):', err.message);
+                  } else {
+                    console.log('✅ Tasks status enum updated to include overdue');
+                  }
+                });
               }
             });
             
