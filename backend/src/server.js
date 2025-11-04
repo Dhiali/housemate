@@ -2093,7 +2093,7 @@ app.get('/tasks', authenticateToken, requireHouseAccess(), async (req, res) => {
 });
 
 // Get specific task by ID
-app.get('/tasks/:id', (req, res) => {
+app.get('/tasks/:id', authenticateToken, requireHouseAccess(), (req, res) => {
   const taskId = req.params.id;
 
   const query = `
@@ -2113,7 +2113,7 @@ app.get('/tasks/:id', (req, res) => {
   db.query(query, [taskId], (err, results) => {
     if (err) {
       console.error('Error fetching task:', err);
-      return res.status(500).json({ error: err.message });
+      return handleDatabaseError(res, err, 'Error fetching task', req);
     }
     
     if (results.length === 0) {
@@ -2228,7 +2228,7 @@ app.post('/tasks', authenticateToken, requireHouseAccess(), (req, res) => {
 });
 
 // Update a task
-app.put('/tasks/:id', (req, res) => {
+app.put('/tasks/:id', authenticateToken, requireHouseAccess(), (req, res) => {
   const taskId = req.params.id;
   const { 
     title, 
@@ -2246,7 +2246,7 @@ app.put('/tasks/:id', (req, res) => {
   db.query('SELECT * FROM tasks WHERE id = ?', [taskId], (err, currentTask) => {
     if (err) {
       console.error('Error fetching current task:', err);
-      return res.status(500).json({ error: err.message });
+      return handleDatabaseError(res, err, 'Error fetching current task', req);
     }
 
     if (currentTask.length === 0) {
@@ -2321,7 +2321,7 @@ app.put('/tasks/:id', (req, res) => {
     db.query(updateQuery, updateValues, (updateErr) => {
       if (updateErr) {
         console.error('Error updating task:', updateErr);
-        return res.status(500).json({ error: updateErr.message });
+        return handleDatabaseError(res, updateErr, 'Error updating task', req);
       }
 
       // Log changes in task_history
@@ -2350,7 +2350,7 @@ app.put('/tasks/:id', (req, res) => {
 });
 
 // Delete a task
-app.delete('/tasks/:id', (req, res) => {
+app.delete('/tasks/:id', authenticateToken, requireHouseAccess(), (req, res) => {
   const taskId = req.params.id;
   const { deleted_by } = req.body;
 
@@ -2358,7 +2358,7 @@ app.delete('/tasks/:id', (req, res) => {
   db.query('SELECT * FROM tasks WHERE id = ?', [taskId], (err, results) => {
     if (err) {
       console.error('Error checking task:', err);
-      return res.status(500).json({ error: err.message });
+      return handleDatabaseError(res, err, 'Error checking task', req);
     }
 
     if (results.length === 0) {
@@ -2380,7 +2380,7 @@ app.delete('/tasks/:id', (req, res) => {
       db.query('DELETE FROM tasks WHERE id = ?', [taskId], (deleteErr) => {
         if (deleteErr) {
           console.error('Error deleting task:', deleteErr);
-          return res.status(500).json({ error: deleteErr.message });
+          return handleDatabaseError(res, deleteErr, 'Error deleting task', req);
         }
 
         res.json({ message: 'Task deleted successfully' });
