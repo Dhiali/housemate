@@ -21,18 +21,29 @@ export function BillItem({
   shares = [],
   payments = [],
   onRecordPayment,
-  onViewPayments
+  onViewPayments,
+  // New calculated fields from backend
+  total_amount,
+  total_paid,
+  total_remaining,
+  payment_status,
+  payment_progress
 }) {
   const [showDetails, setShowDetails] = useState(false);
   
-  const progress = (paid / amount) * 100;
-  const progressText = `R${Number(paid || 0).toFixed(2)} of R${Number(amount || 0).toFixed(2)} paid`;
+  // Use calculated values from backend if available, otherwise fallback to props
+  const actualAmount = total_amount !== undefined ? total_amount : amount;
+  const actualPaid = total_paid !== undefined ? total_paid : paid;
+  const actualStatus = payment_status !== undefined ? payment_status : status;
+  const actualProgress = payment_progress !== undefined ? payment_progress : (actualPaid / actualAmount) * 100;
+  
+  const progressText = `R${Number(actualPaid || 0).toFixed(2)} of R${Number(actualAmount || 0).toFixed(2)} paid`;
   const formattedDueDate = `Due ${new Date(dueDate).toLocaleDateString('en-US', { 
     month: 'short', 
     day: 'numeric', 
     year: 'numeric' 
   })}`;
-  const formattedAmount = `R${Number(amount || 0).toFixed(2)}`;
+  const formattedAmount = `R${Number(actualAmount || 0).toFixed(2)}`;
   const formattedPerPerson = `R${Number(perPerson || 0).toFixed(2)} per person`;
   
   const getStatusColor = (status) => {
@@ -65,8 +76,26 @@ export function BillItem({
       case 'Pending':
       case 'pending':
         return 'bg-blue-500';
+      case 'Overdue':
+      case 'overdue':
+        return 'bg-red-500';
       default:
         return 'bg-gray-500';
+    }
+  };
+
+  const getStatusDisplayText = (status) => {
+    switch (status) {
+      case 'partial':
+        return 'Partially Paid';
+      case 'paid':
+        return 'Paid';
+      case 'pending':
+        return 'Pending';
+      case 'overdue':
+        return 'Overdue';
+      default:
+        return status;
     }
   };
 
@@ -98,11 +127,11 @@ export function BillItem({
             </div>
             <p className="text-sm text-gray-500 mb-3">{description}</p>
             <div className="flex items-center space-x-4 mb-3">
-              <span className={`px-2 py-1 rounded-md text-xs border ${getStatusColor(status)}`}>
-                {status}
+              <span className={`px-2 py-1 rounded-md text-xs border ${getStatusColor(actualStatus)}`}>
+                {getStatusDisplayText(actualStatus)}
               </span>
               <span className="text-xs text-gray-500">{formattedDueDate}</span>
-              {isOverdue && (
+              {isOverdue && actualStatus !== 'paid' && (
                 <span className="text-xs text-red-500 font-medium">OVERDUE</span>
               )}
             </div>
@@ -112,8 +141,8 @@ export function BillItem({
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
-                  className={`h-2 rounded-full ${getProgressColor(status)}`}
-                  style={{ width: `${progress}%` }}
+                  className={`h-2 rounded-full transition-all duration-300 ${getProgressColor(actualStatus)}`}
+                  style={{ width: `${Math.min(100, Math.max(0, actualProgress))}%` }}
                 ></div>
               </div>
             </div>
@@ -128,30 +157,43 @@ export function BillItem({
                   <div className="mb-4">
                     <h5 className="text-xs font-medium text-gray-700 mb-2">Individual Shares:</h5>
                     <div className="space-y-2">
-                      {shares.map((share, index) => (
-                        <div key={index} className="flex items-center justify-between text-xs">
-                          <div className="flex items-center space-x-2">
-                            <User className="w-3 h-3 text-gray-400" />
-                            <span className="text-gray-600">
-                              {share.user_name} {share.user_surname}
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-gray-500">R{Number(share.amount || 0).toFixed(2)}</span>
-                            <Badge 
-                              variant={share.status === 'paid' ? 'success' : 'secondary'}
-                              className="text-xs"
-                            >
-                              {share.status === 'paid' ? 'Paid' : 'Pending'}
-                            </Badge>
-                            {share.status === 'paid' && share.paid_by_name && (
-                              <span className="text-xs text-green-600">
-                                by {share.paid_by_name}
+                      {shares.map((share, index) => {
+                        const remainingAmount = share.remaining_amount !== undefined 
+                          ? share.remaining_amount 
+                          : Math.max(0, (share.amount || 0) - (share.amount_paid || 0));
+                        const isPaid = remainingAmount === 0;
+                        
+                        return (
+                          <div key={index} className="flex items-center justify-between text-xs">
+                            <div className="flex items-center space-x-2">
+                              <User className="w-3 h-3 text-gray-400" />
+                              <span className="text-gray-600">
+                                {share.user_name} {share.user_surname}
                               </span>
-                            )}
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              {isPaid ? (
+                                <span className="text-green-600 font-medium">Paid in full</span>
+                              ) : (
+                                <span className="text-red-600">
+                                  R{Number(remainingAmount).toFixed(2)} remaining
+                                </span>
+                              )}
+                              <Badge 
+                                variant={isPaid ? 'success' : 'secondary'}
+                                className="text-xs"
+                              >
+                                {isPaid ? 'Paid' : 'Pending'}
+                              </Badge>
+                              {isPaid && share.paid_by_name && (
+                                <span className="text-xs text-green-600">
+                                  by {share.paid_by_name}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}

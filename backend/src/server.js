@@ -1219,6 +1219,8 @@ app.get('/bills', authenticateToken, requireHouseAccess(), (req, res) => {
               user_surname: share.user_surname,
               user_email: share.user_email,
               amount: parseFloat(share.amount) || 0,
+              amount_paid: parseFloat(share.amount_paid) || 0,
+              remaining_amount: Math.max(0, (parseFloat(share.amount) || 0) - (parseFloat(share.amount_paid) || 0)),
               status: share.status,
               paid_by_user_id: share.paid_by_user_id,
               paid_by_name: share.paid_by_name ? `${share.paid_by_name} ${share.paid_by_surname}` : null,
@@ -1227,7 +1229,39 @@ app.get('/bills', authenticateToken, requireHouseAccess(), (req, res) => {
               paid_at: share.paid_at
             }));
 
-            billsWithData[index] = { ...bill, payments, shares };
+            // Calculate payment totals and status
+            const totalBillAmount = parseFloat(bill.amount) || 0;
+            const totalPaidAmount = shares.reduce((sum, share) => sum + (parseFloat(share.amount_paid) || 0), 0);
+            const totalRemainingAmount = Math.max(0, totalBillAmount - totalPaidAmount);
+            
+            // Determine bill status based on payments
+            let calculatedStatus = 'pending';
+            if (totalPaidAmount >= totalBillAmount) {
+              calculatedStatus = 'paid';
+            } else if (totalPaidAmount > 0) {
+              calculatedStatus = 'partial';
+            } else {
+              // Check if bill is overdue
+              const currentDate = new Date();
+              const dueDate = new Date(bill.due_date);
+              if (dueDate < currentDate) {
+                calculatedStatus = 'overdue';
+              }
+            }
+
+            // Create enhanced bill object with calculated payment data
+            const enhancedBill = {
+              ...bill,
+              payments,
+              shares,
+              total_amount: totalBillAmount,
+              total_paid: totalPaidAmount,
+              total_remaining: totalRemainingAmount,
+              payment_status: calculatedStatus,
+              payment_progress: totalBillAmount > 0 ? (totalPaidAmount / totalBillAmount) * 100 : 0
+            };
+
+            billsWithData[index] = enhancedBill;
             completedBills++;
             
             if (completedBills === results.length) {
@@ -1293,9 +1327,58 @@ app.get('/bills/:id', (req, res) => {
       }
       
       const bill = billResults[0];
-      bill.shares = sharesResults;
       
-      res.json({ data: bill });
+      // Enhanced shares with payment calculations
+      const shares = sharesResults.map(share => ({
+        id: share.id,
+        bill_id: share.bill_id,
+        user_id: share.user_id,
+        user_name: share.user_name,
+        user_surname: share.user_surname,
+        user_email: share.user_email,
+        amount: parseFloat(share.amount) || 0,
+        amount_paid: parseFloat(share.amount_paid) || 0,
+        remaining_amount: Math.max(0, (parseFloat(share.amount) || 0) - (parseFloat(share.amount_paid) || 0)),
+        status: share.status,
+        paid_by_user_id: share.paid_by_user_id,
+        paid_by_name: share.paid_by_name ? `${share.paid_by_name} ${share.paid_by_surname}` : null,
+        payment_method: share.payment_method,
+        payment_notes: share.payment_notes,
+        paid_at: share.paid_at
+      }));
+
+      // Calculate payment totals and status
+      const totalBillAmount = parseFloat(bill.amount) || 0;
+      const totalPaidAmount = shares.reduce((sum, share) => sum + (parseFloat(share.amount_paid) || 0), 0);
+      const totalRemainingAmount = Math.max(0, totalBillAmount - totalPaidAmount);
+      
+      // Determine bill status based on payments
+      let calculatedStatus = 'pending';
+      if (totalPaidAmount >= totalBillAmount) {
+        calculatedStatus = 'paid';
+      } else if (totalPaidAmount > 0) {
+        calculatedStatus = 'partial';
+      } else {
+        // Check if bill is overdue
+        const currentDate = new Date();
+        const dueDate = new Date(bill.due_date);
+        if (dueDate < currentDate) {
+          calculatedStatus = 'overdue';
+        }
+      }
+
+      // Create enhanced bill object with calculated payment data
+      const enhancedBill = {
+        ...bill,
+        shares,
+        total_amount: totalBillAmount,
+        total_paid: totalPaidAmount,
+        total_remaining: totalRemainingAmount,
+        payment_status: calculatedStatus,
+        payment_progress: totalBillAmount > 0 ? (totalPaidAmount / totalBillAmount) * 100 : 0
+      };
+      
+      res.json({ data: enhancedBill });
     });
   });
 });
