@@ -433,6 +433,17 @@ function App() {
       console.log('Events loaded successfully:', mappedEvents);
     } catch (error) {
       console.error('Error fetching events:', error);
+      
+      // Provide specific handling for different error types
+      if (error.response?.status === 500) {
+        console.warn('⚠️ Schedule endpoint experiencing issues (500 error). Using empty schedule for now.');
+        // Could show a user-friendly message here if needed
+      } else if (error.response?.status === 503) {
+        console.warn('⚠️ Schedule service temporarily unavailable (503 error).');
+      } else {
+        console.error('💥 Unexpected error fetching schedule:', error.message);
+      }
+      
       setHouseEvents([]);
     }
   };

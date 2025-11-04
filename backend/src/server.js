@@ -1569,8 +1569,8 @@ app.get('/schedule', authenticateToken, (req, res) => {
     }
   }
   
-  // Use actual database column names: event_date, event_time
-  query += " ORDER BY event_date ASC, event_time ASC";
+  // Use actual database column names: scheduled_date, scheduled_time
+  query += " ORDER BY scheduled_date ASC, scheduled_time ASC";
   
   db.query(query, params, (err, results) => {
     if (err) {
@@ -1584,8 +1584,8 @@ app.get('/schedule', authenticateToken, (req, res) => {
       house_id: event.house_id,
       title: event.title,
       description: event.description,
-      scheduled_date: event.event_date, // Map event_date to scheduled_date
-      scheduled_time: event.event_time, // Map event_time to scheduled_time
+      scheduled_date: event.scheduled_date, // Use actual column name
+      scheduled_time: event.scheduled_time, // Use actual column name
       type: event.type || 'meeting', // Now uses actual column
       attendees: event.attendees || 'All', // Now uses actual column
       recurrence: event.recurrence,
@@ -1672,11 +1672,11 @@ app.post('/debug/create-event', (req, res) => {
   
   const query = `
     INSERT INTO schedule 
-    (house_id, title, description, event_date, event_time, type, attendees, recurrence, created_by, task_id) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (house_id, title, description, scheduled_date, scheduled_time, type, attendees, recurrence, created_by) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   
-  const values = [house_id, title, description, scheduled_date, scheduled_time, type, attendeesStr, recurrence, created_by, null];
+  const values = [house_id, title, description, scheduled_date, scheduled_time, type, attendeesStr, recurrence, created_by];
   
   console.log('🧪 DEBUG: Query:', query);
   console.log('🧪 DEBUG: Values:', values);
@@ -1749,14 +1749,14 @@ app.post('/schedule', authenticateToken, (req, res) => {
   
   // Map frontend field names to actual database column names
   // Frontend sends: scheduled_date, scheduled_time
-  // Database has: event_date, event_time
+  // Database has: scheduled_date, scheduled_time (corrected)
   // Now includes: type and attendees columns
   
   const attendeesStr = Array.isArray(attendees) ? attendees.join(',') : attendees || 'All';
   
   db.query(
-    "INSERT INTO schedule (house_id, title, description, event_date, event_time, type, attendees, recurrence, created_by, task_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
-    [house_id, title, description || '', scheduled_date, scheduled_time || null, type || 'meeting', attendeesStr, recurrence || 'none', finalCreatedBy, null], 
+    "INSERT INTO schedule (house_id, title, description, scheduled_date, scheduled_time, type, attendees, recurrence, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", 
+    [house_id, title, description || '', scheduled_date, scheduled_time || null, type || 'meeting', attendeesStr, recurrence || 'none', finalCreatedBy], 
     (err, results) => {
       if (err) {
         console.error('❌ Database error when creating schedule:', err);
