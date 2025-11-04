@@ -2622,54 +2622,44 @@ const formatDate = (date) => {
                             <div className="space-y-4">
                               {(() => {
                                 let filteredTasks = [];
-                                if (upcomingTasksView === 'me') {
-                                  filteredTasks = tasks.filter(task => task.assignedTo === 'You');
-                                } else {
+                                
+                                // Filter by user assignment (for dropdown)
+                                if (upcomingTasksView === 'own') {
+                                  // Show only tasks assigned to current user
+                                  filteredTasks = tasks.filter(task => task.assigned_to === user?.id);
+                                } else if (upcomingTasksView === 'everyone') {
+                                  // Show all tasks (admin view)
                                   filteredTasks = tasks;
+                                } else {
+                                  // Default fallback
+                                  filteredTasks = tasks.filter(task => task.assigned_to === user?.id);
                                 }
+                                
+                                // Filter by tab (today/overdue/all)
                                 if (tab === 'today') {
-                                  filteredTasks = filteredTasks.filter(task => task.dueDate.includes('Today'));
+                                  // Show tasks due today
+                                  const today = new Date();
+                                  today.setHours(0, 0, 0, 0);
+                                  const tomorrow = new Date(today);
+                                  tomorrow.setDate(tomorrow.getDate() + 1);
+                                  
+                                  filteredTasks = filteredTasks.filter(task => {
+                                    if (!task.due_date) return false;
+                                    const taskDue = new Date(task.due_date);
+                                    taskDue.setHours(0, 0, 0, 0);
+                                    return taskDue.getTime() === today.getTime();
+                                  });
                                 } else if (tab === 'overdue') {
-                                  filteredTasks = filteredTasks.filter(task => task.status === 'Overdue');
+                                  // Show overdue tasks using database status
+                                  filteredTasks = filteredTasks.filter(task => task.originalStatus === 'overdue');
                                 }
+                                
                                 return filteredTasks.length > 0
                                   ? filteredTasks.map((task, index) => (
                                       <TaskItem
-                                        key={index}
+                                        key={task.id || index}
                                         {...task}
-                                        onStatusChange={newStatus => {
-                                          setTasks(prevTasks => {
-                                            const updatedTasks = prevTasks.map((t, i) => {
-                                              if (i === tasks.indexOf(task)) {
-                                                let updatedStatus = newStatus;
-                                                // If not completed and past due date, set overdue
-                                                if (newStatus !== 'Completed') {
-                                                  let dueDateObj = null;
-                                                  if (t.dueDate.includes('Today')) {
-                                                    dueDateObj = new Date();
-                                                  } else if (t.dueDate.includes('Tomorrow')) {
-                                                    dueDateObj = new Date();
-                                                    dueDateObj.setDate(dueDateObj.getDate() + 1);
-                                                  } else {
-                                                    const match = t.dueDate.match(/Due (\w+ \d+)/);
-                                                    if (match) {
-                                                      const currentYear = new Date().getFullYear();
-                                                      dueDateObj = new Date(`${match[1]} ${currentYear}`);
-                                                    }
-                                                  }
-                                                  if (dueDateObj && dueDateObj < new Date() && newStatus !== 'Completed') {
-                                                    updatedStatus = 'Overdue';
-                                                  }
-                                                }
-                                                return { ...t, status: updatedStatus };
-                                              }
-                                              return t;
-                                            });
-                                            // Refresh housemates data after task status change
-                                            refreshHousemates();
-                                            return updatedTasks;
-                                          });
-                                        }}
+                                        onStatusChange={(newStatus) => handleTaskStatusChange(task.id, newStatus)}
                                       />
                                     ))
                                   : <div className="text-center text-gray-400 py-8">No tasks found.</div>;
