@@ -697,7 +697,10 @@ export function SettingsContent({
         {settingsTab === 'help' && (
           <div className="max-w-2xl">
             <div className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-2">Help & Support</h2>
+              <div className="flex items-center gap-3 mb-2">
+                <img src="/housemate-logo.png" alt="HouseMate Logo" className="w-8 h-8" />
+                <h2 className="text-2xl font-semibold text-gray-900">Help & Support</h2>
+              </div>
               <p className="text-gray-600">Get help and learn more about HouseMate</p>
             </div>
 

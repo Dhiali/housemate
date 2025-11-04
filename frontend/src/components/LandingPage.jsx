@@ -19,7 +19,10 @@ const LandingPage = () => {
       {/* Header */}
       <header className="header">
         <div className="container">
-          <div className="logo">HouseMate</div>
+          <div className="logo">
+            <img src="/housemate-logo.png" alt="HouseMate Logo" className="logo-icon" />
+            HouseMate
+          </div>
           <nav className="nav">
             <button className="nav-button" onClick={handleSignIn}>Sign In</button>
             <button className="nav-button primary" onClick={handleGetStarted}>Get Started</button>

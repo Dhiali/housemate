@@ -7,6 +7,7 @@ import { Label } from "./ui/label";
 import { Checkbox } from "./ui/checkbox";
 import { useAuth } from "../../../UserContext.jsx";
 import { useNavigate } from 'react-router-dom';
+import housemateLogo from "../../../assets/housemate-logo.png";
 
 export function SignInForm({ onForgotPassword, onCreateHouse, onSignInSuccess }) {
   // Get auth context
@@ -208,9 +209,16 @@ export function SignInForm({ onForgotPassword, onCreateHouse, onSignInSuccess })
       <Button 
         type="submit"
         disabled={loading}
-        className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 h-12 rounded-lg"
+        className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 h-12 rounded-lg flex items-center justify-center gap-2"
       >
-        {loading ? "Signing in..." : "Sign in to HouseMate"}
+        {loading ? (
+          "Signing in..."
+        ) : (
+          <>
+            <img src={housemateLogo} alt="HouseMate Logo" className="w-5 h-5" />
+            Sign in to HouseMate
+          </>
+        )}
       </Button>
     </form>
   );

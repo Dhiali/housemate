@@ -5,6 +5,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Checkbox } from "./ui/checkbox";
+import housemateLogo from "../../../assets/housemate-logo.png";
 
 
 // Accept onSignUpSuccess prop
@@ -247,9 +248,16 @@ export function SignUpForm({ onCreateHouseMateAccount, houseId, onSignUpSuccess 
       <Button 
         onClick={handleRegister}
         disabled={loading}
-        className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 h-12 rounded-lg"
+        className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 h-12 rounded-lg flex items-center justify-center gap-2"
       >
-        {loading ? "Registering..." : "Create HouseMate Account"}
+        {loading ? (
+          "Registering..."
+        ) : (
+          <>
+            <img src={housemateLogo} alt="HouseMate Logo" className="w-5 h-5" />
+            Create HouseMate Account
+          </>
+        )}
       </Button>
 
     </div>
