@@ -26,14 +26,14 @@ export function BillItem({
   const [showDetails, setShowDetails] = useState(false);
   
   const progress = (paid / amount) * 100;
-  const progressText = `R${(paid || 0).toFixed(2)} of R${(amount || 0).toFixed(2)} paid`;
+  const progressText = `R${Number(paid || 0).toFixed(2)} of R${Number(amount || 0).toFixed(2)} paid`;
   const formattedDueDate = `Due ${new Date(dueDate).toLocaleDateString('en-US', { 
     month: 'short', 
     day: 'numeric', 
     year: 'numeric' 
   })}`;
-  const formattedAmount = `R${(amount || 0).toFixed(2)}`;
-  const formattedPerPerson = `R${(perPerson || 0).toFixed(2)} per person`;
+  const formattedAmount = `R${Number(amount || 0).toFixed(2)}`;
+  const formattedPerPerson = `R${Number(perPerson || 0).toFixed(2)} per person`;
   
   const getStatusColor = (status) => {
     switch (status) {
@@ -137,7 +137,7 @@ export function BillItem({
                             </span>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <span className="text-gray-500">R{(share.amount || 0).toFixed(2)}</span>
+                            <span className="text-gray-500">R{Number(share.amount || 0).toFixed(2)}</span>
                             <Badge 
                               variant={share.status === 'paid' ? 'success' : 'secondary'}
                               className="text-xs"
@@ -171,7 +171,7 @@ export function BillItem({
                           </div>
                           <div className="flex items-center space-x-1">
                             <span className="text-green-600 font-medium">
-                              R{(payment.amount_paid || 0).toFixed(2)}
+                              R{Number(payment.amount_paid || 0).toFixed(2)}
                             </span>
                             {payment.payment_method && (
                               <span className="text-gray-500">({payment.payment_method})</span>
