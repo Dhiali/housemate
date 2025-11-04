@@ -139,7 +139,9 @@ function App() {
     
     try {
       setLoadingTasks(true);
-      const res = await getTasks(user.house_id);
+      // Use role-based task fetching - admins can view all tasks if they choose
+      const options = { viewAll: isAdmin && upcomingTasksView === 'everyone' };
+      const res = await getTasks(options);
       console.log('Tasks API response:', res.data);
       
       // Map backend data to frontend format
@@ -2011,7 +2013,7 @@ const formatDate = (date) => {
                 <StatsCard
                   title="Total Tasks"
                   amount={dashboardStats.totalTasks.toString()}
-                  subtitle="All tasks"
+                  subtitle={isAdmin ? "All household tasks" : "Your tasks"}
                   icon={<CheckSquare size={20} />}
                   variant="default"
                 />
@@ -2216,19 +2218,25 @@ const formatDate = (date) => {
                       <div className="flex justify-between items-center mb-4">
                         <h2 id="upcoming-tasks" className="text-lg font-semibold text-gray-900">Upcoming Tasks</h2>
                         <div className="flex items-center space-x-4" role="toolbar" aria-label="Task filtering options">
-                          {/* Dropdown for 'everyone'/'me' */}
-                          <Select value={upcomingTasksView}
-                            onValueChange={value => setUpcomingTasksView(value)}
-                            aria-label="Filter tasks by person"
-                          >
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="everyone">Everyone</SelectItem>
-                              <SelectItem value="me">Me</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          {/* Admin-only dropdown for 'everyone'/'me' */}
+                          {isAdmin && (
+                            <Select value={upcomingTasksView}
+                              onValueChange={(value) => {
+                                setUpcomingTasksView(value);
+                                // Refetch tasks when view changes
+                                fetchTasks();
+                              }}
+                              aria-label="Filter tasks by person"
+                            >
+                              <SelectTrigger className="w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="everyone">Everyone</SelectItem>
+                                <SelectItem value="own">My Tasks</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
                           <TabsList className="grid w-48 grid-cols-3" role="tablist" aria-label="Task status filter">
                             <TabsTrigger value="all" role="tab">All</TabsTrigger>
                             <TabsTrigger value="today" role="tab">Today</TabsTrigger>
@@ -2306,12 +2314,29 @@ const formatDate = (date) => {
                   <div className="p-6">
                     <div className="flex justify-between items-center mb-4">
                       <h2 className="text-lg font-semibold text-gray-900">Today's Schedule</h2>
-                      <button 
-                        onClick={() => setCurrentPage('Schedule')}
-                        className="text-sm text-purple-600 hover:text-purple-700 font-medium"
-                      >
-                        View Full Schedule
-                      </button>
+                      <div className="flex items-center space-x-3">
+                        {/* Admin-only dropdown for schedule view */}
+                        {isAdmin && (
+                          <Select value={scheduleDataView}
+                            onValueChange={setScheduleDataView}
+                            aria-label="Filter schedule by person"
+                          >
+                            <SelectTrigger className="w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="everyone">Everyone</SelectItem>
+                              <SelectItem value="own">My Schedule</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                        <button 
+                          onClick={() => setCurrentPage('Schedule')}
+                          className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+                        >
+                          View Full Schedule
+                        </button>
+                      </div>
                     </div>
                     
                     <div className="space-y-3">
@@ -2448,12 +2473,13 @@ const formatDate = (date) => {
                       onClick={() => setIsTaskFormOpen(true)}
                       className="w-full text-left"
                       aria-label="Create new task"
+                      disabled={isReadOnly}
                     >
                       <QuickAction
                         icon={<Plus size={16} className="text-white" />}
                         title="Create New Task"
-                        description="Add a new household task"
-                        iconBg="bg-purple-500"
+                        description={isReadOnly ? "Read-only access" : isAdmin ? "Add a new household task" : "Add a task for yourself"}
+                        iconBg={isReadOnly ? "bg-gray-400" : "bg-purple-500"}
                       />
                     </button>
                     <button 
@@ -2480,18 +2506,21 @@ const formatDate = (date) => {
                         iconBg="bg-orange-500"
                       />
                     </button>
-                    <button 
-                      onClick={() => setIsInviteHousemateOpen(true)}
-                      className="w-full text-left"
-                      aria-label="Invite new housemate"
-                    >
-                      <QuickAction
-                        icon={<UserPlus size={16} className="text-white" />}
-                        title="Invite New Housemate"
-                        description="Send invitation to join house"
-                        iconBg="bg-blue-500"
-                      />
-                    </button>
+                    {/* Admin-only quick action */}
+                    {isAdmin && (
+                      <button 
+                        onClick={() => setIsInviteHousemateOpen(true)}
+                        className="w-full text-left"
+                        aria-label="Invite new housemate"
+                      >
+                        <QuickAction
+                          icon={<UserPlus size={16} className="text-white" />}
+                          title="Invite New Housemate"
+                          description="Send invitation to join house"
+                          iconBg="bg-blue-500"
+                        />
+                      </button>
+                    )}
                   </nav>
                 </section>
 
