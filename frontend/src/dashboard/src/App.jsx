@@ -550,20 +550,20 @@ function App() {
     
     switch (filterType) {
       case 'all':
-        return tasks.filter(task => task.status !== 'Completed');
+        return tasks.filter(task => task.originalStatus !== 'completed');
       
       case 'today':
         return tasks.filter(task => 
-          task.status !== 'Completed' && task.due_date && isToday(task.due_date)
+          task.originalStatus !== 'completed' && task.due_date && isToday(task.due_date)
         );
       
       case 'overdue':
         return tasks.filter(task => 
-          task.status !== 'Completed' && task.due_date && isOverdue(task.due_date, task.status)
+          task.originalStatus !== 'completed' && task.due_date && isOverdue(task.due_date, task.originalStatus)
         );
       
       case 'past':
-        return tasks.filter(task => task.status === 'Completed');
+        return tasks.filter(task => task.originalStatus === 'completed');
       
       default:
         return tasks;
@@ -776,6 +776,13 @@ function App() {
       fetchEvents();
     }
   }, [schedulePageView, currentPage, user?.house_id]);
+
+  // Refetch tasks when tasks page view changes
+  useEffect(() => {
+    if (currentPage === 'Tasks' && user?.house_id) {
+      fetchTasks();
+    }
+  }, [tasksPageView, currentPage, user?.house_id]);
 
   // Auto-set payment form for standard users to themselves only
   useEffect(() => {
