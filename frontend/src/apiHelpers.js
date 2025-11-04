@@ -68,12 +68,12 @@ export const deleteSchedule = (id) => API.delete(`/schedule/${id}`);
 // Debug endpoint to check schedule table
 // Debug helpers
 export const checkScheduleTable = async () => {
-  const response = await api.get('/debug/schedule-table');
+  const response = await API.get('/debug/schedule-table');
   return response;
 };
 
 // New debug endpoint to test schedule creation
 export const debugCreateEvent = async (eventData) => {
-  const response = await api.post('/debug/create-event', eventData);
+  const response = await API.post('/debug/create-event', eventData);
   return response;
 };

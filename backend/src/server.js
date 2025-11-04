@@ -1507,11 +1507,11 @@ app.post('/debug/create-event', (req, res) => {
   
   const query = `
     INSERT INTO schedule 
-    (house_id, title, description, event_date, event_time, type, attendees, recurrence, created_by) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (house_id, title, description, event_date, event_time, type, attendees, recurrence, created_by, task_id) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   
-  const values = [house_id, title, description, scheduled_date, scheduled_time, type, attendeesStr, recurrence, created_by];
+  const values = [house_id, title, description, scheduled_date, scheduled_time, type, attendeesStr, recurrence, created_by, null];
   
   console.log('🧪 DEBUG: Query:', query);
   console.log('🧪 DEBUG: Values:', values);
@@ -1577,8 +1577,8 @@ app.post('/schedule', (req, res) => {
   const attendeesStr = Array.isArray(attendees) ? attendees.join(',') : attendees || 'All';
   
   db.query(
-    "INSERT INTO schedule (house_id, title, description, event_date, event_time, type, attendees, recurrence, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", 
-    [house_id, title, description || '', scheduled_date, scheduled_time || null, type || 'meeting', attendeesStr, recurrence || 'none', created_by || null], 
+    "INSERT INTO schedule (house_id, title, description, event_date, event_time, type, attendees, recurrence, created_by, task_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
+    [house_id, title, description || '', scheduled_date, scheduled_time || null, type || 'meeting', attendeesStr, recurrence || 'none', created_by || null, null], 
     (err, results) => {
       if (err) {
         console.error('❌ Database error when creating schedule:', err);
