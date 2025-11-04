@@ -47,7 +47,6 @@ import {
 import './index.css';
 import { useState, useEffect } from 'react';
 import { getTasks, addTask, updateTask, getHouse, getHouseStatistics, getHousemates, getUserStatistics, getUserCompletedTasks, getUserPendingTasks, getUserContributedBills, getBills, addBill, updateBill, deleteBill, payBill, addEvent, getSchedule, checkScheduleTable } from '../../apiHelpers';
-import { getPublicHouseStatistics } from '../../publicApi';
 import { updateUserBio, updateUserPhone } from '../../apiHelpers';
 import { Button } from './components/ui/button';
 import { useSEO, SEO_CONFIG } from '../../hooks/useSEO.js';
