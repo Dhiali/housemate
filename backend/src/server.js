@@ -960,7 +960,7 @@ app.get('/houses/:houseId/statistics', (req, res) => {
 // Bills endpoints
 
 // Get all bills for a house with sharing information
-app.get('/bills', authenticateToken, (req, res) => {
+app.get('/bills', authenticateToken, requireHouseAccess(), (req, res) => {
   const { house_id, view = 'my' } = req.query;
   const userId = req.user.id;
   const userRole = req.user.role;
@@ -975,8 +975,8 @@ app.get('/bills', authenticateToken, (req, res) => {
     if (userRole === 'admin' && view === 'all') {
       // Admins can see all bills in the house when view=all
       query = `SELECT b.*, 
-                      u.first_name as created_by_name, 
-                      u.last_name as created_by_surname
+                      u.name as created_by_name, 
+                      u.surname as created_by_surname
                FROM bills b
                LEFT JOIN users u ON b.created_by = u.id
                WHERE b.house_id = ?`;
@@ -985,8 +985,8 @@ app.get('/bills', authenticateToken, (req, res) => {
       // Standard users and read-only users see only bills they're involved in
       // Admins see only their bills when view=my
       query = `SELECT DISTINCT b.*, 
-                      u.first_name as created_by_name, 
-                      u.last_name as created_by_surname
+                      u.name as created_by_name, 
+                      u.surname as created_by_surname
                FROM bills b
                LEFT JOIN users u ON b.created_by = u.id
                LEFT JOIN bill_shares bs ON b.id = bs.bill_id
@@ -1025,8 +1025,8 @@ app.get('/bills/:id', (req, res) => {
   const billQuery = `
     SELECT 
       b.*,
-      u.first_name as created_by_name,
-      u.last_name as created_by_surname
+      u.name as created_by_name,
+      u.surname as created_by_surname
     FROM bills b
     LEFT JOIN users u ON b.created_by = u.id
     WHERE b.id = ?
