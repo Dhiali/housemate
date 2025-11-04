@@ -1563,6 +1563,7 @@ app.put('/bills/:id/pay', (req, res) => {
     const columnNames = columns.map(col => col.Field);
     const hasStatus = columnNames.includes('status');
     const hasAmountPaid = columnNames.includes('amount_paid');
+    const hasShareAmount = columnNames.includes('share_amount');
     const hasPaidBy = columnNames.includes('paid_by_user_id');
     const hasPaidAt = columnNames.includes('paid_at');
     const hasPaymentMethod = columnNames.includes('payment_method');
@@ -1632,6 +1633,11 @@ app.put('/bills/:id/pay', (req, res) => {
         const insertValues = [billId, user_id];
         const insertPlaceholders = ['?', '?'];
 
+        if (hasShareAmount) {
+          insertFields.push('share_amount');
+          insertValues.push(amount_paid || 0); // Use the payment amount as the share amount
+          insertPlaceholders.push('?');
+        }
         if (hasAmountPaid) {
           insertFields.push('amount_paid');
           insertValues.push(amount_paid || 0);
