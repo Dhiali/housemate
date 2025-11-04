@@ -2137,8 +2137,8 @@ const formatDate = (date) => {
           <div className="flex items-center space-x-2">
             <div className="w-14 h-14 bg-purple-600 rounded-xl flex items-center justify-center overflow-hidden">
               <OptimizedImage
-                src="/HouseMate logo.png"
-                webpSrc="/HouseMate logo.webp"
+                src="/housemate-logo.png"
+                webpSrc="/housemate-logo.webp"
                 alt="HouseMate Logo"
                 className="w-12 h-12 object-contain"
                 onError={e => { e.target.onerror = null; e.target.style.display = 'none'; }}
@@ -2190,12 +2190,12 @@ const formatDate = (date) => {
           {currentPage === 'Dashboard' && (
             <div className="flex items-center space-x-3" role="complementary" aria-label="House information">
               <OptimizedImage
-                src={householdSettings.avatar ? `data:image/png;base64,${householdSettings.avatar}` : "/HouseMate logo.png"}
-                webpSrc={householdSettings.avatar ? null : "/HouseMate logo.webp"}
+                src={householdSettings.avatar ? `data:image/png;base64,${householdSettings.avatar}` : "/housemate-logo.png"}
+                webpSrc={householdSettings.avatar ? null : "/housemate-logo.webp"}
                 alt="House Avatar"
                 className="w-12 h-12 rounded-full object-cover border-2 border-purple-500 shadow"
                 style={{background: 'white'}}
-                onError={e => { e.target.onerror = null; e.target.src = "/HouseMate logo.png"; }}
+                onError={e => { e.target.onerror = null; e.target.src = "/housemate-logo.png"; }}
               />
               <span className="font-semibold text-lg text-gray-900">{householdSettings.houseName}</span>
             </div>

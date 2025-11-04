@@ -1,5 +1,5 @@
-import housemateLogo from "../../../assets/HouseMate logo.png";
-import housemateLogoWebP from "../../../assets/HouseMate logo.webp";
+import housemateLogo from "../../../assets/housemate-logo.png";
+import housemateLogoWebP from "../../../assets/housemate-logo.webp";
 import OptimizedImage from "../../../components/OptimizedImage.jsx";
 
 export function AuthCard({ children, title, description }) {
