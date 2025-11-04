@@ -2204,7 +2204,7 @@ const formatDate = (date) => {
                 src={householdSettings.avatar ? `data:image/png;base64,${householdSettings.avatar}` : "/housemate-logo.png"}
                 webpSrc={householdSettings.avatar ? null : "/housemate-logo.webp"}
                 alt="House Avatar"
-                className="w-12 h-12 rounded-full object-cover border-2 border-purple-500 shadow"
+                className="w-16 h-16 rounded-full object-cover border-2 border-purple-500 shadow flex-shrink-0"
                 style={{background: 'white'}}
                 onError={e => { e.target.onerror = null; e.target.src = "/housemate-logo.png"; }}
               />
