@@ -1559,6 +1559,19 @@ export default function App({ user }) {
 
       console.log('Creating event:', eventData);
       
+      // First, let's check the debug endpoint to see if the table is properly set up
+      try {
+        const debugResponse = await checkScheduleTable();
+        console.log('Debug table check:', debugResponse.data);
+        
+        if (!debugResponse.data.exists) {
+          alert('Schedule table is not properly set up. Please contact support.');
+          return;
+        }
+      } catch (debugError) {
+        console.warn('Could not check table status:', debugError);
+      }
+      
       // Call the API to create the event
       const response = await addEvent(eventData);
       console.log('Event created successfully:', response.data);
@@ -1593,8 +1606,16 @@ export default function App({ user }) {
       
     } catch (error) {
       console.error('Error creating event:', error);
-      // You could add user-friendly error handling here
-      // For now, we'll just log the error
+      console.error('Full error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText
+      });
+      
+      // Show user-friendly error message
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to create event';
+      alert(`Error creating event: ${errorMessage}`);
     }
   };
 

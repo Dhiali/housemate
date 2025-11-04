@@ -1469,6 +1469,75 @@ app.get('/debug/schedule-table', (req, res) => {
     });
   });
 });
+
+// Debug endpoint to test event creation without full validation
+app.post('/debug/create-event', (req, res) => {
+  console.log('🧪 DEBUG: Testing event creation with data:', JSON.stringify(req.body, null, 2));
+  
+  const { 
+    house_id, 
+    title, 
+    description = null, 
+    scheduled_date, 
+    scheduled_time, 
+    type = 'meeting',
+    attendees = 'All',
+    recurrence = 'none', 
+    created_by 
+  } = req.body;
+  
+  // Check required fields
+  const missing = [];
+  if (!house_id) missing.push('house_id');
+  if (!title) missing.push('title');
+  if (!scheduled_date) missing.push('scheduled_date');
+  if (!created_by) missing.push('created_by');
+  
+  if (missing.length > 0) {
+    console.log('❌ DEBUG: Missing required fields:', missing);
+    return res.status(400).json({ 
+      error: 'Missing required fields', 
+      missing: missing,
+      received: req.body
+    });
+  }
+  
+  // Try a simple insert
+  const attendeesStr = Array.isArray(attendees) ? attendees.join(',') : attendees;
+  
+  const query = `
+    INSERT INTO schedule 
+    (house_id, title, description, event_date, event_time, type, attendees, recurrence, created_by) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+  
+  const values = [house_id, title, description, scheduled_date, scheduled_time, type, attendeesStr, recurrence, created_by];
+  
+  console.log('🧪 DEBUG: Query:', query);
+  console.log('🧪 DEBUG: Values:', values);
+  
+  db.query(query, values, (err, results) => {
+    if (err) {
+      console.error('❌ DEBUG: Database error:', err);
+      return res.status(500).json({ 
+        error: 'Database error', 
+        details: err.message,
+        code: err.code,
+        sqlState: err.sqlState,
+        query: query,
+        values: values
+      });
+    }
+    
+    console.log('✅ DEBUG: Event created successfully, ID:', results.insertId);
+    res.json({ 
+      message: 'Event created successfully',
+      id: results.insertId,
+      query: query,
+      values: values
+    });
+  });
+});
 app.get('/schedule/:id', (req, res) => {
   db.query("SELECT * FROM schedule WHERE id = ?", [req.params.id], (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
