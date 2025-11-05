@@ -14,6 +14,8 @@ import {
 import { createPerformanceDashboard } from './utils/lighthouseOptimization.js';
 import analytics from './utils/analytics.js';
 import { UserProvider } from './UserContext.jsx';
+import { isDashboardAllowed, getDeviceType, onDeviceChange } from './utils/deviceDetection.js';
+import MobileWarning from './components/MobileWarning.jsx';
 
 // Lazy load components
 const LandingPage = lazy(() => import('./components/LandingPage.jsx'));
@@ -22,6 +24,20 @@ const DashboardApp = lazy(() => import('./dashboard/src/App.jsx'));
 
 function App() {
   // const [showSplash, setShowSplash] = useState(true);
+  
+  // Mobile device detection state
+  const [isDeviceAllowed, setIsDeviceAllowed] = useState(isDashboardAllowed());
+  const [deviceType, setDeviceType] = useState(getDeviceType());
+  
+  // Monitor device changes (orientation, resize)
+  useEffect(() => {
+    const cleanup = onDeviceChange((deviceInfo) => {
+      setIsDeviceAllowed(deviceInfo.isDashboardAllowed);
+      setDeviceType(deviceInfo.deviceType);
+    });
+
+    return cleanup;
+  }, []);
   
   // Initialize performance monitoring and service worker
   useEffect(() => {
@@ -100,14 +116,18 @@ function App() {
         <Router>
           <Suspense fallback={<LoadingSpinner />}>
             <Routes>
-              {/* Landing page - default route */}
+              {/* Landing page - default route (accessible on all devices) */}
               <Route path="/" element={<LandingPage />} />
               
-              {/* Auth routes */}
-              <Route path="/auth/*" element={<AuthApp />} />
+              {/* Auth routes - check device compatibility */}
+              <Route path="/auth/*" element={
+                isDeviceAllowed ? <AuthApp /> : <MobileWarning />
+              } />
               
-              {/* Dashboard routes - protected */}
-              <Route path="/dashboard/*" element={<DashboardApp />} />
+              {/* Dashboard routes - check device compatibility */}
+              <Route path="/dashboard/*" element={
+                isDeviceAllowed ? <DashboardApp /> : <MobileWarning />
+              } />
               
               {/* Redirect any unknown routes to landing page */}
               <Route path="*" element={<Navigate to="/" replace />} />
