@@ -3443,7 +3443,7 @@ app.put('/admin/house', authenticateToken, requireAdmin, (req, res) => {
   
   const updateQuery = `
     UPDATE houses 
-    SET ${updateFields.join(', ')}, updated_at = NOW()
+    SET ${updateFields.join(', ')}
     WHERE id = ?
   `;
   
