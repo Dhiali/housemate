@@ -550,7 +550,15 @@ function App() {
       console.log('✅ Task deleted successfully');
     } catch (error) {
       console.error('❌ Error deleting task:', error);
-      alert('Failed to delete task. Please try again.');
+      
+      // Provide specific error messages based on error type
+      if (error.code === 'ERR_BAD_RESPONSE' && error.response?.status === 503) {
+        alert('Backend service is temporarily unavailable. Please try again in a few moments.');
+      } else if (error.code === 'ERR_NETWORK') {
+        alert('Network connection error. Please check your internet connection and try again.');
+      } else {
+        alert('Failed to delete task. Please try again.');
+      }
     }
   };
 
@@ -576,7 +584,15 @@ function App() {
       console.log('✅ Bill deleted successfully');
     } catch (error) {
       console.error('Error deleting bill:', error);
-      alert('Failed to delete bill. Please try again.');
+      
+      // Provide specific error messages based on error type
+      if (error.code === 'ERR_BAD_RESPONSE' && error.response?.status === 503) {
+        alert('Backend service is temporarily unavailable. Please try again in a few moments.');
+      } else if (error.code === 'ERR_NETWORK') {
+        alert('Network connection error. Please check your internet connection and try again.');
+      } else {
+        alert('Failed to delete bill. Please try again.');
+      }
     }
   };
 
@@ -602,7 +618,15 @@ function App() {
       console.log('✅ Event deleted successfully');
     } catch (error) {
       console.error('Error deleting event:', error);
-      alert('Failed to delete event. Please try again.');
+      
+      // Provide specific error messages based on error type
+      if (error.code === 'ERR_BAD_RESPONSE' && error.response?.status === 503) {
+        alert('Backend service is temporarily unavailable. Please try again in a few moments.');
+      } else if (error.code === 'ERR_NETWORK') {
+        alert('Network connection error. Please check your internet connection and try again.');
+      } else {
+        alert('Failed to delete event. Please try again.');
+      }
     }
   };
 
@@ -628,7 +652,15 @@ function App() {
       console.log('✅ Housemate removed successfully');
     } catch (error) {
       console.error('❌ Error removing housemate:', error);
-      alert('Failed to remove housemate. Please try again.');
+      
+      // Provide specific error messages based on error type
+      if (error.code === 'ERR_BAD_RESPONSE' && error.response?.status === 503) {
+        alert('Backend service is temporarily unavailable. Please try again in a few moments.');
+      } else if (error.code === 'ERR_NETWORK') {
+        alert('Network connection error. Please check your internet connection and try again.');
+      } else {
+        alert('Failed to remove housemate. Please try again.');
+      }
     }
   };
 
