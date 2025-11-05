@@ -46,7 +46,7 @@ import {
 } from 'lucide-react';
 import './index.css';
 import { useState, useEffect } from 'react';
-import { getTasks, addTask, updateTask, deleteTask, getHouse, getHouseStatistics, getHousemates, getUserStatistics, getUserCompletedTasks, getUserPendingTasks, getUserContributedBills, getBills, addBill, updateBill, deleteBill, payBill, addEvent, getSchedule, checkScheduleTable, deleteSchedule, removeUser } from '../../apiHelpers';
+import { getTasks, addTask, updateTask, deleteTask, getHouse, getHouseStatistics, getHousemates, getUserStatistics, getUserCompletedTasks, getUserPendingTasks, getUserContributedBills, getBills, addBill, updateBill, deleteBill, payBill, addEvent, getSchedule, checkScheduleTable, deleteSchedule, removeUser, updateUserRole } from '../../apiHelpers';
 import { updateUserBio, updateUserPhone } from '../../apiHelpers';
 import { isDashboardAllowed, getDeviceType, onDeviceChange } from '../../utils/deviceDetection.js';
 import MobileWarning from '../../components/MobileWarning.jsx';
@@ -962,7 +962,7 @@ function App() {
             initials: `${housemate.name?.[0] || ''}${housemate.surname?.[0] || ''}`.toUpperCase(),
             email: housemate.email,
             phone: housemate.phone || '',
-            role: housemate.is_house_creator ? 'admin' : housemate.role, // House creators are always admin
+            role: housemate.is_house_creator ? 'admin' : (housemate.role === 'read_only' ? 'read-only' : housemate.role), // Normalize role format
             bio: housemate.bio || '',
             avatar: housemate.avatar,
             lastActive: housemate.last_login,
@@ -1021,7 +1021,7 @@ function App() {
           initials: `${housemate.name?.[0] || ''}${housemate.surname?.[0] || ''}`.toUpperCase(),
           email: housemate.email,
           phone: housemate.phone || '',
-          role: housemate.is_house_creator ? 'admin' : housemate.role, // House creators are always admin
+          role: housemate.is_house_creator ? 'admin' : (housemate.role === 'read_only' ? 'read-only' : housemate.role), // Normalize role format
           bio: housemate.bio || '',
           avatar: housemate.avatar,
           lastActive: housemate.last_login,
@@ -2426,24 +2426,28 @@ const formatDate = (date) => {
         return;
       }
 
+      // Convert frontend role format to backend format (read-only -> read_only)
+      const backendRole = newRole === 'read-only' ? 'read_only' : newRole;
+      
+      // Display proper role name for confirmation
+      const roleDisplayName = newRole === 'read-only' ? 'Read-only' : newRole.charAt(0).toUpperCase() + newRole.slice(1);
+      
       // Confirm the role change
-      if (!confirm(`Are you sure you want to change ${housemate.name}'s role to ${newRole.charAt(0).toUpperCase() + newRole.slice(1)}?`)) {
+      if (!confirm(`Are you sure you want to change ${housemate.name}'s role to ${roleDisplayName}?`)) {
         return;
       }
 
-      // Use the new role update API
-      const { updateUserRole } = await import('../../apiHelpers');
-      
-      console.log(`Updating role for housemate ${housemateId} to ${newRole}`);
-      await updateUserRole(housemateId, newRole);
+      // Update role using the API (send backend format)
+      console.log(`Updating role for housemate ${housemateId} from ${housemate.role} to ${backendRole}`);
+      await updateUserRole(housemateId, backendRole);
 
-      // Update local state
+      // Update local state (keep frontend format for display)
       setHousemates(prev => prev.map(h => 
         h.id === housemateId ? { ...h, role: newRole } : h
       ));
       
-      // Show confirmation
-      alert(`${housemate.name}'s role has been successfully updated to ${newRole.charAt(0).toUpperCase() + newRole.slice(1)}`);
+      // Show confirmation with proper role name
+      alert(`${housemate.name}'s role has been successfully updated to ${roleDisplayName}`);
 
     } catch (error) {
       console.error('Error updating role:', error);
