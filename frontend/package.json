@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "install:legacy": "npm install --legacy-peer-deps",
+    "preinstall": "npm config set legacy-peer-deps true"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.3",
