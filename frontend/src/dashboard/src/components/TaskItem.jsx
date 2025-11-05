@@ -2,8 +2,11 @@ import { ReactNode } from 'react';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from './ui/select';
 import { Badge } from './ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Button } from './ui/button';
+import { Trash2 } from 'lucide-react';
 
 export function TaskItem({
+  id,
   icon,
   title,
   description,
@@ -14,8 +17,11 @@ export function TaskItem({
   avatarInitials,
   avatar,
   onStatusChange,
+  onDelete,
   isOverdue = false,
-  overdueDays = 0
+  overdueDays = 0,
+  isAdmin = false,
+  canEdit = true
 }) {
   const getStatusColor = (status) => {
     switch (status) {
@@ -97,29 +103,48 @@ export function TaskItem({
             priority === 'MEDIUM PRIORITY' ? 'bg-yellow-500' :
             'bg-green-500'
           }`}></div>
-          {/* Status dropdown for admin */}
-          <div className="w-24 mt-2">
-            <Select 
-              value={status} 
-              onValueChange={value => onStatusChange && onStatusChange(value)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {status === 'Overdue' ? (
-                  // For overdue tasks, only allow completion
-                  <SelectItem value="Completed">Completed</SelectItem>
-                ) : (
-                  // For other tasks, show all options
-                  <>
-                    <SelectItem value="Pending">Pending</SelectItem>
-                    <SelectItem value="In Progress">In Progress</SelectItem>
-                    <SelectItem value="Completed">Completed</SelectItem>
-                  </>
-                )}
-              </SelectContent>
-            </Select>
+          
+          {/* Admin Controls */}
+          <div className="flex flex-col space-y-2">
+            {/* Status dropdown - show for admins or if user can edit */}
+            {(isAdmin || canEdit) && (
+              <div className="w-24">
+                <Select 
+                  value={status} 
+                  onValueChange={value => onStatusChange && onStatusChange(value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {status === 'Overdue' ? (
+                      // For overdue tasks, only allow completion
+                      <SelectItem value="Completed">Completed</SelectItem>
+                    ) : (
+                      // For other tasks, show all options
+                      <>
+                        <SelectItem value="Pending">Pending</SelectItem>
+                        <SelectItem value="In Progress">In Progress</SelectItem>
+                        <SelectItem value="Completed">Completed</SelectItem>
+                      </>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
+            {/* Delete button - only for admins */}
+            {isAdmin && onDelete && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onDelete(id)}
+                className="w-24 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+              >
+                <Trash2 className="h-3 w-3 mr-1" />
+                Delete
+              </Button>
+            )}
           </div>
         </div>
       </div>

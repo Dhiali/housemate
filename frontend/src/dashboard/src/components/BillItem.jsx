@@ -3,7 +3,7 @@ import { Button } from './ui/button';
 import { Progress } from './ui/progress';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Badge } from './ui/badge';
-import { Eye, User, Calendar, CreditCard, FileText } from 'lucide-react';
+import { Eye, User, Calendar, CreditCard, FileText, Trash2 } from 'lucide-react';
 
 
 
@@ -22,6 +22,8 @@ export function BillItem({
   payments = [],
   onRecordPayment,
   onViewPayments,
+  onDelete,
+  isAdmin = false,
   // New calculated fields from backend
   total_amount,
   total_paid,
@@ -280,6 +282,18 @@ export function BillItem({
               >
                 <FileText className="w-3 h-3 mr-1" />
                 View History
+              </Button>
+            )}
+            {/* Admin delete button */}
+            {isAdmin && onDelete && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onDelete(id)}
+                className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+              >
+                <Trash2 className="w-3 h-3 mr-1" />
+                Delete
               </Button>
             )}
           </div>

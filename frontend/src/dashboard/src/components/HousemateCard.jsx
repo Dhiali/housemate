@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Mail, Phone, Eye, EyeOff, MessageCircle } from 'lucide-react';
+import { Mail, Phone, Eye, EyeOff, MessageCircle, Trash2 } from 'lucide-react';
 
 
 
@@ -25,7 +25,9 @@ export function HousemateCard({
   bio,
   isHouseCreator,
   onContactToggle,
-  onViewDetails
+  onViewDetails,
+  onDelete,
+  isAdmin = false
 }) {
   const getRoleColor = (role) => {
     switch (role) {
@@ -109,17 +111,32 @@ export function HousemateCard({
           </div>
         </div>
         
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onViewDetails?.({
-            id, name, initials, email, phone, role, avatarBg, lastActive,
-            isOnline, joinedDate, tasksCompleted, tasksAssigned, totalBillsPaid,
-            preferredContact, showContact, bio
-          })}
-        >
-          View Details
-        </Button>
+        <div className="flex space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onViewDetails?.({
+              id, name, initials, email, phone, role, avatarBg, lastActive,
+              isOnline, joinedDate, tasksCompleted, tasksAssigned, totalBillsPaid,
+              preferredContact, showContact, bio
+            })}
+          >
+            View Details
+          </Button>
+          
+          {/* Admin delete button - don't allow deletion of house creator */}
+          {isAdmin && onDelete && !isHouseCreator && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onDelete(id)}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+            >
+              <Trash2 className="h-3 w-3 mr-1" />
+              Remove
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Bio */}

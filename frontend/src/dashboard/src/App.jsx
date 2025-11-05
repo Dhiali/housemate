@@ -46,7 +46,7 @@ import {
 } from 'lucide-react';
 import './index.css';
 import { useState, useEffect } from 'react';
-import { getTasks, addTask, updateTask, getHouse, getHouseStatistics, getHousemates, getUserStatistics, getUserCompletedTasks, getUserPendingTasks, getUserContributedBills, getBills, addBill, updateBill, deleteBill, payBill, addEvent, getSchedule, checkScheduleTable } from '../../apiHelpers';
+import { getTasks, addTask, updateTask, deleteTask, getHouse, getHouseStatistics, getHousemates, getUserStatistics, getUserCompletedTasks, getUserPendingTasks, getUserContributedBills, getBills, addBill, updateBill, deleteBill, payBill, addEvent, getSchedule, checkScheduleTable, deleteSchedule, removeUser } from '../../apiHelpers';
 import { updateUserBio, updateUserPhone } from '../../apiHelpers';
 import { isDashboardAllowed, getDeviceType, onDeviceChange } from '../../utils/deviceDetection.js';
 import MobileWarning from '../../components/MobileWarning.jsx';
@@ -521,6 +521,90 @@ function App() {
       }
     } catch (error) {
       console.error('Error updating task status:', error);
+    }
+  };
+
+  // Admin delete functions
+  const handleDeleteTask = async (taskId) => {
+    if (!isAdmin()) {
+      console.error('Only admins can delete tasks');
+      return;
+    }
+    
+    try {
+      const confirmDelete = window.confirm('Are you sure you want to delete this task? This action cannot be undone.');
+      if (!confirmDelete) return;
+      
+      await deleteTask(taskId);
+      
+      // Refresh tasks and statistics
+      fetchTasks();
+      if (user?.house_id) {
+        fetchHousemateStatistics(housemates);
+      }
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      alert('Failed to delete task. Please try again.');
+    }
+  };
+
+  const handleDeleteBill = async (billId) => {
+    if (!isAdmin()) {
+      console.error('Only admins can delete bills');
+      return;
+    }
+    
+    try {
+      const confirmDelete = window.confirm('Are you sure you want to delete this bill? This action cannot be undone.');
+      if (!confirmDelete) return;
+      
+      await deleteBill(billId);
+      
+      // Refresh bills
+      fetchBills();
+    } catch (error) {
+      console.error('Error deleting bill:', error);
+      alert('Failed to delete bill. Please try again.');
+    }
+  };
+
+  const handleDeleteEvent = async (eventId) => {
+    if (!isAdmin()) {
+      console.error('Only admins can delete events');
+      return;
+    }
+    
+    try {
+      const confirmDelete = window.confirm('Are you sure you want to delete this event? This action cannot be undone.');
+      if (!confirmDelete) return;
+      
+      await deleteSchedule(eventId);
+      
+      // Refresh events
+      fetchEvents();
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      alert('Failed to delete event. Please try again.');
+    }
+  };
+
+  const handleDeleteHousemate = async (housemateId) => {
+    if (!isAdmin()) {
+      console.error('Only admins can delete housemates');
+      return;
+    }
+    
+    try {
+      const confirmDelete = window.confirm('Are you sure you want to remove this housemate from the house? This action cannot be undone.');
+      if (!confirmDelete) return;
+      
+      await removeUser(housemateId);
+      
+      // Refresh housemates
+      fetchHousemates();
+    } catch (error) {
+      console.error('Error removing housemate:', error);
+      alert('Failed to remove housemate. Please try again.');
     }
   };
 
@@ -2664,6 +2748,9 @@ const formatDate = (date) => {
                             assignedTo={task.assigned_to_name}
                             avatarInitials={task.assigned_to_name ? task.assigned_to_name.split(' ').map(n => n[0]).join('') : ''}
                             onStatusChange={(newStatus) => handleTaskStatusChange(task.id, newStatus)}
+                            onDelete={handleDeleteTask}
+                            isAdmin={isAdmin}
+                            canEdit={isAdmin || task.assigned_to === user?.id}
                             isOverdue={task.isOverdue}
                             overdueDays={task.overdueDays}
                           />
@@ -2886,6 +2973,9 @@ const formatDate = (date) => {
                                         key={task.id || index}
                                         {...task}
                                         onStatusChange={(newStatus) => handleTaskStatusChange(task.id, newStatus)}
+                                        onDelete={handleDeleteTask}
+                                        isAdmin={isAdmin}
+                                        canEdit={isAdmin || task.assigned_to === user?.id}
                                       />
                                     ))
                                   : <div className="text-center text-gray-400 py-8">No tasks found.</div>;
@@ -3387,6 +3477,9 @@ const formatDate = (date) => {
                             key={task.id || index} 
                             {...enhanceTaskWithOverdueInfo(task)} 
                             onStatusChange={(newStatus) => handleTaskStatusChange(task.id, newStatus)}
+                            onDelete={handleDeleteTask}
+                            isAdmin={isAdmin}
+                            canEdit={isAdmin || task.assigned_to === user?.id}
                           />
                         ))
                       ) : (
@@ -3412,6 +3505,9 @@ const formatDate = (date) => {
                             key={task.id || index} 
                             {...enhanceTaskWithOverdueInfo(task)} 
                             onStatusChange={(newStatus) => handleTaskStatusChange(task.id, newStatus)}
+                            onDelete={handleDeleteTask}
+                            isAdmin={isAdmin}
+                            canEdit={isAdmin || task.assigned_to === user?.id}
                           />
                         ))
                       ) : (
@@ -3437,6 +3533,9 @@ const formatDate = (date) => {
                             key={task.id || index} 
                             {...enhanceTaskWithOverdueInfo(task)} 
                             onStatusChange={(newStatus) => handleTaskStatusChange(task.id, newStatus)}
+                            onDelete={handleDeleteTask}
+                            isAdmin={isAdmin}
+                            canEdit={isAdmin || task.assigned_to === user?.id}
                           />
                         ))
                       ) : (
@@ -3462,6 +3561,9 @@ const formatDate = (date) => {
                             key={task.id || index} 
                             {...enhanceTaskWithOverdueInfo(task)} 
                             onStatusChange={(newStatus) => handleTaskStatusChange(task.id, newStatus)}
+                            onDelete={handleDeleteTask}
+                            isAdmin={isAdmin}
+                            canEdit={isAdmin || task.assigned_to === user?.id}
                           />
                         ))
                       ) : (
@@ -3718,6 +3820,8 @@ const formatDate = (date) => {
                               {...bill}
                               onRecordPayment={() => handleRecordPayment(bill.id)}
                               onViewPayments={() => handleViewPayments(bill.id)}
+                              onDelete={handleDeleteBill}
+                              isAdmin={isAdmin}
                             />
                           ))
                         ) : (
@@ -3749,6 +3853,8 @@ const formatDate = (date) => {
                               {...bill}
                               onRecordPayment={() => handleRecordPayment(bill.id)}
                               onViewPayments={() => handleViewPayments(bill.id)}
+                              onDelete={handleDeleteBill}
+                              isAdmin={isAdmin}
                             />
                           ))
                         ) : (
@@ -3780,6 +3886,8 @@ const formatDate = (date) => {
                               {...bill}
                               onRecordPayment={() => handleRecordPayment(bill.id)}
                               onViewPayments={() => handleViewPayments(bill.id)}
+                              onDelete={handleDeleteBill}
+                              isAdmin={isAdmin}
                             />
                           ))
                         ) : (
@@ -3811,6 +3919,8 @@ const formatDate = (date) => {
                               {...bill}
                               onRecordPayment={() => handleRecordPayment(bill.id)}
                               onViewPayments={() => handleViewPayments(bill.id)}
+                              onDelete={handleDeleteBill}
+                              isAdmin={isAdmin}
                             />
                           ))
                         ) : (
@@ -4430,12 +4540,14 @@ const formatDate = (date) => {
                             return (
                               <div
                                 key={item.id}
-                                className={`flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors ${
+                                className={`flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${
                                   item.isOverdue ? 'border-red-300 bg-red-50' : ''
                                 }`}
-                                onClick={() => handleEventClick(item)}
                               >
-                                <div className="flex items-center space-x-4">
+                                <div 
+                                  className="flex items-center space-x-4 flex-1 cursor-pointer"
+                                  onClick={() => handleEventClick(item)}
+                                >
                                   <div className={`w-3 h-3 rounded-full ${indicatorColor}`}></div>
                                   <div className="flex items-center space-x-3">
                                     {item.icon}
@@ -4453,33 +4565,56 @@ const formatDate = (date) => {
                                     </div>
                                   </div>
                                 </div>
-                                <div className="text-right">
-                                  <div className={`text-sm font-medium ${item.isOverdue ? 'text-red-700' : 'text-gray-900'}`}>
-                                    {new Date(item.date).toLocaleDateString()}
+                                <div className="flex items-center space-x-3">
+                                  <div className="text-right">
+                                    <div className={`text-sm font-medium ${item.isOverdue ? 'text-red-700' : 'text-gray-900'}`}>
+                                      {new Date(item.date).toLocaleDateString()}
+                                    </div>
+                                    {item.time && (
+                                      <div className="text-sm text-gray-500">{item.time}</div>
+                                    )}
+                                    {item.amount && (
+                                      <div className={`text-sm font-medium ${item.isOverdue ? 'text-red-600' : 'text-green-600'}`}>
+                                        R{Number(item.amount || 0).toFixed(2)}
+                                      </div>
+                                    )}
+                                    {item.assignedTo && (
+                                      <div className="text-sm text-gray-600">{item.assignedTo}</div>
+                                    )}
+                                    {item.status && (
+                                      <div className="text-xs text-gray-500 mt-1">
+                                        Status: {item.status}
+                                      </div>
+                                    )}
+                                    {item.priority && (
+                                      <div className={`text-xs mt-1 ${
+                                        item.priority === 'high' ? 'text-red-600' :
+                                        item.priority === 'medium' ? 'text-yellow-600' : 'text-green-600'
+                                      }`}>
+                                        {item.priority} priority
+                                      </div>
+                                    )}
                                   </div>
-                                  {item.time && (
-                                    <div className="text-sm text-gray-500">{item.time}</div>
-                                  )}
-                                  {item.amount && (
-                                    <div className={`text-sm font-medium ${item.isOverdue ? 'text-red-600' : 'text-green-600'}`}>
-                                      R{Number(item.amount || 0).toFixed(2)}
-                                    </div>
-                                  )}
-                                  {item.assignedTo && (
-                                    <div className="text-sm text-gray-600">{item.assignedTo}</div>
-                                  )}
-                                  {item.status && (
-                                    <div className="text-xs text-gray-500 mt-1">
-                                      Status: {item.status}
-                                    </div>
-                                  )}
-                                  {item.priority && (
-                                    <div className={`text-xs mt-1 ${
-                                      item.priority === 'high' ? 'text-red-600' :
-                                      item.priority === 'medium' ? 'text-yellow-600' : 'text-green-600'
-                                    }`}>
-                                      {item.priority} priority
-                                    </div>
+                                  
+                                  {/* Admin delete button */}
+                                  {isAdmin && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (item.type === 'task') {
+                                          handleDeleteTask(item.id);
+                                        } else if (item.type === 'bill') {
+                                          handleDeleteBill(item.id);
+                                        } else if (item.type === 'event') {
+                                          handleDeleteEvent(item.id);
+                                        }
+                                      }}
+                                      className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
                                   )}
                                 </div>
                               </div>
@@ -5056,6 +5191,8 @@ const formatDate = (date) => {
                       {...housemate}
                       onContactToggle={toggleContactVisibility}
                       onViewDetails={handleHousemateClick}
+                      onDelete={handleDeleteHousemate}
+                      isAdmin={isAdmin}
                     />
                   ))
                 )}
