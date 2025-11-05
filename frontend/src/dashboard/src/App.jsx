@@ -394,8 +394,8 @@ function App() {
       });
       setTasks(mapped);
       
-      // Fetch real house statistics from backend instead of calculating from filtered task data
-      await fetchHouseStatistics();
+      // Fetch role-appropriate statistics from backend instead of calculating from filtered task data
+      await fetchStatistics();
     } catch (error) {
       console.error('Error fetching tasks:', error);
       setTasks([]);
@@ -706,8 +706,8 @@ function App() {
     };
   };
 
-  // Function to fetch house statistics from backend (alternative to frontend calculations)
-  const fetchHouseStatistics = async () => {
+  // Function to fetch statistics from backend - house-wide for admins/standard, user-specific for read-only
+  const fetchStatistics = async () => {
     // Only fetch if user is logged in and has a house_id
     if (!user?.house_id) {
       console.log('No user or house_id available, skipping statistics fetch');
@@ -715,10 +715,21 @@ function App() {
     }
     
     try {
-      console.log('Fetching house statistics for house_id:', user.house_id);
-      // Use authenticated API with the user's actual house
-      const response = await getHouseStatistics(user.house_id);
-      console.log('House statistics API response:', response);
+      console.log('Fetching statistics for house_id:', user.house_id, 'user role:', user.role);
+      
+      let response;
+      
+      // For read-only users, fetch their own statistics instead of house-wide statistics
+      if (isReadOnly) {
+        console.log('Fetching user-specific statistics for read-only user:', user.id);
+        response = await getUserStatistics(user.id);
+      } else {
+        // For admin and standard users, fetch house statistics 
+        console.log('Fetching house statistics for admin/standard user');
+        response = await getHouseStatistics(user.house_id);
+      }
+      
+      console.log('Statistics API response:', response);
       
       // The response structure is { data: { data: { tasks: {...}, bills: {...}, housemates: {...} } } }
       const statisticsData = response.data.data || response.data;
@@ -744,7 +755,7 @@ function App() {
         console.error('No task statistics found in response:', statisticsData);
       }
     } catch (error) {
-      console.error('Error fetching house statistics:', error);
+      console.error('Error fetching statistics:', error);
       // Fall back to frontend calculation if backend fails
       const stats = calculateDashboardStats(tasks);
       setDashboardStats(stats);
