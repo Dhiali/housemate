@@ -8,6 +8,8 @@ import { CreateHouseForm } from "./components/CreateHouseForm.jsx";
 import { ForgotPasswordForm } from "./components/ForgotPasswordForm.jsx";
 import { addUser, addHouse, updateUser } from "../../apiHelpers";
 import { useSEO, SEO_CONFIG } from '../../hooks/useSEO.js';
+import { SEO, generateStructuredData } from '../../utils/seo.jsx';
+import { Helmet } from 'react-helmet-async';
 import { trackAuth, trackHousehold, trackPageView } from '../../utils/analytics.js';
 import { isDashboardAllowed, getDeviceType, onDeviceChange } from '../../utils/deviceDetection.js';
 import MobileWarning from '../../components/MobileWarning.jsx';
@@ -233,7 +235,24 @@ export default function App() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-purple-600 flex items-center justify-center p-4">
+    <>
+      {/* Dynamic SEO based on current route */}
+      {currentView === 'signin' && <SEO page="AUTH_SIGNIN" />}
+      {currentView === 'signup' && <SEO page="AUTH_SIGNUP" />}
+      {currentView === 'create-house' && <SEO page="AUTH_CREATE_HOUSE" />}
+      
+      <Helmet>
+        <script type="application/ld+json">
+          {JSON.stringify(generateStructuredData('BreadcrumbList', {
+            breadcrumbs: [
+              { name: 'Home', url: 'https://www.housemate.website/' },
+              { name: 'Authentication', url: `https://www.housemate.website/auth/${currentView}` }
+            ]
+          }))}
+        </script>
+      </Helmet>
+      
+      <main className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-purple-600 flex items-center justify-center p-4">
       <section className="w-full max-w-md">
         <AuthCard description={getDescription()}>
           <Routes>
@@ -319,6 +338,7 @@ export default function App() {
           </footer>
         </AuthCard>
       </section>
-    </main>
+      </main>
+    </>
   );
 }

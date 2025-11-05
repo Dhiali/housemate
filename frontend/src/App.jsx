@@ -1,6 +1,7 @@
 
 import { useState, lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import './App.css';
 // import SplashScreen from './SplashScreen.jsx';
 import { useStructuredData } from './hooks/useStructuredData.js';
@@ -13,6 +14,7 @@ import {
 } from './utils/serviceWorker.js';
 import { createPerformanceDashboard } from './utils/lighthouseOptimization.js';
 import analytics from './utils/analytics.js';
+import { trackSEOPerformance } from './utils/seoAnalytics.js';
 import { UserProvider } from './UserContext.jsx';
 import { isDashboardAllowed, getDeviceType, onDeviceChange } from './utils/deviceDetection.js';
 import MobileWarning from './components/MobileWarning.jsx';
@@ -47,6 +49,9 @@ function App() {
     const initServices = async () => {
       // Start performance monitoring
       initPerformanceMonitoring();
+      
+      // Start SEO performance tracking
+      trackSEOPerformance();
       
       // Initialize Google Analytics with privacy compliance
       analytics.init();
@@ -110,32 +115,34 @@ function App() {
   );
 
   return (
-    <UserProvider>
-      {/* SplashScreen removed, show app immediately */}
-      <div>
-        <Router>
-          <Suspense fallback={<LoadingSpinner />}>
-            <Routes>
-              {/* Landing page - default route (accessible on all devices) */}
-              <Route path="/" element={<LandingPage />} />
-              
-              {/* Auth routes - check device compatibility */}
-              <Route path="/auth/*" element={
-                isDeviceAllowed ? <AuthApp /> : <MobileWarning />
-              } />
-              
-              {/* Dashboard routes - check device compatibility */}
-              <Route path="/dashboard/*" element={
-                isDeviceAllowed ? <DashboardApp /> : <MobileWarning />
-              } />
-              
-              {/* Redirect any unknown routes to landing page */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Suspense>
-        </Router>
-      </div>
-    </UserProvider>
+    <HelmetProvider>
+      <UserProvider>
+        {/* SplashScreen removed, show app immediately */}
+        <div>
+          <Router>
+            <Suspense fallback={<LoadingSpinner />}>
+              <Routes>
+                {/* Landing page - default route (accessible on all devices) */}
+                <Route path="/" element={<LandingPage />} />
+                
+                {/* Auth routes - check device compatibility */}
+                <Route path="/auth/*" element={
+                  isDeviceAllowed ? <AuthApp /> : <MobileWarning />
+                } />
+                
+                {/* Dashboard routes - check device compatibility */}
+                <Route path="/dashboard/*" element={
+                  isDeviceAllowed ? <DashboardApp /> : <MobileWarning />
+                } />
+                
+                {/* Redirect any unknown routes to landing page */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Suspense>
+          </Router>
+        </div>
+      </UserProvider>
+    </HelmetProvider>
   );
 }
 

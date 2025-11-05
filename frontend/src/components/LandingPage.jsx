@@ -1,21 +1,75 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckSquare, CreditCard, Calendar, Users, BarChart3, Activity } from 'lucide-react';
+import { SEO, generateStructuredData } from '../utils/seo.jsx';
+import { useSEOAnalytics, optimizeForSocialSharing } from '../utils/seoAnalytics.js';
+import { Helmet } from 'react-helmet-async';
 import './LandingPage.css';
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  const { trackEngagement, trackConversion } = useSEOAnalytics();
 
   const handleGetStarted = () => {
+    trackConversion('signup_intent', { source: 'landing_page_cta' });
+    trackEngagement('cta_click', { button_type: 'get_started' });
     navigate('/auth/signup');
   };
 
   const handleSignIn = () => {
+    trackEngagement('cta_click', { button_type: 'sign_in' });
     navigate('/auth/signin');
   };
 
+  const handleLearnMore = () => {
+    trackEngagement('cta_click', { button_type: 'learn_more' });
+    // Scroll to features section
+    document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
-    <div className="App">
+    <>
+      <SEO page="HOME" />
+      <Helmet>
+        <script type="application/ld+json">
+          {JSON.stringify(generateStructuredData('WebApplication'))}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify(generateStructuredData('SoftwareApplication'))}
+        </script>
+        
+        {/* Rich Snippets for Homepage */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "name": "HouseMate",
+            "url": "https://www.housemate.website",
+            "logo": "https://www.housemate.website/housemate-logo.png",
+            "description": "The all-in-one platform for roommates to manage household tasks, split bills, coordinate schedules, and streamline shared living.",
+            "foundingDate": "2024",
+            "founders": [
+              {
+                "@type": "Person",
+                "name": "HouseMate Team"
+              }
+            ],
+            "contactPoint": {
+              "@type": "ContactPoint",
+              "contactType": "customer service",
+              "url": "https://www.housemate.website/contact",
+              "availableLanguage": "English"
+            },
+            "sameAs": [
+              "https://twitter.com/housemate_app",
+              "https://facebook.com/housemateapp",
+              "https://linkedin.com/company/housemate"
+            ]
+          })}
+        </script>
+      </Helmet>
+      
+      <div className="App">
       {/* Header */}
       <header className="header">
         <div className="container">
@@ -42,7 +96,7 @@ const LandingPage = () => {
               </p>
               <div className="hero-buttons">
                 <button className="btn primary" onClick={handleGetStarted}>Get Started Free</button>
-                <button className="btn secondary">Learn More</button>
+                <button className="btn secondary" onClick={handleLearnMore}>Learn More</button>
               </div>
             </div>
             <div className="hero-image">
@@ -83,7 +137,7 @@ const LandingPage = () => {
       </section>
 
       {/* Features Section */}
-      <section className="features">
+      <section id="features" className="features">
         <div className="container">
           <h2>Everything You Need to Manage Your Home</h2>
           <p className="features-subtitle">
@@ -284,7 +338,8 @@ const LandingPage = () => {
           </div>
         </div>
       </footer>
-    </div>
+      </div>
+    </>
   );
 };
 

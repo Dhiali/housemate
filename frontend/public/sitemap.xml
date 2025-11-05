@@ -5,28 +5,28 @@
   
   <!-- Homepage - Highest Priority -->
   <url>
-    <loc>https://housemate.website/</loc>
-    <lastmod>2025-10-23T10:00:00+00:00</lastmod>
+    <loc>https://www.housemate.website/</loc>
+    <lastmod>2025-11-05T10:00:00+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <image:image>
-      <image:loc>https://housemate.website/og-image.svg</image:loc>
-      <image:title>Housemate - Split Bills &amp; Manage Shared Living Expenses</image:title>
-      <image:caption>Free bill splitting app for roommates and housemates</image:caption>
+      <image:loc>https://www.housemate.website/og-home.jpg</image:loc>
+      <image:title>HouseMate - Simplify Your Shared Living Experience</image:title>
+      <image:caption>The all-in-one platform for roommates to manage household tasks, split bills, and coordinate schedules</image:caption>
     </image:image>
   </url>
 
   <!-- Authentication Pages -->
   <url>
-    <loc>https://housemate.website/signin</loc>
-    <lastmod>2025-10-23T10:00:00+00:00</lastmod>
+    <loc>https://www.housemate.website/auth/signin</loc>
+    <lastmod>2025-11-05T10:00:00+00:00</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   
   <url>
-    <loc>https://housemate.website/signup</loc>
-    <lastmod>2025-10-23T10:00:00+00:00</lastmod>
+    <loc>https://www.housemate.website/auth/signup</loc>
+    <lastmod>2025-11-05T10:00:00+00:00</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>

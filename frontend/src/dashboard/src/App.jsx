@@ -46,6 +46,8 @@ import {
 } from 'lucide-react';
 import './index.css';
 import { useState, useEffect } from 'react';
+import { SEO, generateStructuredData } from '../../utils/seo.jsx';
+import { Helmet } from 'react-helmet-async';
 import { getTasks, addTask, updateTask, deleteTask, getHouse, getHouseStatistics, getHousemates, getUserStatistics, getUserCompletedTasks, getUserPendingTasks, getUserContributedBills, getBills, addBill, updateBill, deleteBill, payBill, addEvent, getSchedule, checkScheduleTable, deleteSchedule, removeUser, updateUserRole } from '../../apiHelpers';
 import { updateUserBio, updateUserPhone } from '../../apiHelpers';
 import { isDashboardAllowed, getDeviceType, onDeviceChange } from '../../utils/deviceDetection.js';
@@ -2627,7 +2629,29 @@ const formatDate = (date) => {
   };
 
   return (
-    <div className="h-screen min-h-0 bg-gray-50 flex overflow-hidden" role="application" aria-label="HouseMate Dashboard Application">
+    <>
+      {/* Dynamic SEO based on current page */}
+      {currentPage === 'Dashboard' && <SEO page="DASHBOARD_HOME" />}
+      {currentPage === 'Tasks' && <SEO page="DASHBOARD_TASKS" />}
+      {currentPage === 'Bills' && <SEO page="DASHBOARD_BILLS" />}
+      {currentPage === 'Calendar' && <SEO page="DASHBOARD_CALENDAR" />}
+      {currentPage === 'Housemates' && <SEO page="DASHBOARD_HOUSEMATES" />}
+      {currentPage === 'Settings' && <SEO page="DASHBOARD_SETTINGS" />}
+      
+      <Helmet>
+        <script type="application/ld+json">
+          {JSON.stringify(generateStructuredData('BreadcrumbList', {
+            breadcrumbs: [
+              { name: 'Home', url: 'https://www.housemate.website/' },
+              { name: 'Dashboard', url: 'https://www.housemate.website/dashboard' },
+              { name: currentPage, url: `https://www.housemate.website/dashboard/${currentPage.toLowerCase()}` }
+            ]
+          }))}
+        </script>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
+      
+      <div className="h-screen min-h-0 bg-gray-50 flex overflow-hidden" role="application" aria-label="HouseMate Dashboard Application">
       {/* Sidebar Navigation */}
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col sticky top-0 h-screen flex-none overflow-hidden" role="navigation" aria-label="Main navigation">
         <header className="p-6">
@@ -6064,7 +6088,8 @@ const formatDate = (date) => {
       />
       </main>
 
-    </div>
+      </div>
+    </>
   );
   
   } catch (error) {
