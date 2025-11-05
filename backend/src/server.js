@@ -70,7 +70,6 @@ if (missingEnvVars.length > 0) {
 // Configure CORS with environment variables
 const corsOrigins = [
   "https://white-water-0fbd05910.3.azurestaticapps.net",
-  "https://white-mud-0f0b8bc10.5.azurestaticapps.net",
   "https://www.housemate.website",
   "https://housemate.website",
   "http://localhost:3000",
