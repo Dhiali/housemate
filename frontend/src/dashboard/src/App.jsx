@@ -128,7 +128,8 @@ function App() {
     category: '',
     priority: 'medium',
     dueDate: '',
-    assignedTo: ''
+    assignedTo: '',
+    location: ''
   });
   
   // Bill form state  
