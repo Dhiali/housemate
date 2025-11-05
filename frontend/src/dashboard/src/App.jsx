@@ -429,20 +429,29 @@ function App() {
       console.log('Events API response:', res.data);
       
       // Map backend schedule data to frontend event format
-      const mappedEvents = res.data.map(event => ({
-        id: event.id,
-        title: event.title,
-        description: event.description || '',
-        date: event.scheduled_date,
-        time: event.scheduled_time || '',
-        type: event.type || 'meeting',
-        attendees: typeof event.attendees === 'string' ? event.attendees.split(',') : (event.attendees || ['All']),
-        color: 'purple'
-      }));
+      const mappedEvents = res.data.map(event => {
+        // Ensure date is in YYYY-MM-DD format for calendar consistency
+        let formattedDate = event.scheduled_date;
+        if (event.scheduled_date && event.scheduled_date.includes('T')) {
+          formattedDate = event.scheduled_date.split('T')[0];
+        }
+        
+        return {
+          id: event.id,
+          title: event.title,
+          description: event.description || '',
+          date: formattedDate,
+          time: event.scheduled_time || '',
+          type: event.type || 'meeting',
+          attendees: typeof event.attendees === 'string' ? event.attendees.split(',') : (event.attendees || ['All']),
+          color: 'purple'
+        };
+      });
       
       setHouseEvents(mappedEvents);
       console.log('Events loaded successfully:', mappedEvents);
       console.log('Sample event date format:', mappedEvents[0]?.date);
+      console.log('Schedule filters at event load:', scheduleFilters);
     } catch (error) {
       console.error('Error fetching events:', error);
       
@@ -1756,8 +1765,10 @@ function App() {
     
     // Add house events if filter is enabled
     if (scheduleFilters.events) {
+      console.log('Adding events to calendar - houseEvents count:', houseEvents.length);
       houseEvents.forEach(event => {
         if (event.date) {
+          console.log('Adding event:', { title: event.title, date: event.date });
           items.push({
             id: `event-${event.id}`,
             title: event.title,
@@ -1769,8 +1780,12 @@ function App() {
             color: 'purple',
             icon: <Calendar size={16} className="text-purple-600" />
           });
+        } else {
+          console.log('Event missing date:', event);
         }
       });
+    } else {
+      console.log('Events filter is disabled:', scheduleFilters);
     }
     
     return items.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
