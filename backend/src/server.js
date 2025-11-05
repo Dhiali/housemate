@@ -43,22 +43,6 @@ function isDatabaseAvailable() {
 function handleDatabaseError(res, error, message = 'Database connection failed', req = null) {
   console.error(`❌ ${message}:`, error);
   
-  // Set CORS headers if request object is available
-  if (req) {
-    const origin = req.get('origin');
-    if (origin && corsOrigins.includes(origin)) {
-      res.header('Access-Control-Allow-Origin', origin);
-      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
-      res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
-      res.header('Access-Control-Allow-Credentials', 'false');
-    } else if (origin) {
-      res.header('Access-Control-Allow-Origin', origin);
-      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
-      res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
-      res.header('Access-Control-Allow-Credentials', 'false');
-    }
-  }
-  
   res.status(503).json({ 
     error: 'Service temporarily unavailable', 
     message: 'Database connection issues. Please try again later.',
@@ -86,6 +70,7 @@ if (missingEnvVars.length > 0) {
 // Configure CORS with environment variables
 const corsOrigins = [
   "https://white-water-0fbd05910.3.azurestaticapps.net",
+  "https://white-mud-0f0b8bc10.5.azurestaticapps.net",
   "https://www.housemate.website",
   "https://housemate.website",
   "http://localhost:3000",
@@ -144,9 +129,9 @@ app.use(cors({
       return callback(null, true);
     } else {
       console.log(`❌ CORS blocked for origin: ${origin}`);
-      // For now, allow all origins for debugging
-      console.log(`� DEBUG: Allowing blocked origin anyway`);
-      return callback(null, true);
+      const error = new Error('Not allowed by CORS');
+      error.statusCode = 403;
+      return callback(error, false);
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD', 'PATCH'],
@@ -165,53 +150,9 @@ app.use(cors({
   optionsSuccessStatus: 204
 }));
 
-// Additional CORS headers as fallback for problematic requests
-app.use((req, res, next) => {
-  const origin = req.get('origin');
-  console.log(`🌐 Fallback CORS middleware for origin: ${origin}`);
-  
-  // Set CORS headers manually as fallback
-  if (origin) {
-    res.header('Access-Control-Allow-Origin', origin);
-  } else {
-    res.header('Access-Control-Allow-Origin', '*');
-  }
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
-  res.header('Access-Control-Allow-Credentials', 'false');
-  
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    console.log(`✈️ Handling preflight request for ${req.url}`);
-    res.status(200).end();
-    return;
-  }
-  
-  next();
-});
-
 // Log all incoming requests for debugging
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.path} - Origin: ${req.get('origin') || 'none'}`);
-  
-  // Set CORS headers for all requests to ensure they're always present
-  const origin = req.get('origin');
-  if (origin && corsOrigins.includes(origin)) {
-    console.log(`🔄 Setting CORS headers for allowed origin: ${origin}`);
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
-    res.header('Access-Control-Expose-Headers', 'X-Total-Count');
-    res.header('Access-Control-Allow-Credentials', 'false');
-  } else if (origin) {
-    console.log(`⚠️ Unknown origin detected: ${origin} - Setting basic CORS headers`);
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
-    res.header('Access-Control-Expose-Headers', 'X-Total-Count');
-    res.header('Access-Control-Allow-Credentials', 'false');
-  }
-  
   next();
 });
 
@@ -221,20 +162,6 @@ app.use(express.json({ limit: '10mb' }));
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
-
-  // Set CORS headers for all authentication responses
-  const origin = req.get('origin');
-  if (origin && corsOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
-    res.header('Access-Control-Allow-Credentials', 'false');
-  } else if (origin) {
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
-    res.header('Access-Control-Allow-Credentials', 'false');
-  }
 
   if (!token) {
     return res.status(401).json({ error: 'Access token required' });
@@ -286,20 +213,6 @@ const requireRole = (allowedRoles) => {
 // Check if user belongs to a house and optionally if they can access specific house data
 const requireHouseAccess = (allowOwnHouseOnly = true) => {
   return (req, res, next) => {
-    // Set CORS headers for all house access responses
-    const origin = req.get('origin');
-    if (origin && corsOrigins.includes(origin)) {
-      res.header('Access-Control-Allow-Origin', origin);
-      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
-      res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
-      res.header('Access-Control-Allow-Credentials', 'false');
-    } else if (origin) {
-      res.header('Access-Control-Allow-Origin', origin);
-      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
-      res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
-      res.header('Access-Control-Allow-Credentials', 'false');
-    }
-
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
     }
@@ -725,30 +638,6 @@ app.get('/cors-test', (req, res) => {
     timestamp: new Date().toISOString(),
     headers: req.headers
   });
-});
-
-// OPTIONS handler for preflight requests
-app.options('*', (req, res) => {
-  console.log(`📋 OPTIONS request for ${req.path} from origin: ${req.get('origin')}`);
-  
-  // Explicitly set CORS headers for preflight requests
-  const origin = req.get('origin');
-  if (origin && corsOrigins.includes(origin)) {
-    console.log(`✅ OPTIONS allowed for origin: ${origin}`);
-    res.header('Access-Control-Allow-Origin', origin);
-  } else if (origin) {
-    console.log(`⚠️ OPTIONS for unknown origin: ${origin} - allowing anyway`);
-    res.header('Access-Control-Allow-Origin', origin);
-  } else {
-    res.header('Access-Control-Allow-Origin', '*');
-  }
-  
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
-  res.header('Access-Control-Allow-Credentials', 'false');
-  res.header('Access-Control-Max-Age', '86400'); // 24 hours
-  
-  res.status(204).send();
 });
 
 // Login endpoint
@@ -2002,20 +1891,6 @@ app.get('/schedule', authenticateToken, (req, res) => {
 // Debug endpoint to check if schedule table exists
 app.get('/debug/schedule-table', (req, res) => {
   console.log('🔍 Checking if schedule table exists...');
-  
-  // Set CORS headers for debug endpoint
-  const origin = req.get('origin');
-  if (origin && corsOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
-    res.header('Access-Control-Allow-Credentials', 'false');
-  } else if (origin) {
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
-    res.header('Access-Control-Allow-Credentials', 'false');
-  }
   
   db.query("SHOW TABLES LIKE 'schedule'", (err, results) => {
     if (err) {
@@ -3619,15 +3494,6 @@ app.put('/admin/house', authenticateToken, requireAdmin, (req, res) => {
 app.use((err, req, res, next) => {
   console.error('Global error handler:', err.message);
   console.error('Error stack:', err.stack);
-  
-  // Ensure CORS headers are always present in error responses
-  const origin = req.get('origin');
-  if (origin && corsOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Credentials', 'false');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
-  }
   
   // Handle specific error types
   if (err.message === 'Not allowed by CORS') {
