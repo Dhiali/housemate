@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://housemate-backend-pdfmkrqt5q-bq.a.run.app",
+  baseURL: "https://housemate-backend-234825552341.africa-south1.run.app",
 });
 
 // Add request interceptor to include auth token
