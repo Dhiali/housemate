@@ -9,6 +9,8 @@ import { ForgotPasswordForm } from "./components/ForgotPasswordForm.jsx";
 import { addUser, addHouse, updateUser } from "../../apiHelpers";
 import { useSEO, SEO_CONFIG } from '../../hooks/useSEO.js';
 import { trackAuth, trackHousehold, trackPageView } from '../../utils/analytics.js';
+import { isDashboardAllowed, getDeviceType, onDeviceChange } from '../../utils/deviceDetection.js';
+import MobileWarning from '../../components/MobileWarning.jsx';
 import './index.css';
 
 // Lazy load the Dashboard application
@@ -22,6 +24,8 @@ export default function App() {
   const [showCreateHouseForm, setShowCreateHouseForm] = useState(false);
   const [authToken, setAuthToken] = useState(null);
   const [authUser, setAuthUser] = useState(null);
+  const [isDeviceAllowed, setIsDeviceAllowed] = useState(isDashboardAllowed());
+  const [deviceType, setDeviceType] = useState(getDeviceType());
 
   // Get current view from URL path
   const getCurrentView = () => {
@@ -30,6 +34,16 @@ export default function App() {
   };
 
   const currentView = getCurrentView();
+
+  // Monitor device changes (orientation, resize)
+  useEffect(() => {
+    const cleanup = onDeviceChange((deviceInfo) => {
+      setIsDeviceAllowed(deviceInfo.isDashboardAllowed);
+      setDeviceType(deviceInfo.deviceType);
+    });
+
+    return cleanup;
+  }, []);
 
   // On app load, check localStorage for token/user
   useEffect(() => {
@@ -196,6 +210,11 @@ export default function App() {
         return "";
     }
   };
+
+  // Check if device is allowed for dashboard access
+  if (!isDeviceAllowed) {
+    return <MobileWarning />;
+  }
 
   // If authenticated, show dashboard
   if (showDashboard && authToken && authUser) {

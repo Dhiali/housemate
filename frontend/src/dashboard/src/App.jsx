@@ -48,6 +48,8 @@ import './index.css';
 import { useState, useEffect } from 'react';
 import { getTasks, addTask, updateTask, getHouse, getHouseStatistics, getHousemates, getUserStatistics, getUserCompletedTasks, getUserPendingTasks, getUserContributedBills, getBills, addBill, updateBill, deleteBill, payBill, addEvent, getSchedule, checkScheduleTable } from '../../apiHelpers';
 import { updateUserBio, updateUserPhone } from '../../apiHelpers';
+import { isDashboardAllowed, getDeviceType, onDeviceChange } from '../../utils/deviceDetection.js';
+import MobileWarning from '../../components/MobileWarning.jsx';
 import { Button } from './components/ui/button';
 import { useSEO, SEO_CONFIG } from '../../hooks/useSEO.js';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
@@ -178,6 +180,10 @@ function App() {
     attendees: 'All'
   });
   
+  // Mobile device detection state
+  const [isDeviceAllowed, setIsDeviceAllowed] = useState(isDashboardAllowed());
+  const [deviceType, setDeviceType] = useState(getDeviceType());
+  
   // Housemates state
   const [selectedHousemate, setSelectedHousemate] = useState(null);
   const [isHousemateDetailOpen, setIsHousemateDetailOpen] = useState(false);
@@ -285,6 +291,16 @@ function App() {
     }
   }, [user, isAdmin]);
 
+  // Monitor device changes (orientation, resize)
+  useEffect(() => {
+    const cleanup = onDeviceChange((deviceInfo) => {
+      setIsDeviceAllowed(deviceInfo.isDashboardAllowed);
+      setDeviceType(deviceInfo.deviceType);
+    });
+
+    return cleanup;
+  }, []);
+
   // Early return if user data is not available
   if (!user) {
     return (
@@ -295,6 +311,11 @@ function App() {
         </div>
       </div>
     );
+  }
+
+  // Check if device is allowed for dashboard access
+  if (!isDeviceAllowed) {
+    return <MobileWarning />;
   }
 
   try {
