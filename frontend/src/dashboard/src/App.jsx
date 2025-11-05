@@ -2878,15 +2878,35 @@ const formatDate = (date) => {
                   </div>
                   
                   <div>
-                    <Label htmlFor="task-assigned">Assigned To</Label>
-                    <Select value={taskFormData.assignedTo} onValueChange={(value) => setTaskFormData({...taskFormData, assignedTo: value})}>
+                    <Label htmlFor="task-assigned">
+                      Assigned To
+                      {isStandard && (
+                        <span className="text-xs text-gray-500 ml-1">(You can only assign tasks to yourself)</span>
+                      )}
+                    </Label>
+                    <Select 
+                      value={taskFormData.assignedTo} 
+                      onValueChange={(value) => setTaskFormData({...taskFormData, assignedTo: value})}
+                      disabled={isStandard}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select housemate" />
                       </SelectTrigger>
                       <SelectContent>
-                        {housemates.map((housemate) => (
-                          <SelectItem key={housemate.id} value={housemate.name}>{housemate.name}</SelectItem>
-                        ))}
+                        {isStandard ? (
+                          // Standard users can only see themselves
+                          housemates.filter(housemate => {
+                            const currentUserName = `${user?.name} ${user?.surname || ''}`.trim();
+                            return housemate.name === currentUserName;
+                          }).map((housemate) => (
+                            <SelectItem key={housemate.id} value={housemate.name}>{housemate.name}</SelectItem>
+                          ))
+                        ) : (
+                          // Admins can see all housemates
+                          housemates.map((housemate) => (
+                            <SelectItem key={housemate.id} value={housemate.name}>{housemate.name}</SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -4733,15 +4753,35 @@ const formatDate = (date) => {
                     </div>
                     
                     <div>
-                      <Label htmlFor="task-assigned">Assigned To</Label>
-                      <Select value={taskFormData.assignedTo} onValueChange={(value) => setTaskFormData({...taskFormData, assignedTo: value})}>
+                      <Label htmlFor="task-assigned">
+                        Assigned To
+                        {isStandard && (
+                          <span className="text-xs text-gray-500 ml-1">(You can only assign tasks to yourself)</span>
+                        )}
+                      </Label>
+                      <Select 
+                        value={taskFormData.assignedTo} 
+                        onValueChange={(value) => setTaskFormData({...taskFormData, assignedTo: value})}
+                        disabled={isStandard}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select housemate" />
                         </SelectTrigger>
                         <SelectContent>
-                          {housemates.map((housemate) => (
-                            <SelectItem key={housemate.id} value={housemate.name}>{housemate.name}</SelectItem>
-                          ))}
+                          {isStandard ? (
+                            // Standard users can only see themselves
+                            housemates.filter(housemate => {
+                              const currentUserName = `${user?.name} ${user?.surname || ''}`.trim();
+                              return housemate.name === currentUserName;
+                            }).map((housemate) => (
+                              <SelectItem key={housemate.id} value={housemate.name}>{housemate.name}</SelectItem>
+                            ))
+                          ) : (
+                            // Admins can see all housemates
+                            housemates.map((housemate) => (
+                              <SelectItem key={housemate.id} value={housemate.name}>{housemate.name}</SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
