@@ -601,7 +601,7 @@ function App() {
       await removeUser(housemateId);
       
       // Refresh housemates
-      fetchHousemates();
+      refreshHousemates();
     } catch (error) {
       console.error('Error removing housemate:', error);
       alert('Failed to remove housemate. Please try again.');
