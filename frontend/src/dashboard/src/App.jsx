@@ -526,8 +526,12 @@ function App() {
 
   // Admin delete functions
   const handleDeleteTask = async (taskId) => {
-    if (!isAdmin()) {
+    console.log('🗑️ DELETE TASK CLICKED:', taskId);
+    console.log('🔐 isAdmin result:', isAdmin);
+    
+    if (!isAdmin) {
       console.error('Only admins can delete tasks');
+      alert('Only admins can delete tasks');
       return;
     }
     
@@ -535,6 +539,7 @@ function App() {
       const confirmDelete = window.confirm('Are you sure you want to delete this task? This action cannot be undone.');
       if (!confirmDelete) return;
       
+      console.log('🚀 Deleting task:', taskId);
       await deleteTask(taskId);
       
       // Refresh tasks and statistics
@@ -542,15 +547,20 @@ function App() {
       if (user?.house_id) {
         fetchHousemateStatistics(housemates);
       }
+      console.log('✅ Task deleted successfully');
     } catch (error) {
-      console.error('Error deleting task:', error);
+      console.error('❌ Error deleting task:', error);
       alert('Failed to delete task. Please try again.');
     }
   };
 
   const handleDeleteBill = async (billId) => {
-    if (!isAdmin()) {
+    console.log('🗑️ DELETE BILL CLICKED:', billId);
+    console.log('🔐 isAdmin result:', isAdmin);
+    
+    if (!isAdmin) {
       console.error('Only admins can delete bills');
+      alert('Only admins can delete bills');
       return;
     }
     
@@ -558,10 +568,12 @@ function App() {
       const confirmDelete = window.confirm('Are you sure you want to delete this bill? This action cannot be undone.');
       if (!confirmDelete) return;
       
+      console.log('🚀 Deleting bill:', billId);
       await deleteBill(billId);
       
       // Refresh bills
       fetchBills();
+      console.log('✅ Bill deleted successfully');
     } catch (error) {
       console.error('Error deleting bill:', error);
       alert('Failed to delete bill. Please try again.');
@@ -569,8 +581,12 @@ function App() {
   };
 
   const handleDeleteEvent = async (eventId) => {
-    if (!isAdmin()) {
+    console.log('🗑️ DELETE EVENT CLICKED:', eventId);
+    console.log('🔐 isAdmin result:', isAdmin);
+    
+    if (!isAdmin) {
       console.error('Only admins can delete events');
+      alert('Only admins can delete events');
       return;
     }
     
@@ -578,10 +594,12 @@ function App() {
       const confirmDelete = window.confirm('Are you sure you want to delete this event? This action cannot be undone.');
       if (!confirmDelete) return;
       
+      console.log('🚀 Deleting event:', eventId);
       await deleteSchedule(eventId);
       
       // Refresh events
       fetchEvents();
+      console.log('✅ Event deleted successfully');
     } catch (error) {
       console.error('Error deleting event:', error);
       alert('Failed to delete event. Please try again.');
@@ -589,8 +607,12 @@ function App() {
   };
 
   const handleDeleteHousemate = async (housemateId) => {
-    if (!isAdmin()) {
+    console.log('🗑️ DELETE HOUSEMATE CLICKED:', housemateId);
+    console.log('🔐 isAdmin result:', isAdmin);
+    
+    if (!isAdmin) {
       console.error('Only admins can delete housemates');
+      alert('Only admins can delete housemates');
       return;
     }
     
@@ -598,12 +620,14 @@ function App() {
       const confirmDelete = window.confirm('Are you sure you want to remove this housemate from the house? This action cannot be undone.');
       if (!confirmDelete) return;
       
+      console.log('🚀 Removing housemate:', housemateId);
       await removeUser(housemateId);
       
       // Refresh housemates
       refreshHousemates();
+      console.log('✅ Housemate removed successfully');
     } catch (error) {
-      console.error('Error removing housemate:', error);
+      console.error('❌ Error removing housemate:', error);
       alert('Failed to remove housemate. Please try again.');
     }
   };
