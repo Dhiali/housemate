@@ -19,6 +19,7 @@ Housemate is a complete household management solution that enables roommates to:
 - **Frontend (Azure Static Web Apps)**: [https://white-water-0fbd05910.3.azurestaticapps.net](https://white-water-0fbd05910.3.azurestaticapps.net)
 - **Backend API (Google Cloud Run)**: [https://housemate-backend-234825552341.africa-south1.run.app](https://housemate-backend-234825552341.africa-south1.run.app)
 - **Demo Video**: [🎥 Walkthrough Video](https://drive.google.com/file/d/1nfEjGqwr8m8vn9OnU4X9X3suUY5qn9lB/view?usp=sharing)
+- **Project Proposal**: [📋 Design Document](https://docs.google.com/presentation/d/1sEDTh27cn-yEqHB2aYB3yHqXs97zfoTednUUVy9m1Ts/edit?usp=sharing)
 - **GitHub Repository**: [https://github.com/Dhiali/Housemate](https://github.com/Dhiali/Housemate)
 
 ## 🛠️ Tech Stack
@@ -403,7 +404,24 @@ The demo video showcases:
 - **Security**: Implement additional security measures and audit logs
 - **Accessibility**: Improve accessibility compliance and screen reader support
 
-## 📄 License
+## � Project Documentation
+
+### 📋 **Project Proposal & Design**
+- **[Design Document & Proposal](https://docs.google.com/presentation/d/1sEDTh27cn-yEqHB2aYB3yHqXs97zfoTednUUVy9m1Ts/edit?usp=sharing)** - Complete project planning, user stories, wireframes, and technical specifications
+
+### 🎥 **Demo & Walkthrough**
+- **[Complete Walkthrough Video](https://drive.google.com/file/d/1nfEjGqwr8m8vn9OnU4X9X3suUY5qn9lB/view?usp=sharing)** - Full application demonstration including authentication, CRUD operations, and deployment
+
+### 🗄️ **Database Resources**
+- **Database Export**: Available in project repository (`housemate_backup_2025-11-05_13-37.sql`)
+- **ERD Documentation**: Included in this README with complete relationship mapping
+
+### 🚀 **Live Resources**
+- **Production Frontend**: [www.housemate.website](https://www.housemate.website)
+- **API Documentation**: Available through backend health endpoint
+- **Source Code**: Complete codebase available in this GitHub repository
+
+## �📄 License
 
 This project is licensed under the UNLICENSED License - see the package.json files for details.
 
