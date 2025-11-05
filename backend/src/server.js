@@ -86,7 +86,10 @@ if (missingEnvVars.length > 0) {
 // Configure CORS with environment variables
 const corsOrigins = [
   "https://white-water-0fbd05910.3.azurestaticapps.net",
-  "https://www.housemate.website"
+  "https://www.housemate.website",
+  "https://housemate.website",
+  "http://localhost:3000",
+  "http://localhost:5173"
 ];
 // Only use enhanced CORS configuration below
 
@@ -161,6 +164,31 @@ app.use(cors({
   preflightContinue: false,
   optionsSuccessStatus: 204
 }));
+
+// Additional CORS headers as fallback for problematic requests
+app.use((req, res, next) => {
+  const origin = req.get('origin');
+  console.log(`🌐 Fallback CORS middleware for origin: ${origin}`);
+  
+  // Set CORS headers manually as fallback
+  if (origin) {
+    res.header('Access-Control-Allow-Origin', origin);
+  } else {
+    res.header('Access-Control-Allow-Origin', '*');
+  }
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma');
+  res.header('Access-Control-Allow-Credentials', 'false');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    console.log(`✈️ Handling preflight request for ${req.url}`);
+    res.status(200).end();
+    return;
+  }
+  
+  next();
+});
 
 // Log all incoming requests for debugging
 app.use((req, res, next) => {
