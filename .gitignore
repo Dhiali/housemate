@@ -1,8 +1,10 @@
-# Dependencies
+# Dependencies - NEVER commit these
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.npm
+.yarn-integrity
 
 # Environment variables - CRITICAL: Never commit these!
 .env
@@ -18,27 +20,48 @@ logs
 !.vscode/extensions.json
 .idea
 .DS_Store
+*.swp
+*.swo
+*~
 
 # OS generated files
 Thumbs.db
 .DS_Store
+Desktop.ini
 
 # Temporary files
 tmp/
 temp/
+*.tmp
+*.temp
 
 # Production builds
 dist/
 build/
+out/
 
-# Cloud credentials and keys
+# Cloud credentials and keys - CRITICAL: Never commit these!
 *.json
 *.pem
 *.p12
 service-account-*.json
 google-credentials.json
+firebase-adminsdk-*.json
 
 # Security sensitive files
 secrets/
 private/
 credentials/
+
+# Runtime data
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+.nyc_output
+
+# Note: package-lock.json is tracked for applications but ignored for libraries
+# For libraries, uncomment the following line:
+# package-lock.json
