@@ -42,9 +42,7 @@ import {
   Lock,
   Database,
   HelpCircle,
-  UserPlus,
-  Menu,
-  X
+  UserPlus
 } from 'lucide-react';
 import './index.css';
 import { useState, useEffect } from 'react';
@@ -171,10 +169,6 @@ function App() {
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
   const [hoveredItem, setHoveredItem] = useState(null);
   const [houseEvents, setHouseEvents] = useState([]);
-  
-  // Mobile navigation state
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
   const [eventFormData, setEventFormData] = useState({
     title: '',
     description: '',
@@ -2385,12 +2379,6 @@ const formatDate = (date) => {
     }
   };
 
-  // Mobile navigation handler
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-    setIsMobileMenuOpen(false); // Close mobile menu on navigation
-  };
-
   const getRolePermissions = (role) => {
     switch (role) {
       case 'admin':
@@ -2445,33 +2433,9 @@ const formatDate = (date) => {
 
   return (
     <div className="h-screen min-h-0 bg-gray-50 flex overflow-hidden" role="application" aria-label="HouseMate Dashboard Application">
-      {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
-        <div 
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
-      
-      {/* Sidebar Navigation - Desktop always visible, Mobile sliding */}
-      <aside className={`
-        w-64 bg-white border-r border-gray-200 flex flex-col sticky top-0 h-screen flex-none overflow-hidden
-        lg:static lg:translate-x-0 
-        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:block fixed z-50 transition-transform duration-300 ease-in-out
-      `} role="navigation" aria-label="Main navigation">
-        {/* Mobile Close Button */}
-        <div className="lg:hidden flex justify-end p-4">
-          <button
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-            aria-label="Close menu"
-          >
-            <X size={24} />
-          </button>
-        </div>
-        
-        <header className="p-6 lg:pt-6 pt-0">
+      {/* Sidebar Navigation */}
+      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col sticky top-0 h-screen flex-none overflow-hidden" role="navigation" aria-label="Main navigation">
+        <header className="p-6">
           <div className="flex items-center space-x-2">
             <div className="w-14 h-14 bg-purple-600 rounded-xl flex items-center justify-center overflow-hidden">
               <OptimizedImage
@@ -2491,7 +2455,7 @@ const formatDate = (date) => {
             {sidebarItems.map((item, index) => (
               <li key={index} role="listitem">
                 <button
-                  onClick={() => handlePageChange(item.label)}
+                  onClick={() => setCurrentPage(item.label)}
                   className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
                     item.active
                       ? 'bg-purple-100 text-purple-600'
@@ -2512,42 +2476,30 @@ const formatDate = (date) => {
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col h-full min-h-0 overflow-y-auto" role="main" aria-label="Main content area">
         {/* Page Header */}
-        <header className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-4 lg:py-6 flex items-center justify-between" role="banner">
-          <div className="flex items-center space-x-4">
-            {/* Hamburger Menu - Mobile Only */}
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-              aria-label="Toggle menu"
-            >
-              <Menu size={24} />
-            </button>
-            
-            <div>
-              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">{currentPage}</h1>
-              <p className="text-gray-500 mt-1 text-sm sm:text-base hidden sm:block">
-                {currentPage === 'Dashboard' && 'Overview of your household tasks and responsibilities'}
-                {currentPage === 'Tasks' && 'Manage and track all household tasks'}
-                {currentPage === 'Bills' && 'Track shared expenses and manage payments'}
-                {currentPage === 'Schedule' && 'View and manage household schedules'}
-                {currentPage === 'Housemates' && 'Manage your housemate information'}
-                {currentPage === 'Settings' && 'Configure your household preferences'}
-              </p>
-            </div>
+        <header className="bg-white border-b border-gray-200 px-8 py-6 flex items-center justify-between" role="banner">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">{currentPage}</h1>
+            <p className="text-gray-500 mt-1">
+              {currentPage === 'Dashboard' && 'Overview of your household tasks and responsibilities'}
+              {currentPage === 'Tasks' && 'Manage and track all household tasks'}
+              {currentPage === 'Bills' && 'Track shared expenses and manage payments'}
+              {currentPage === 'Schedule' && 'View and manage household schedules'}
+              {currentPage === 'Housemates' && 'Manage your housemate information'}
+              {currentPage === 'Settings' && 'Configure your household preferences'}
+            </p>
           </div>
-          
-          {/* House avatar and name - Responsive */}
+          {/* House avatar and name on far right */}
           {currentPage === 'Dashboard' && (
-            <div className="flex items-center space-x-2 sm:space-x-3" role="complementary" aria-label="House information">
+            <div className="flex items-center space-x-3" role="complementary" aria-label="House information">
               <OptimizedImage
                 src={householdSettings.avatar ? `data:image/png;base64,${householdSettings.avatar}` : "/housemate-logo.png"}
                 webpSrc={householdSettings.avatar ? null : "/housemate-logo.webp"}
                 alt="House Avatar"
-                className="w-8 h-8 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-purple-500 shadow"
+                className="w-12 h-12 rounded-full object-cover border-2 border-purple-500 shadow"
                 style={{background: 'white'}}
                 onError={e => { e.target.onerror = null; e.target.src = "/housemate-logo.png"; }}
               />
-              <span className="font-semibold text-sm sm:text-lg text-gray-900 hidden sm:block">{householdSettings.houseName}</span>
+              <span className="font-semibold text-lg text-gray-900">{householdSettings.houseName}</span>
             </div>
           )}
         </header>
@@ -2556,10 +2508,10 @@ const formatDate = (date) => {
         {currentPage === 'Dashboard' && (
           <>
             {/* House Information Section */}
-            <section className="p-4 sm:p-6 lg:p-8 pb-2 sm:pb-3 lg:pb-4" role="region" aria-labelledby="house-info">
-              <article className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+            <section className="p-8 pb-4" role="region" aria-labelledby="house-info">
+              <article className="bg-white rounded-lg border border-gray-200 p-6">
                 <h3 id="house-info" className="text-lg font-semibold text-gray-900 mb-4">House Information</h3>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* House Address */}
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
@@ -2592,8 +2544,8 @@ const formatDate = (date) => {
             </section>
 
             {/* Dashboard Statistics Overview */}
-            <section className="px-4 sm:px-6 lg:px-8 pb-2 sm:pb-3 lg:pb-4" role="region" aria-labelledby="dashboard-stats">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6" role="group" aria-label="Dashboard statistics">
+            <section className="px-8 pb-4" role="region" aria-labelledby="dashboard-stats">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6" role="group" aria-label="Dashboard statistics">
                 <StatsCard
                   title="Total Tasks"
                   amount={dashboardStats.totalTasks.toString()}
@@ -2631,15 +2583,15 @@ const formatDate = (date) => {
 
             {/* Task Detail View - appears when a stats card is clicked */}
             {isTaskDetailOpen && (
-              <section className="px-4 sm:px-6 lg:px-8 pb-4 sm:pb-6" role="region" aria-labelledby="task-detail-view">
+              <section className="px-8 pb-6" role="region" aria-labelledby="task-detail-view">
                 <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
                   {/* Header */}
-                  <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 bg-gray-50">
+                  <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
                     <div>
-                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 capitalize">
+                      <h3 className="text-lg font-semibold text-gray-900 capitalize">
                         {selectedTaskType} Tasks
                       </h3>
-                      <p className="text-xs sm:text-sm text-gray-600">
+                      <p className="text-sm text-gray-600">
                         {filteredTasks.length} {filteredTasks.length === 1 ? 'task' : 'tasks'} found
                       </p>
                     </div>
@@ -2822,11 +2774,11 @@ const formatDate = (date) => {
             </Dialog>
 
             {/* Main Dashboard Content Area */}
-            <div className="flex flex-col lg:flex-row flex-1" role="region" aria-label="Dashboard main content">
+            <div className="flex flex-1" role="region" aria-label="Dashboard main content">
               {/* Tasks Section */}
-              <section className="flex-1 px-4 sm:px-6 lg:px-8 pb-4 sm:pb-6 lg:pb-8" role="region" aria-labelledby="upcoming-tasks">
+              <section className="flex-1 px-8 pb-8" role="region" aria-labelledby="upcoming-tasks">
                 <article className="bg-white rounded-lg border border-gray-200">
-                  <header className="p-4 sm:p-6 border-b border-gray-200">
+                  <header className="p-6 border-b border-gray-200">
                     <Tabs defaultValue="all" className="w-full">
                       <div className="flex justify-between items-center mb-4">
                         <h2 id="upcoming-tasks" className="text-lg font-semibold text-gray-900">Upcoming Tasks</h2>
@@ -3067,9 +3019,9 @@ const formatDate = (date) => {
               </section>
 
               {/* Dashboard Sidebar */}
-              <aside className="w-full lg:w-80 p-4 sm:p-6 space-y-4 sm:space-y-6" role="complementary" aria-label="Dashboard sidebar">
+              <aside className="w-80 p-6 space-y-6" role="complementary" aria-label="Dashboard sidebar">
                 {/* Quick Actions Section */}
-                <section className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6" role="region" aria-labelledby="quick-actions">
+                <section className="bg-white rounded-lg border border-gray-200 p-6" role="region" aria-labelledby="quick-actions">
                   <h3 id="quick-actions" className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
                   <nav className="space-y-3" role="navigation" aria-label="Quick action buttons">
                     <button 
@@ -3204,12 +3156,12 @@ const formatDate = (date) => {
         )}
 
         {currentPage === 'Tasks' && (
-          <section className="flex-1 p-4 sm:p-6 lg:p-8" role="region" aria-labelledby="tasks-page">
+          <section className="flex-1 p-8" role="region" aria-labelledby="tasks-page">
             <article className="bg-white rounded-lg border border-gray-200">
-              <header className="p-4 sm:p-6">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0 mb-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-                    <h2 id="tasks-page" className="text-lg sm:text-xl font-semibold text-gray-900">
+              <header className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <div className="flex items-center space-x-4">
+                    <h2 id="tasks-page" className="text-xl font-semibold text-gray-900">
                       {isAdmin && tasksPageView === 'everyone' ? 'All Household Tasks' : 'My Tasks'}
                     </h2>
                     {/* Admin-only toggle for viewing all vs own tasks */}
@@ -3222,7 +3174,7 @@ const formatDate = (date) => {
                         }}
                         aria-label="Filter tasks by person"
                       >
-                        <SelectTrigger className="w-full sm:w-36">
+                        <SelectTrigger className="w-36">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -3236,7 +3188,7 @@ const formatDate = (date) => {
                   <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
                     <DialogTrigger asChild>
                       <Button 
-                        className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto" 
+                        className="bg-purple-600 hover:bg-purple-700" 
                         aria-label="Create new task"
                         disabled={isReadOnly}
                       >
@@ -3495,16 +3447,16 @@ const formatDate = (date) => {
         )}
 
         {currentPage === 'Bills' && (
-          <section className="flex-1 p-4 sm:p-6 lg:p-8" role="region" aria-labelledby="bills-page">
-            <div className="space-y-4 sm:space-y-6">
+          <section className="flex-1 p-8" role="region" aria-labelledby="bills-page">
+            <div className="space-y-6">
               {/* Bills Page Header */}
-              <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
-                <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+              <header className="flex justify-between items-center">
+                <div className="flex items-center space-x-4">
                   <div>
-                    <h1 id="bills-page" className="text-xl sm:text-2xl font-bold text-gray-900">
+                    <h1 id="bills-page" className="text-2xl font-bold text-gray-900">
                       {isAdmin && billsPageView === 'everyone' ? 'All Household Bills' : 'My Bills'}
                     </h1>
-                    <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-gray-600 mt-1">
                       {isAdmin && billsPageView === 'everyone' 
                         ? 'Manage all bills for the household' 
                         : isReadOnly 
@@ -3516,7 +3468,7 @@ const formatDate = (date) => {
                   
                   {/* Admin View Toggle */}
                   {isAdmin && (
-                    <div className="flex items-center space-x-3 bg-white rounded-lg p-3 border-2 border-purple-200 shadow-sm w-full sm:w-auto">
+                    <div className="flex items-center space-x-3 bg-white rounded-lg p-3 border-2 border-purple-200 shadow-sm">
                       <Switch
                         id="bills-view-toggle"
                         checked={billsPageView === 'everyone'}
@@ -3979,10 +3931,10 @@ const formatDate = (date) => {
         )}
 
         {currentPage === 'Schedule' && (
-          <div className="flex-1 flex flex-col lg:flex-row" role="region" aria-labelledby="schedule-page">
+          <div className="flex-1 flex" role="region" aria-labelledby="schedule-page">
             {/* Schedule Sidebar */}
-            <aside className="w-full lg:w-80 bg-white border-b lg:border-r lg:border-b-0 border-gray-200 p-4 sm:p-6" role="complementary" aria-label="Schedule sidebar">
-              <div className="space-y-4 sm:space-y-6">
+            <aside className="w-80 bg-white border-r border-gray-200 p-6" role="complementary" aria-label="Schedule sidebar">
+              <div className="space-y-6">
                 {/* Schedule Quick Actions */}
                 <section role="region" aria-labelledby="schedule-quick-actions">
                   <h3 id="schedule-quick-actions" className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
@@ -4157,17 +4109,17 @@ const formatDate = (date) => {
             </aside>
 
             {/* Schedule Main Content */}
-            <section className="flex-1 p-4 sm:p-6 lg:p-8" role="region" aria-labelledby="schedule-main">
-              <div className="space-y-4 sm:space-y-6">
+            <section className="flex-1 p-8" role="region" aria-labelledby="schedule-main">
+              <div className="space-y-6">
                 {/* Schedule Header with View Toggle */}
-                <header className="flex flex-col sm:flex-row sm:justify-between sm:items-start space-y-4 sm:space-y-0">
+                <header className="flex justify-between items-start">
                   <div>
-                    <h2 id="schedule-main" className="text-lg sm:text-xl font-semibold text-gray-900">
+                    <h2 id="schedule-main" className="text-xl font-semibold text-gray-900">
                       {scheduleView === 'month' && selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                       {scheduleView === 'week' && `Week of ${selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
                       {scheduleView === 'list' && 'Upcoming Items'}
                     </h2>
-                    <p className="text-gray-500 mt-1 text-sm sm:text-base">
+                    <p className="text-gray-500 mt-1">
                       {scheduleView === 'month' && 'Monthly view of all household activities'}
                       {scheduleView === 'week' && 'Weekly view of household activities'}
                       {scheduleView === 'list' && 'All upcoming tasks, bills, and events'}
@@ -4255,10 +4207,9 @@ const formatDate = (date) => {
                     <div>
                       {/* Calendar Header */}
                       <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
-                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, index) => (
-                          <div key={day} className="p-2 sm:p-4 text-center text-xs sm:text-sm font-medium text-gray-700">
-                            <span className="hidden sm:inline">{day}</span>
-                            <span className="sm:hidden">{day.charAt(0)}</span>
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                          <div key={day} className="p-4 text-center text-sm font-medium text-gray-700">
+                            {day}
                           </div>
                         ))}
                       </div>
@@ -4267,7 +4218,7 @@ const formatDate = (date) => {
                       <div className="grid grid-cols-7">
                         {getDaysInMonth(selectedDate).map((day, index) => {
                           if (!day) {
-                            return <div key={index} className="h-16 sm:h-24 lg:h-32 border-r border-b border-gray-100"></div>;
+                            return <div key={index} className="h-32 border-r border-b border-gray-100"></div>;
                           }
                           
                           const dayItems = getItemsForDate(day);
@@ -4276,18 +4227,18 @@ const formatDate = (date) => {
                           return (
                             <div
                               key={day.getTime()}
-                              className={`h-16 sm:h-24 lg:h-32 border-r border-b border-gray-100 p-1 sm:p-2 ${
+                              className={`h-32 border-r border-b border-gray-100 p-2 ${
                                 isCurrentMonth ? 'bg-white' : 'bg-gray-50'
                               } ${isTodayCalendar(day) ? 'bg-blue-50' : ''}`}
                             >
-                              <div className={`text-xs sm:text-sm font-medium mb-1 sm:mb-2 ${
+                              <div className={`text-sm font-medium mb-2 ${
                                 isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
                               } ${isTodayCalendar(day) ? 'text-blue-600' : ''}`}>
                                 {day.getDate()}
                               </div>
                               
                               <div className="space-y-1">
-                                {dayItems.slice(0, window.innerWidth < 640 ? 1 : 3).map((item) => {
+                                {dayItems.slice(0, 3).map((item) => {
                                   // Color coding: Red for overdue, Blue for upcoming tasks, Green for upcoming bills
                                   let itemClasses = 'text-xs p-1 rounded cursor-pointer hover:opacity-80 transition-opacity ';
                                   
@@ -4755,13 +4706,13 @@ const formatDate = (date) => {
         )}
 
         {currentPage === 'Housemates' && (
-          <section className="flex-1 p-4 sm:p-6 lg:p-8" role="region" aria-labelledby="housemates-page">
-            <div className="space-y-4 sm:space-y-6">
+          <section className="flex-1 p-8" role="region" aria-labelledby="housemates-page">
+            <div className="space-y-6">
               {/* Housemates Page Header */}
-              <header className="flex flex-col sm:flex-row sm:justify-between sm:items-start space-y-4 sm:space-y-0">
+              <header className="flex justify-between items-start">
                 <div>
-                  <h2 id="housemates-page" className="text-lg sm:text-xl font-semibold text-gray-900">Housemates</h2>
-                  <p className="text-gray-500 mt-1 text-sm sm:text-base">
+                  <h2 id="housemates-page" className="text-xl font-semibold text-gray-900">Housemates</h2>
+                  <p className="text-gray-500 mt-1">
                     {isAdmin 
                       ? 'Manage your household members and their information'
                       : isReadOnly
@@ -4773,8 +4724,8 @@ const formatDate = (date) => {
                 
                 {/* Admin-only controls */}
                 {isAdmin ? (
-                  <nav className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto" role="navigation" aria-label="Housemate management actions">
-                    <Button variant="outline" onClick={() => setIsInviteHousemateOpen(true)} aria-label="Invite new housemate" className="w-full sm:w-auto">
+                  <nav className="flex space-x-3" role="navigation" aria-label="Housemate management actions">
+                    <Button variant="outline" onClick={() => setIsInviteHousemateOpen(true)} aria-label="Invite new housemate">
                       <Plus size={16} className="mr-2" aria-hidden="true" />
                       Invite Housemate
                     </Button>
@@ -5049,7 +5000,7 @@ const formatDate = (date) => {
                 )}
               </header>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {loadingHousemates ? (
                   <div className="col-span-full flex justify-center py-8">
                     <div className="text-gray-500">Loading housemates...</div>
@@ -5078,11 +5029,11 @@ const formatDate = (date) => {
             </div>
 
             {/* Additional Info Section */}
-            <div className="mt-6 sm:mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Role Permissions */}
-              <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <h3 className="font-semibold text-gray-900 mb-4">Role Permissions</h3>
-                <div className="space-y-3 sm:space-y-4">
+                <div className="space-y-4">
                   <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-200">
                     <div>
                       <div className="font-medium text-purple-900">Admin</div>
