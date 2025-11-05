@@ -3,31 +3,48 @@
   <head>
     <meta charset="UTF-8" />
     
+    <!-- Enhanced Mobile Viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
+    
+    <!-- Mobile Web App Capable -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="HouseMate" />
+    
+    <!-- Format Detection -->
+    <meta name="format-detection" content="telephone=no, date=no, email=no, address=no" />
+    
     <!-- Performance & Resource Hints -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="dns-prefetch" href="https://api.housemate.website" />
-    <link rel="dns-prefetch" href="https://housemate.website" />
+    <link rel="dns-prefetch" href="https://housemate-backend-234825552341.africa-south1.run.app" />
+    <link rel="dns-prefetch" href="https://www.housemate.website" />
+    <link rel="preconnect" href="https://housemate-backend-234825552341.africa-south1.run.app" crossorigin />
     
-    <!-- Critical Resource Preload -->
-    <!-- Note: Module preloads will be handled by Vite automatically -->
+    <!-- Preload Critical Resources -->
+    <link rel="modulepreload" href="/src/main.jsx" />
+    <link rel="preload" href="/HouseMate logo.webp" as="image" type="image/webp" />
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
     
-    <!-- Favicons -->
+    <!-- Enhanced Favicons -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#3b82f6" />
     
-    <!-- Responsive viewport -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Theme Colors -->
+    <meta name="theme-color" content="#3b82f6" />
+    <meta name="msapplication-TileColor" content="#3b82f6" />
+    <meta name="msapplication-navbutton-color" content="#3b82f6" />
     
-    <!-- SEO Meta Tags -->
-    <title>Housemate - Split Bills & Manage Shared Living Expenses</title>
-    <meta name="description" content="Simplify shared living with Housemate. Track expenses, split bills fairly, manage household tasks, and keep your roommates organized. Free bill splitting app for housemates and roommates." />
-    <meta name="keywords" content="bill splitting, roommate expenses, shared living, household management, expense tracker, roommate app, split bills, shared expenses" />
+    <!-- Enhanced SEO Meta Tags -->
+    <title>HouseMate - Smart Bill Splitting & Shared Living Management</title>
+    <meta name="description" content="Simplify shared living with HouseMate. Effortlessly track expenses, split bills fairly, manage household tasks, and keep your roommates organized. The ultimate free bill splitting app for modern housemates." />
+    <meta name="keywords" content="bill splitting, roommate expenses, shared living, household management, expense tracker, roommate app, split bills, shared expenses, housemate organizer" />
     <meta name="author" content="Housemate App" />
     
     <!-- Google Search Console Verification: DNS method used (no HTML tag needed) -->

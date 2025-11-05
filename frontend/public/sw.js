@@ -1,9 +1,9 @@
 /**
- * Service Worker for HouseMate Application
- * Implements intelligent caching strategies for optimal performance
+ * Enhanced Service Worker for HouseMate Application
+ * Implements intelligent caching strategies, PWA features, and performance optimization
  */
 
-const CACHE_NAME = 'housemate-v1.0.0';
+const CACHE_NAME = 'housemate-v2.0.0';
 const STATIC_CACHE_NAME = `${CACHE_NAME}-static`;
 const DYNAMIC_CACHE_NAME = `${CACHE_NAME}-dynamic`;
 const API_CACHE_NAME = `${CACHE_NAME}-api`;
@@ -15,7 +15,8 @@ const STATIC_ASSETS = [
   '/HouseMate logo.webp',
   '/HouseMate logo.png',
   '/favicon.svg',
-  '/manifest.json'
+  '/manifest.json',
+  '/offline.html'
 ];
 
 // API endpoints that can be cached
@@ -23,34 +24,48 @@ const CACHEABLE_API_PATTERNS = [
   /\/api\/houses/,
   /\/api\/users/,
   /\/api\/tasks/,
+  /\/api\/bills/,
+  /\/api\/schedule/,
   /\/uploads\/avatars/
 ];
 
-// Maximum cache sizes
-const MAX_STATIC_CACHE_SIZE = 50;
-const MAX_DYNAMIC_CACHE_SIZE = 30;
-const MAX_API_CACHE_SIZE = 20;
+// Maximum cache sizes (increased for better performance)
+const MAX_STATIC_CACHE_SIZE = 100;
+const MAX_DYNAMIC_CACHE_SIZE = 50;
+const MAX_API_CACHE_SIZE = 30;
 
 // Cache duration (in milliseconds)
 const CACHE_DURATION = {
   STATIC: 7 * 24 * 60 * 60 * 1000, // 7 days
   DYNAMIC: 24 * 60 * 60 * 1000, // 1 day
-  API: 30 * 60 * 1000 // 30 minutes
+  API: 30 * 60 * 1000, // 30 minutes
+  IMAGES: 3 * 24 * 60 * 60 * 1000 // 3 days
+};
+
+// Cache strategies
+const STRATEGIES = {
+  CACHE_FIRST: 'cache-first',
+  NETWORK_FIRST: 'network-first',
+  STALE_WHILE_REVALIDATE: 'stale-while-revalidate'
 };
 
 /**
- * Service Worker Installation
+ * Enhanced Service Worker Installation
  */
 self.addEventListener('install', (event) => {
-  console.log('🔧 Service Worker installing...');
+  console.log('🔧 Enhanced Service Worker installing...');
   
   event.waitUntil(
-    caches.open(STATIC_CACHE_NAME).then((cache) => {
-      console.log('📦 Caching static assets');
-      return cache.addAll(STATIC_ASSETS);
-    }).then(() => {
+    Promise.all([
+      caches.open(STATIC_CACHE_NAME).then((cache) => {
+        console.log('📦 Caching static assets');
+        return cache.addAll(STATIC_ASSETS);
+      }),
+      // Preload critical resources
+      preloadCriticalResources()
+    ]).then(() => {
       console.log('✅ Service Worker installed successfully');
-      return self.skipWaiting();
+      return self.skipWaiting(); // Take control immediately
     }).catch((error) => {
       console.error('❌ Service Worker installation failed:', error);
     })
@@ -58,7 +73,36 @@ self.addEventListener('install', (event) => {
 });
 
 /**
- * Service Worker Activation
+ * Preload critical resources for better performance
+ */
+async function preloadCriticalResources() {
+  try {
+    const cache = await caches.open(DYNAMIC_CACHE_NAME);
+    
+    // Preload critical CSS and JS that are likely to be needed
+    const criticalResources = [
+      '/assets/css/style.css',
+      '/assets/js/index.js'
+    ];
+    
+    // Only cache if resources exist
+    for (const resource of criticalResources) {
+      try {
+        const response = await fetch(resource);
+        if (response.ok) {
+          await cache.put(resource, response);
+        }
+      } catch (error) {
+        console.warn(`Failed to preload ${resource}:`, error);
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to preload critical resources:', error);
+  }
+}
+
+/**
+ * Enhanced Service Worker Activation
  */
 self.addEventListener('activate', (event) => {
   console.log('🚀 Service Worker activating...');

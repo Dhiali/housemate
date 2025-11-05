@@ -8,25 +8,26 @@ export default defineConfig({
   // Development server configuration
   server: {
     hmr: true,
-    port: 3000
+    port: 5173,
+    host: true // Allow external connections for mobile testing
   },
   
   // Performance optimizations
   build: {
-    // Enable sourcemaps for better debugging in production
+    // Disable sourcemaps for production builds
     sourcemap: false,
     
-    // Optimize chunk size
-    chunkSizeWarningLimit: 1000,
+    // Optimize chunk size for better loading
+    chunkSizeWarningLimit: 800,
     
-    // Advanced minification
+    // Advanced minification with SWC
     minify: 'esbuild',
     
-    // Disable CSS code splitting to ensure CSS is included in HTML
-    cssCodeSplit: false,
+    // Enable CSS code splitting for better caching
+    cssCodeSplit: true,
     
     // Target modern browsers for better optimization
-    target: 'esnext',
+    target: ['es2020', 'edge88', 'firefox78', 'chrome87', 'safari14'],
     
     // Rollup specific optimizations
     rollupOptions: {
@@ -34,40 +35,49 @@ export default defineConfig({
       external: [],
       
       output: {
-        // Advanced chunking strategy
+        // Advanced chunking strategy for better caching
         manualChunks: {
-          // Vendor chunks for better caching
-          vendor: ['react', 'react-dom'],
+          // React core
+          'react-vendor': ['react', 'react-dom'],
           
           // UI library chunks
-          radix: [
+          'radix-ui': [
             '@radix-ui/react-dialog',
             '@radix-ui/react-select',
             '@radix-ui/react-tabs',
             '@radix-ui/react-accordion',
-            '@radix-ui/react-dropdown-menu'
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-popover',
+            '@radix-ui/react-tooltip',
+            '@radix-ui/react-switch',
+            '@radix-ui/react-checkbox',
+            '@radix-ui/react-avatar',
+            '@radix-ui/react-label'
           ],
           
           // Utility libraries
-          utils: ['axios', 'clsx', 'class-variance-authority', 'tailwind-merge'],
+          'utils': ['axios', 'clsx', 'class-variance-authority', 'tailwind-merge'],
           
           // Chart and visualization
-          charts: ['recharts'],
+          'charts': ['recharts'],
           
           // Form handling
-          forms: ['react-hook-form'],
+          'forms': ['react-hook-form'],
           
-          // Icons
-          icons: ['lucide-react']
+          // Icons (separate chunk for lazy loading)
+          'icons': ['lucide-react'],
+          
+          // Animation libraries
+          'animations': ['framer-motion']
         },
         
-        // Optimized asset file naming
+        // Optimized asset file naming with content hashing
         assetFileNames: (assetInfo) => {
           const info = assetInfo.name.split('.');
           let extType = info[info.length - 1];
           
-          // Organize assets by type
-          if (/png|jpe?g|svg|gif|tiff|bmp|ico|webp/i.test(extType)) {
+          // Organize assets by type for better caching
+          if (/png|jpe?g|svg|gif|tiff|bmp|ico|webp|avif/i.test(extType)) {
             extType = 'img';
           } else if (/woff|woff2|eot|ttf|otf/i.test(extType)) {
             extType = 'fonts';
@@ -80,22 +90,29 @@ export default defineConfig({
         
         // Optimized chunk file naming
         chunkFileNames: (chunkInfo) => {
-          const facadeModuleId = chunkInfo.facadeModuleId ? chunkInfo.facadeModuleId.split('/').pop() : 'chunk';
-          return `assets/js/${facadeModuleId}-[hash].js`;
+          return `assets/js/[name]-[hash].js`;
         },
         
         entryFileNames: 'assets/js/[name]-[hash].js'
       }
     },
     
-    // Enable tree shaking
-    treeshake: true
+    // Enable tree shaking for smaller bundles
+    treeshake: {
+      moduleSideEffects: false
+    },
+    
+    // Optimize for better compression
+    assetsInlineLimit: 4096, // 4kb limit for inlining assets
+    
+    // Enable CSS minification
+    cssMinify: true
   },
   
   // Optimize image assets
-  assetsInclude: ['**/*.webp'],
+  assetsInclude: ['**/*.webp', '**/*.avif'],
   
-  // Optimize dependencies
+  // Optimize dependencies for faster dev startup
   optimizeDeps: {
     // Include dependencies that should be pre-bundled
     include: [
@@ -104,21 +121,59 @@ export default defineConfig({
       'axios',
       'clsx',
       'class-variance-authority',
-      'tailwind-merge'
+      'tailwind-merge',
+      'react-hook-form'
     ],
     
     // Exclude large dependencies from pre-bundling
     exclude: [
-      'recharts'
-    ]
+      'recharts',
+      'framer-motion'
+    ],
+    
+    // Force optimization for better performance
+    force: true
   },
   
   // Enable experimental features for better performance
   esbuild: {
-    // Enable advanced minification
-    legalComments: 'none',
+    // Remove console.log in production
+    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
     
     // Optimize for smaller bundles
-    treeShaking: true
+    treeShaking: true,
+    
+    // Remove legal comments for smaller size
+    legalComments: 'none',
+    
+    // Enable advanced minification
+    minifyIdentifiers: true,
+    minifySyntax: true,
+    minifyWhitespace: true
+  },
+  
+  // CSS preprocessing optimizations
+  css: {
+    // Enable CSS modules for better scoping
+    modules: {
+      localsConvention: 'camelCase'
+    },
+    
+    // PostCSS optimizations
+    postcss: {
+      plugins: []
+    },
+    
+    // Optimize CSS loading
+    preprocessorOptions: {
+      // Add any SCSS/SASS optimizations here if needed
+    }
+  },
+  
+  // Preview server optimization
+  preview: {
+    port: 4173,
+    host: true,
+    strictPort: true
   }
 })
