@@ -3097,6 +3097,87 @@ app.put('/users/:id/privacy', (req, res) => {
   }
 });
 
+// Update user profile (comprehensive update)
+app.put('/users/:id/profile', authenticateToken, (req, res) => {
+  console.log('👤 Updating user profile:', req.body);
+  const { name, email, bio, phone, preferred_contact, avatar } = req.body;
+  const userId = req.params.id;
+  const requestingUserId = req.user.id;
+  
+  // Users can only update their own profile unless they are admin
+  if (parseInt(userId) !== requestingUserId && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'You can only update your own profile' });
+  }
+  
+  // Validate that at least one field is being updated
+  if (!name && !email && !bio && !phone && !preferred_contact && !avatar) {
+    return res.status(400).json({ error: 'At least one field must be provided for update' });
+  }
+  
+  // Build dynamic update query
+  const updateFields = [];
+  const values = [];
+  
+  if (name !== undefined) {
+    updateFields.push('name = ?');
+    values.push(name);
+  }
+  
+  if (email !== undefined) {
+    updateFields.push('email = ?');
+    values.push(email);
+  }
+  
+  if (bio !== undefined) {
+    updateFields.push('bio = ?');
+    values.push(bio);
+  }
+  
+  if (phone !== undefined) {
+    updateFields.push('phone = ?');
+    values.push(phone);
+  }
+  
+  if (preferred_contact !== undefined) {
+    updateFields.push('preferred_contact = ?');
+    values.push(preferred_contact);
+  }
+  
+  if (avatar !== undefined) {
+    updateFields.push('avatar = ?');
+    values.push(avatar);
+  }
+  
+  // Add user_id to values for WHERE clause
+  values.push(userId);
+  
+  const updateQuery = `
+    UPDATE users 
+    SET ${updateFields.join(', ')}
+    WHERE id = ?
+  `;
+  
+  console.log('🔍 User update query:', updateQuery);
+  console.log('📊 Values:', values);
+  
+  db.query(updateQuery, values, (err, results) => {
+    if (err) {
+      console.error('❌ Error updating user profile:', err);
+      return res.status(500).json({ error: 'Failed to update user profile' });
+    }
+    
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    console.log('✅ User profile updated successfully');
+    res.json({ 
+      message: 'User profile updated successfully',
+      updatedFields: updateFields.map(field => field.split(' = ')[0])
+    });
+  });
+});
+
 // Health check endpoint for deployment platforms
 app.get('/', (req, res) => {
   res.json({ 

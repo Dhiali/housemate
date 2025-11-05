@@ -5504,41 +5504,44 @@ const formatDate = (date) => {
               }
             }}
             onSaveProfile={async (newSettings) => {
-              // Only update DB on Save
-              if (user && user.id && typeof newSettings.name === 'string') {
-                const { updateUserName } = await import('../../apiHelpers');
-                await updateUserName(user.id, newSettings.name || '');
-              }
-              if (user && user.id && typeof newSettings.email === 'string') {
-                const { updateUserEmail } = await import('../../apiHelpers');
-                await updateUserEmail(user.id, newSettings.email || '');
-              }
-              if (user && user.id && typeof newSettings.bio === 'string') {
-                await updateUserBio(user.id, newSettings.bio || '');
-              }
-              if (user && user.id && typeof newSettings.phone === 'string') {
-                await updateUserPhone(user.id, newSettings.phone || '');
-              }
-              if (user && user.id && typeof newSettings.preferredContact === 'string') {
-                const { updateUserPreferredContact } = await import('../../apiHelpers');
-                await updateUserPreferredContact(user.id, newSettings.preferredContact);
-              }
-              // After saving, reload user profile from backend to ensure latest preferredContact
-              if (user && user.id) {
-                const { getUser } = await import('../../apiHelpers');
-                const res = await getUser(user.id);
-                const dbUser = res.data;
-                setProfileSettings(prev => ({
-                  ...prev,
-                  name: dbUser.name || '',
-                  email: dbUser.email || '',
-                  bio: dbUser.bio || '',
-                  phone: dbUser.phone || '',
-                  preferredContact: dbUser.preferred_contact || 'email'
-                }));
+              try {
+                console.log('Saving user profile:', newSettings);
                 
-                // Refresh housemates data to show updated bio/phone in housemate cards
-                await refreshHousemates();
+                if (user && user.id) {
+                  // Use comprehensive profile update
+                  const { updateUserProfile } = await import('../../apiHelpers');
+                  await updateUserProfile(user.id, {
+                    name: newSettings.name,
+                    email: newSettings.email,
+                    bio: newSettings.bio,
+                    phone: newSettings.phone,
+                    preferred_contact: newSettings.preferredContact
+                  });
+                  
+                  console.log('User profile updated successfully');
+                  
+                  // After saving, reload user profile from backend to ensure consistency
+                  const { getUser } = await import('../../apiHelpers');
+                  const res = await getUser(user.id);
+                  const dbUser = res.data;
+                  setProfileSettings(prev => ({
+                    ...prev,
+                    name: dbUser.name || '',
+                    email: dbUser.email || '',
+                    bio: dbUser.bio || '',
+                    phone: dbUser.phone || '',
+                    preferredContact: dbUser.preferred_contact || 'email'
+                  }));
+                  
+                  // Refresh housemates data to show updated profile information
+                  await refreshHousemates();
+                  
+                  alert('Profile updated successfully!');
+                }
+              } catch (error) {
+                console.error('Error saving user profile:', error);
+                const errorMessage = error.response?.data?.error || error.message || 'Unknown error occurred';
+                alert(`Error saving profile: ${errorMessage}`);
               }
             }}
             onSavePrivacy={async (newPrivacySettings) => {

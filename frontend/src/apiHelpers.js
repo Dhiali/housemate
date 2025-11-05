@@ -155,3 +155,9 @@ export const updateHouseInformation = async (houseData) => {
   const response = await API.put('/admin/house', houseData);
   return response.data;
 };
+
+// User profile management
+export const updateUserProfile = async (userId, profileData) => {
+  const response = await API.put(`/users/${userId}/profile`, profileData);
+  return response.data;
+};
