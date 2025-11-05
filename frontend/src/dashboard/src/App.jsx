@@ -4052,9 +4052,10 @@ const formatDate = (date) => {
                       variant="outline" 
                       className="w-full"
                       onClick={() => setIsTaskFormOpen(true)}
+                      disabled={isReadOnly}
                     >
                       <Plus size={16} className="mr-2" />
-                      Add Task
+                      {isReadOnly ? 'Read-Only Mode' : 'Add Task'}
                     </Button>
                   </nav>
                 </section>
