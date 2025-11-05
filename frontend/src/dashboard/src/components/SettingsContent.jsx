@@ -64,21 +64,21 @@ export function SettingsContent({
     setAvatarPreview(URL.createObjectURL(file));
     setAvatarUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('avatar', file);
       // Assume user id is in profileSettings.id
       const userId = profileSettings.id || profileSettings.userId || profileSettings.user_id;
       if (!userId) throw new Error('User ID missing for avatar upload');
-      const res = await fetch(`https://housemate-backend-694893036218.us-central1.run.app/users/${userId}/avatar`, {
-        method: 'PUT',
-        body: formData
-      });
-      const data = await res.json();
+      
+      // Import the API helper
+      const { uploadUserAvatar } = await import('../../../apiHelpers');
+      const data = await uploadUserAvatar(userId, file);
+      
       if (data.avatar) {
         setProfileSettings(prev => ({ ...prev, avatar: data.avatar }));
       }
     } catch (err) {
-      alert('Avatar upload failed: ' + err.message);
+      console.error('Avatar upload error:', err);
+      const errorMessage = err.response?.data?.error || err.message || 'Unknown error occurred';
+      alert('Avatar upload failed: ' + errorMessage);
     } finally {
       setAvatarUploading(false);
     }
@@ -179,7 +179,7 @@ export function SettingsContent({
                 <div className="flex items-center space-x-4">
                   <div className="w-20 h-20 bg-purple-500 rounded-full flex items-center justify-center overflow-hidden">
                     {avatarPreview ? (
-                      <img src={avatarPreview.startsWith('/uploads/') ? `https://housemate-backend-694893036218.us-central1.run.app${avatarPreview}` : avatarPreview} alt="Avatar" className="w-full h-full object-cover rounded-full" />
+                      <img src={avatarPreview.startsWith('/uploads/') ? `https://housemate-backend-234825552341.africa-south1.run.app${avatarPreview}` : avatarPreview} alt="Avatar" className="w-full h-full object-cover rounded-full" />
                     ) : (
                       <span className="text-white text-2xl font-medium">YO</span>
                     )}

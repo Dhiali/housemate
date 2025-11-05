@@ -2190,18 +2190,39 @@ app.delete('/schedule/:id', (req, res) => {
 // Serve uploaded avatars statically
 app.use('/uploads/avatars', express.static(path.join(process.cwd(), 'uploads', 'avatars')));
 // Avatar upload endpoint with WebP optimization
-app.put('/users/:id/avatar', upload.single('avatar'), processImage, async (req, res) => {
+app.put('/users/:id/avatar', authenticateToken, upload.single('avatar'), processImage, async (req, res) => {
+  console.log('🖼️ Avatar upload request for user:', req.params.id);
+  
+  // Users can only update their own avatar unless they are admin
+  if (parseInt(req.params.id) !== req.user.id && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'You can only update your own avatar' });
+  }
+  
   if (!req.file) {
+    console.log('❌ No file uploaded');
     return res.status(400).json({ error: 'No file uploaded' });
   }
+  
+  console.log('📁 File uploaded:', { 
+    originalName: req.file.originalname, 
+    size: req.file.size, 
+    mimetype: req.file.mimetype 
+  });
   
   // Convert processed WebP image buffer to base64 data URL
   const dataUrl = bufferToDataUrl(req.file.buffer, req.file.mimetype);
   
   db.query('UPDATE users SET avatar = ? WHERE id = ?', [dataUrl, req.params.id], (err, results) => {
     if (err) {
+      console.error('❌ Database error updating avatar:', err);
       return res.status(500).json({ error: err.message });
     }
+    
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    console.log('✅ Avatar updated successfully for user:', req.params.id);
     res.json({ 
       message: 'Avatar updated with WebP optimization!', 
       avatar: dataUrl,

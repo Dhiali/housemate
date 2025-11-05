@@ -161,3 +161,15 @@ export const updateUserProfile = async (userId, profileData) => {
   const response = await API.put(`/users/${userId}/profile`, profileData);
   return response.data;
 };
+
+// Avatar upload
+export const uploadUserAvatar = async (userId, avatarFile) => {
+  const formData = new FormData();
+  formData.append('avatar', avatarFile);
+  const response = await API.put(`/users/${userId}/avatar`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+};
