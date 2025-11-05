@@ -159,9 +159,9 @@ function App() {
   const [calendarView, setCalendarView] = useState('month');
   const [scheduleView, setScheduleView] = useState('month');
   const [scheduleFilters, setScheduleFilters] = useState({
-    showPersonal: true,
-    showHousehold: true,
-    showMaintenance: true
+    tasks: true,
+    bills: true,
+    events: true
   });
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -442,6 +442,7 @@ function App() {
       
       setHouseEvents(mappedEvents);
       console.log('Events loaded successfully:', mappedEvents);
+      console.log('Sample event date format:', mappedEvents[0]?.date);
     } catch (error) {
       console.error('Error fetching events:', error);
       
@@ -1777,7 +1778,22 @@ function App() {
 
   const getItemsForDate = (date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return getAllScheduleItems().filter(item => item.date === dateStr);
+    const allItems = getAllScheduleItems();
+    const filteredItems = allItems.filter(item => item.date === dateStr);
+    
+    // Debug logging
+    if (dateStr === new Date().toISOString().split('T')[0]) { // Only log for today
+      console.log('Debug - getItemsForDate:', {
+        requestedDate: dateStr,
+        totalItems: allItems.length,
+        filteredItems: filteredItems.length,
+        houseEventsCount: houseEvents.length,
+        scheduleFilters: scheduleFilters,
+        sampleEventDates: houseEvents.slice(0, 3).map(e => ({ title: e.title, date: e.date }))
+      });
+    }
+    
+    return filteredItems;
   };
 
   // Calendar helper functions
