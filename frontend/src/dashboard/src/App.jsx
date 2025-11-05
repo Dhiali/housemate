@@ -28,6 +28,8 @@ import {
   MessageCircle,
   Bell,
   Shield,
+  Menu,
+  X,
   Globe,
   Moon,
   Sun,
@@ -45,7 +47,7 @@ import {
   UserPlus
 } from 'lucide-react';
 import './index.css';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import { getTasks, addTask, updateTask, getHouse, getHouseStatistics, getHousemates, getUserStatistics, getUserCompletedTasks, getUserPendingTasks, getUserContributedBills, getBills, addBill, updateBill, deleteBill, payBill, addEvent, getSchedule, checkScheduleTable } from '../../apiHelpers';
 import { updateUserBio, updateUserPhone } from '../../apiHelpers';
 import { Button } from './components/ui/button';
@@ -177,6 +179,31 @@ function App() {
     category: 'general',
     attendees: 'All'
   });
+  
+  // Mobile and responsive state management
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+      // Close mobile menu when screen becomes desktop size
+      if (window.innerWidth >= 768) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    
+    checkIfMobile();
+    window.addEventListener('resize', checkIfMobile);
+    
+    return () => window.removeEventListener('resize', checkIfMobile);
+  }, []);
+
+  // Close mobile menu when page changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [currentPage]);
   
   // Housemates state
   const [selectedHousemate, setSelectedHousemate] = useState(null);
@@ -1625,7 +1652,8 @@ function App() {
     });
   };
 
-  const getAllScheduleItems = () => {
+  // Optimized schedule items calculation with memoization
+  const getAllScheduleItems = useMemo(() => {
     const items = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -1789,11 +1817,11 @@ function App() {
     }
     
     return items.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  };
+  }, [scheduleFilters, tasks, bills, houseEvents]);  // Dependencies for memoization
 
   const getItemsForDate = (date) => {
     const dateStr = date.toISOString().split('T')[0];
-    const allItems = getAllScheduleItems();
+    const allItems = getAllScheduleItems;
     const filteredItems = allItems.filter(item => item.date === dateStr);
     
     // Debug logging
@@ -2433,30 +2461,61 @@ const formatDate = (date) => {
 
   return (
     <div className="h-screen min-h-0 bg-gray-50 flex overflow-hidden" role="application" aria-label="HouseMate Dashboard Application">
+      {/* Mobile Menu Overlay */}
+      {isMobile && isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Sidebar Navigation */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col sticky top-0 h-screen flex-none overflow-hidden" role="navigation" aria-label="Main navigation">
+      <aside 
+        className={`${
+          isMobile 
+            ? `fixed inset-y-0 left-0 z-50 w-64 bg-white transform ${
+                isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+              } transition-transform duration-300 ease-in-out lg:hidden`
+            : 'w-64 bg-white border-r border-gray-200 hidden lg:flex'
+        } flex-col sticky top-0 h-screen flex-none overflow-hidden`}
+        role="navigation" 
+        aria-label="Main navigation"
+      >
         <header className="p-6">
-          <div className="flex items-center space-x-2">
-            <div className="w-14 h-14 bg-purple-600 rounded-xl flex items-center justify-center overflow-hidden">
-              <OptimizedImage
-                src="/housemate-logo.png"
-                webpSrc="/housemate-logo.webp"
-                alt="HouseMate Logo"
-                className="w-12 h-12 object-contain"
-                onError={e => { e.target.onerror = null; e.target.style.display = 'none'; }}
-              />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center overflow-hidden">
+                <OptimizedImage
+                  src="/housemate-logo.png"
+                  webpSrc="/housemate-logo.webp"
+                  alt="HouseMate Logo"
+                  className="w-10 h-10 object-contain"
+                  onError={e => { e.target.onerror = null; e.target.style.display = 'none'; }}
+                />
+              </div>
+              <span className="font-bold text-xl text-gray-900">HouseMate</span>
             </div>
-            <span className="font-bold text-2xl text-gray-900">HouseMate</span>
+            {/* Close button for mobile */}
+            {isMobile && (
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                aria-label="Close navigation menu"
+              >
+                <X size={20} />
+              </button>
+            )}
           </div>
         </header>
         
-        <nav className="flex-1 px-4" role="navigation" aria-label="Dashboard navigation">
+        <nav className="flex-1 px-4 pb-4 overflow-y-auto" role="navigation" aria-label="Dashboard navigation">
           <ul className="space-y-1" role="list">
             {sidebarItems.map((item, index) => (
               <li key={index} role="listitem">
                 <button
                   onClick={() => setCurrentPage(item.label)}
-                  className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                  className={`w-full flex items-center space-x-3 px-3 py-3 rounded-lg transition-colors ${
                     item.active
                       ? 'bg-purple-100 text-purple-600'
                       : 'text-gray-600 hover:bg-gray-100'
@@ -2465,7 +2524,7 @@ const formatDate = (date) => {
                   aria-label={`Navigate to ${item.label} page`}
                 >
                   {item.icon}
-                  <span>{item.label}</span>
+                  <span className="font-medium">{item.label}</span>
                 </button>
               </li>
             ))}
@@ -2476,17 +2535,29 @@ const formatDate = (date) => {
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col h-full min-h-0 overflow-y-auto" role="main" aria-label="Main content area">
         {/* Page Header */}
-        <header className="bg-white border-b border-gray-200 px-8 py-6 flex items-center justify-between" role="banner">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">{currentPage}</h1>
-            <p className="text-gray-500 mt-1">
-              {currentPage === 'Dashboard' && 'Overview of your household tasks and responsibilities'}
-              {currentPage === 'Tasks' && 'Manage and track all household tasks'}
-              {currentPage === 'Bills' && 'Track shared expenses and manage payments'}
-              {currentPage === 'Schedule' && 'View and manage household schedules'}
-              {currentPage === 'Housemates' && 'Manage your housemate information'}
-              {currentPage === 'Settings' && 'Configure your household preferences'}
-            </p>
+        <header className="bg-white border-b border-gray-200 px-4 lg:px-8 py-4 lg:py-6 flex items-center justify-between" role="banner">
+          <div className="flex items-center space-x-4">
+            {/* Mobile hamburger menu button */}
+            {isMobile && (
+              <button
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 lg:hidden"
+                aria-label="Open navigation menu"
+              >
+                <Menu size={24} />
+              </button>
+            )}
+            <div>
+              <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">{currentPage}</h1>
+              <p className="text-gray-500 mt-1 text-sm lg:text-base hidden sm:block">
+                {currentPage === 'Dashboard' && 'Overview of your household tasks and responsibilities'}
+                {currentPage === 'Tasks' && 'Manage and track all household tasks'}
+                {currentPage === 'Bills' && 'Track shared expenses and manage payments'}
+                {currentPage === 'Schedule' && 'View and manage household schedules'}
+                {currentPage === 'Housemates' && 'Manage your housemate information'}
+                {currentPage === 'Settings' && 'Configure your household preferences'}
+              </p>
+            </div>
           </div>
           {/* House avatar and name on far right */}
           {currentPage === 'Dashboard' && (
@@ -2495,7 +2566,7 @@ const formatDate = (date) => {
                 src={householdSettings.avatar ? `data:image/png;base64,${householdSettings.avatar}` : "/housemate-logo.png"}
                 webpSrc={householdSettings.avatar ? null : "/housemate-logo.webp"}
                 alt="House Avatar"
-                className="w-12 h-12 rounded-full object-cover border-2 border-purple-500 shadow"
+                className="w-8 h-8 lg:w-12 lg:h-12 rounded-full object-cover border-2 border-purple-500 shadow"
                 style={{background: 'white'}}
                 onError={e => { e.target.onerror = null; e.target.src = "/housemate-logo.png"; }}
               />
@@ -2508,10 +2579,10 @@ const formatDate = (date) => {
         {currentPage === 'Dashboard' && (
           <>
             {/* House Information Section */}
-            <section className="p-8 pb-4" role="region" aria-labelledby="house-info">
-              <article className="bg-white rounded-lg border border-gray-200 p-6">
+            <section className="p-4 lg:p-8 pb-4" role="region" aria-labelledby="house-info">
+              <article className="bg-white rounded-lg border border-gray-200 p-4 lg:p-6">
                 <h3 id="house-info" className="text-lg font-semibold text-gray-900 mb-4">House Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
                   {/* House Address */}
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
@@ -2544,8 +2615,8 @@ const formatDate = (date) => {
             </section>
 
             {/* Dashboard Statistics Overview */}
-            <section className="px-8 pb-4" role="region" aria-labelledby="dashboard-stats">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6" role="group" aria-label="Dashboard statistics">
+            <section className="px-4 lg:px-8 pb-4" role="region" aria-labelledby="dashboard-stats">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6" role="group" aria-label="Dashboard statistics">
                 <StatsCard
                   title="Total Tasks"
                   amount={dashboardStats.totalTasks.toString()}
@@ -2774,9 +2845,9 @@ const formatDate = (date) => {
             </Dialog>
 
             {/* Main Dashboard Content Area */}
-            <div className="flex flex-1" role="region" aria-label="Dashboard main content">
+            <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} flex-1`} role="region" aria-label="Dashboard main content">
               {/* Tasks Section */}
-              <section className="flex-1 px-8 pb-8" role="region" aria-labelledby="upcoming-tasks">
+              <section className="flex-1 px-4 lg:px-8 pb-8" role="region" aria-labelledby="upcoming-tasks">
                 <article className="bg-white rounded-lg border border-gray-200">
                   <header className="p-6 border-b border-gray-200">
                     <Tabs defaultValue="all" className="w-full">
@@ -3019,11 +3090,15 @@ const formatDate = (date) => {
               </section>
 
               {/* Dashboard Sidebar */}
-              <aside className="w-80 p-6 space-y-6" role="complementary" aria-label="Dashboard sidebar">
+              <aside className={`${
+                isMobile 
+                  ? 'w-full p-4 space-y-4 mt-4' 
+                  : 'w-80 p-6 space-y-6'
+              }`} role="complementary" aria-label="Dashboard sidebar">
                 {/* Quick Actions Section */}
-                <section className="bg-white rounded-lg border border-gray-200 p-6" role="region" aria-labelledby="quick-actions">
+                <section className="bg-white rounded-lg border border-gray-200 p-4 lg:p-6" role="region" aria-labelledby="quick-actions">
                   <h3 id="quick-actions" className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
-                  <nav className="space-y-3" role="navigation" aria-label="Quick action buttons">
+                  <nav className={`${isMobile ? 'grid grid-cols-2 gap-2' : 'space-y-3'}`} role="navigation" aria-label="Quick action buttons">
                     <button 
                       onClick={() => setIsTaskFormOpen(true)}
                       className="w-full text-left"
@@ -3931,10 +4006,14 @@ const formatDate = (date) => {
         )}
 
         {currentPage === 'Schedule' && (
-          <div className="flex-1 flex" role="region" aria-labelledby="schedule-page">
+          <div className={`flex-1 flex ${isMobile ? 'flex-col' : 'flex-row'}`} role="region" aria-labelledby="schedule-page">
             {/* Schedule Sidebar */}
-            <aside className="w-80 bg-white border-r border-gray-200 p-6" role="complementary" aria-label="Schedule sidebar">
-              <div className="space-y-6">
+            <aside className={`${
+              isMobile 
+                ? 'w-full bg-white border-b border-gray-200 p-4' 
+                : 'w-80 bg-white border-r border-gray-200 p-6'
+            }`} role="complementary" aria-label="Schedule sidebar">
+              <div className={`${isMobile ? 'space-y-4' : 'space-y-6'}`}>
                 {/* Schedule Quick Actions */}
                 <section role="region" aria-labelledby="schedule-quick-actions">
                   <h3 id="schedule-quick-actions" className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
@@ -3979,7 +4058,7 @@ const formatDate = (date) => {
                             />
                           </div>
                           
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                               <Label htmlFor="event-date">Date</Label>
                               <Input
@@ -4109,8 +4188,8 @@ const formatDate = (date) => {
             </aside>
 
             {/* Schedule Main Content */}
-            <section className="flex-1 p-8" role="region" aria-labelledby="schedule-main">
-              <div className="space-y-6">
+            <section className="flex-1 p-4 lg:p-8" role="region" aria-labelledby="schedule-main">
+              <div className="space-y-4 lg:space-y-6">
                 {/* Schedule Header with View Toggle */}
                 <header className="flex justify-between items-start">
                   <div>
@@ -4206,9 +4285,18 @@ const formatDate = (date) => {
                   {scheduleView === 'month' && (
                     <div>
                       {/* Calendar Header */}
-                      <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+                      <div className="hidden md:grid grid-cols-7 bg-gray-50 border-b border-gray-200">
                         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
                           <div key={day} className="p-4 text-center text-sm font-medium text-gray-700">
+                            {day}
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* Mobile Calendar Header */}
+                      <div className="md:hidden grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+                        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+                          <div key={index} className="p-2 text-center text-xs font-medium text-gray-700">
                             {day}
                           </div>
                         ))}
@@ -4218,7 +4306,7 @@ const formatDate = (date) => {
                       <div className="grid grid-cols-7">
                         {getDaysInMonth(selectedDate).map((day, index) => {
                           if (!day) {
-                            return <div key={index} className="h-32 border-r border-b border-gray-100"></div>;
+                            return <div key={index} className={`${isMobile ? 'h-16' : 'h-32'} border-r border-b border-gray-100`}></div>;
                           }
                           
                           const dayItems = getItemsForDate(day);
@@ -4227,18 +4315,18 @@ const formatDate = (date) => {
                           return (
                             <div
                               key={day.getTime()}
-                              className={`h-32 border-r border-b border-gray-100 p-2 ${
+                              className={`${isMobile ? 'h-16' : 'h-32'} border-r border-b border-gray-100 p-1 md:p-2 ${
                                 isCurrentMonth ? 'bg-white' : 'bg-gray-50'
                               } ${isTodayCalendar(day) ? 'bg-blue-50' : ''}`}
                             >
-                              <div className={`text-sm font-medium mb-2 ${
+                              <div className={`text-xs md:text-sm font-medium mb-1 md:mb-2 ${
                                 isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
                               } ${isTodayCalendar(day) ? 'text-blue-600' : ''}`}>
                                 {day.getDate()}
                               </div>
                               
                               <div className="space-y-1">
-                                {dayItems.slice(0, 3).map((item) => {
+                                {dayItems.slice(0, isMobile ? 1 : 3).map((item) => {
                                   // Color coding: Red for overdue, Blue for upcoming tasks, Green for upcoming bills
                                   let itemClasses = 'text-xs p-1 rounded cursor-pointer hover:opacity-80 transition-opacity ';
                                   
@@ -4373,14 +4461,14 @@ const formatDate = (date) => {
                   {scheduleView === 'list' && (
                     <div className="p-6">
                       <div className="space-y-4">
-                        {getAllScheduleItems().length === 0 ? (
+                        {getAllScheduleItems.length === 0 ? (
                           <div className="text-center py-12 text-gray-500">
                             <Calendar size={48} className="mx-auto mb-4 text-gray-300" />
                             <h3 className="font-medium text-gray-900 mb-2">No scheduled items</h3>
                             <p className="text-gray-500">Add tasks, bills, or events to see them here</p>
                           </div>
                         ) : (
-                          getAllScheduleItems().map((item) => {
+                          getAllScheduleItems.map((item) => {
                             // Color coding for the indicator dot
                             let indicatorColor = '';
                             if (item.color === 'red' || item.isOverdue) {
