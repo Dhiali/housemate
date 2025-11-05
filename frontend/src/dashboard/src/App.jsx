@@ -982,13 +982,17 @@ function App() {
 
   // Auto-set payment form for standard users to themselves only
   useEffect(() => {
-    if (isStandard && user && paymentFormData.payingFor === '') {
-      setPaymentFormData(prev => ({
-        ...prev,
-        payingFor: user.id?.toString() || ''
-      }));
+    if (isStandard && user) {
+      const shouldUpdate = paymentFormData.payingFor === '' || paymentFormData.paidBy === '';
+      if (shouldUpdate) {
+        setPaymentFormData(prev => ({
+          ...prev,
+          payingFor: user.id?.toString() || '',
+          paidBy: user.id?.toString() || ''
+        }));
+      }
     }
-  }, [isStandard, user, paymentFormData.payingFor]);
+  }, [isStandard, user, paymentFormData.payingFor, paymentFormData.paidBy]);
 
   // Function to fetch recent activities
   const fetchRecentActivities = async (houseId) => {
@@ -1618,6 +1622,12 @@ function App() {
     // Standard users can only pay for themselves
     if (isStandard && paymentFormData.payingFor !== user?.id?.toString()) {
       alert('You can only record payments for yourself.');
+      return;
+    }
+
+    // Standard users can only make payments as themselves
+    if (isStandard && paymentFormData.paidBy !== user?.id?.toString()) {
+      alert('You can only make payments on your own behalf.');
       return;
     }
     
@@ -4066,19 +4076,41 @@ const formatDate = (date) => {
                     </div>
 
                     <div>
-                      <Label htmlFor="paid-by">Who is making this payment?</Label>
-                      <Select value={paymentFormData.paidBy} onValueChange={(value) => setPaymentFormData({...paymentFormData, paidBy: value})}>
+                      <Label htmlFor="paid-by">
+                        Who is making this payment?
+                        {isStandard && (
+                          <span className="text-xs text-gray-500 ml-2">(Self only)</span>
+                        )}
+                      </Label>
+                      <Select 
+                        value={paymentFormData.paidBy} 
+                        onValueChange={(value) => setPaymentFormData({...paymentFormData, paidBy: value})}
+                        disabled={isStandard} // Standard users can only make payments as themselves
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select person" />
                         </SelectTrigger>
                         <SelectContent>
-                          {housemates.map((mate) => (
-                            <SelectItem key={mate.id} value={mate.id.toString()}>
-                              {mate.name} {mate.surname}
+                          {isStandard ? (
+                            // Standard users see only themselves
+                            <SelectItem value={user?.id?.toString() || ''}>
+                              {user?.name} {user?.surname}
                             </SelectItem>
-                          ))}
+                          ) : (
+                            // Admins see all housemates
+                            housemates.map((mate) => (
+                              <SelectItem key={mate.id} value={mate.id.toString()}>
+                                {mate.name} {mate.surname}
+                              </SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
+                      {isStandard && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          Standard users can only make payments on their own behalf
+                        </p>
+                      )}
                     </div>
 
                     <div>
