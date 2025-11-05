@@ -847,7 +847,7 @@ function App() {
     };
   };
 
-  // Function to fetch statistics from backend - house-wide for admins/standard, user-specific for read-only
+  // Function to fetch statistics from backend - house-wide for admins, user-specific for standard/read-only
   const fetchStatistics = async () => {
     // Only fetch if user is logged in and has a house_id
     if (!user?.house_id) {
@@ -860,13 +860,13 @@ function App() {
       
       let response;
       
-      // For read-only users, fetch their own statistics instead of house-wide statistics
-      if (isReadOnly) {
-        console.log('Fetching user-specific statistics for read-only user:', user.id);
+      // For standard and read-only users, fetch their own statistics instead of house-wide statistics
+      if (isStandard || isReadOnly) {
+        console.log('Fetching user-specific statistics for standard/read-only user:', user.id);
         response = await getUserStatistics(user.id);
       } else {
-        // For admin and standard users, fetch house statistics 
-        console.log('Fetching house statistics for admin/standard user');
+        // For admin users only, fetch house statistics 
+        console.log('Fetching house statistics for admin user');
         response = await getHouseStatistics(user.house_id);
       }
       
@@ -898,7 +898,15 @@ function App() {
     } catch (error) {
       console.error('Error fetching statistics:', error);
       // Fall back to frontend calculation if backend fails
-      const stats = calculateDashboardStats(tasks);
+      let tasksForStats = tasks;
+      
+      // For standard and read-only users, only calculate stats from their own tasks
+      if (isStandard || isReadOnly) {
+        tasksForStats = tasks.filter(task => task.assigned_to === user?.id);
+        console.log('Filtering tasks for standard/read-only user:', tasksForStats.length, 'out of', tasks.length);
+      }
+      
+      const stats = calculateDashboardStats(tasksForStats);
       setDashboardStats(stats);
     }
   };
