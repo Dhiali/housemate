@@ -18,7 +18,7 @@ Housemate is a complete household management solution that enables roommates to:
 - **Frontend (Custom Domain)**: [https://www.housemate.website](https://www.housemate.website)
 - **Frontend (Azure Static Web Apps)**: [https://white-water-0fbd05910.3.azurestaticapps.net](https://white-water-0fbd05910.3.azurestaticapps.net)
 - **Backend API (Google Cloud Run)**: [https://housemate-backend-234825552341.africa-south1.run.app](https://housemate-backend-234825552341.africa-south1.run.app)
-- **Demo Video**: [Coming Soon]
+- **Demo Video**: [🎥 Walkthrough Video](https://drive.google.com/file/d/1nfEjGqwr8m8vn9OnU4X9X3suUY5qn9lB/view?usp=sharing)
 - **GitHub Repository**: [https://github.com/Dhiali/Housemate](https://github.com/Dhiali/Housemate)
 
 ## 🛠️ Tech Stack
@@ -356,15 +356,18 @@ gcloud sql users create housemate-user --instance=housemate-db --password=secure
 
 ## 🎥 Demo Video
 
-[Demo Video Link - Coming Soon]
+**🎬 [Watch the Complete Walkthrough Video](https://drive.google.com/file/d/1nfEjGqwr8m8vn9OnU4X9X3suUY5qn9lB/view?usp=sharing)**
 
-The demo video will showcase:
+The demo video showcases:
 - User registration and house creation
 - Housemate invitation and management
 - Bill creation and payment tracking
 - Task assignment and completion
 - Event scheduling
 - Dashboard overview and navigation
+- Authentication system and role-based access control
+- Complete CRUD operations across all features
+- Live deployment and technical architecture
 
 ## 🔮 Future Improvements
 
