@@ -50,9 +50,14 @@ function handleDatabaseError(res, error, message = 'Database connection failed',
   });
 }
 
-// Validate critical environment variables
-const requiredEnvVars = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
+// Validate critical environment variables (allow empty password for local development)
+const requiredEnvVars = ['DB_HOST', 'DB_USER', 'DB_NAME'];
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+
+// Check if DB_PASSWORD exists in env (can be empty string for local XAMPP)
+if (!process.env.hasOwnProperty('DB_PASSWORD')) {
+  missingEnvVars.push('DB_PASSWORD');
+}
 
 if (missingEnvVars.length > 0) {
   console.error('❌ Missing required environment variables:', missingEnvVars);
@@ -63,7 +68,8 @@ if (missingEnvVars.length > 0) {
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     database: process.env.DB_NAME,
-    port: process.env.DB_PORT || 3306
+    port: process.env.DB_PORT || 3306,
+    passwordSet: process.env.DB_PASSWORD ? 'YES' : 'NO (empty for local XAMPP)'
   });
 }
 
@@ -73,7 +79,8 @@ const corsOrigins = [
   "https://www.housemate.website",
   "https://housemate.website",
   "http://localhost:3000",
-  "http://localhost:5173"
+  "http://localhost:5173",
+  "http://localhost:5174"
 ];
 // Only use enhanced CORS configuration below
 
@@ -94,10 +101,10 @@ app.use(helmet({
   }
 }));
 
-// Rate limiting
+// Rate limiting (more permissive for development)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: 1000, // increased limit for development
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -105,7 +112,7 @@ const limiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 login attempts per windowMs
+  max: 50, // increased limit for development
   message: 'Too many login attempts, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -175,11 +182,21 @@ const authenticateToken = (req, res, next) => {
     }
     
     // Get full user data from database
+    if (!db) {
+      console.error('❌ Database not available in authenticateToken');
+      return handleDatabaseError(res, new Error('Database not initialized'), 'Authentication failed - database unavailable');
+    }
+    
     db.query(
       'SELECT id, name, surname, email, role, house_id, is_house_creator, status FROM users WHERE id = ?', 
       [user.id], 
       (dbErr, results) => {
-        if (dbErr || results.length === 0) {
+        if (dbErr) {
+          console.error('❌ Database error in authenticateToken:', dbErr);
+          return handleDatabaseError(res, dbErr, 'Authentication failed - database error');
+        }
+        
+        if (results.length === 0) {
           return res.status(403).json({ error: 'User not found' });
         }
         
@@ -320,7 +337,11 @@ async function initializeDatabaseWithRetry() {
 
 async function createDatabaseTables() {
   return new Promise((resolve, reject) => {
-    console.log('🔧 Creating database tables...');
+    console.log('🔧 Skipping table creation - tables already exist from import');
+    // Tables already exist from Google Cloud backup import, skipping creation
+    dbAvailable = true; // Set database as available since tables exist
+    resolve();
+    return;
   
   // Create houses table first (referenced by users)
   const createHousesQuery = `
@@ -2505,10 +2526,18 @@ app.delete('/tasks/:id', authenticateToken, requireHouseAccess(), (req, res) => 
   const taskId = req.params.id;
   const { deleted_by } = req.body;
 
+  console.log(`🗑️ DELETE TASK REQUEST: ${taskId}, user: ${req.user?.id}, db available: ${!!db}`);
+
+  // Check if database is available
+  if (!db) {
+    console.error('❌ Database not available for DELETE task');
+    return handleDatabaseError(res, new Error('Database not initialized'), 'Database not available', req);
+  }
+
   // First check if task exists
   db.query('SELECT * FROM tasks WHERE id = ?', [taskId], (err, results) => {
     if (err) {
-      console.error('Error checking task:', err);
+      console.error('❌ Error checking task:', err);
       return handleDatabaseError(res, err, 'Error checking task', req);
     }
 
@@ -2516,24 +2545,21 @@ app.delete('/tasks/:id', authenticateToken, requireHouseAccess(), (req, res) => 
       return res.status(404).json({ error: 'Task not found' });
     }
 
-    // Log deletion in history before deleting
-    const historyQuery = `
-      INSERT INTO task_history (task_id, changed_by, field_name, old_value, new_value)
-      VALUES (?, ?, 'task_deleted', 'active', 'deleted')
-    `;
-
-    db.query(historyQuery, [taskId, deleted_by || null], (histErr) => {
+    // Delete task history entries first (to avoid foreign key constraint)
+    db.query('DELETE FROM task_history WHERE task_id = ?', [taskId], (histErr) => {
       if (histErr) {
-        console.error('Error logging task deletion:', histErr);
+        console.error('⚠️ Warning: Could not delete task history:', histErr);
+        // Continue with task deletion even if history deletion fails
       }
 
-      // Delete the task
+      // Now delete the task
       db.query('DELETE FROM tasks WHERE id = ?', [taskId], (deleteErr) => {
         if (deleteErr) {
-          console.error('Error deleting task:', deleteErr);
+          console.error('❌ Error deleting task:', deleteErr);
           return handleDatabaseError(res, deleteErr, 'Error deleting task', req);
         }
 
+        console.log(`✅ Task ${taskId} deleted successfully`);
         res.json({ message: 'Task deleted successfully' });
       });
     });
@@ -3101,23 +3127,7 @@ app.put('/users/:id/profile', authenticateToken, (req, res) => {
   });
 });
 
-// Health check endpoint for deployment platforms
-app.get('/', (req, res) => {
-  res.json({ 
-    message: 'Housemate API is running!', 
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    version: '1.0.0'
-  });
-});
-
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    database: 'connected',
-    timestamp: new Date().toISOString()
-  });
-});
+// Duplicate endpoints removed - using the more comprehensive health check above
 
 // Admin-only user management endpoints
 
@@ -3516,12 +3526,43 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 8080;
 console.log('🟢 About to start app.listen...');
-app.listen(PORT, '0.0.0.0', () => {
+
+// Add error handling for the server - force IPv4 binding
+const server = app.listen(PORT, '127.0.0.1', () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 Database: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 3306}`);
   console.log(`🔐 JWT Secret configured: ${process.env.JWT_SECRET ? 'Yes' : 'No (using fallback)'}`);
   console.log('🟢 app.listen callback reached, server should be alive!');
+  console.log('🔍 Server address:', server.address());
+  
+  // Keep process alive with periodic health check
+  setInterval(() => {
+    if (isDatabaseAvailable()) {
+      console.log('💓 Server heartbeat - Database available');
+    } else {
+      console.log('💔 Server heartbeat - Database unavailable');
+    }
+  }, 30000); // Every 30 seconds
+});
+
+server.on('error', (err) => {
+  console.error('❌ Server error:', err);
+  if (err.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${PORT} is already in use`);
+  }
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught Exception:', err);
+  console.error('❌ Server will continue running...');
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  console.error('❌ Server will continue running...');
 });
 
 // Start database initialization and table creation in the background

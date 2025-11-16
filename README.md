@@ -1,4 +1,4 @@
-# 🏠 Housemate - Smart Household Management System
+# Housemate - Smart Household Management System
 
 A comprehensive web application designed to streamline household management for shared living spaces. Housemate helps roommates coordinate tasks, manage bills, schedule events, and maintain transparent communication in a user-friendly digital platform.
 

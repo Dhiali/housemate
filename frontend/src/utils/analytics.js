@@ -42,7 +42,9 @@ export const initializeAnalytics = async () => {
     showConsentBanner();
   }
   
-  console.log('🔍 Analytics initialized (consent required)');
+  if (import.meta.env.DEV) {
+    console.log('🔍 Analytics initialized (consent required)');
+  }
 };
 
 /**
@@ -120,7 +122,9 @@ export const trackPageView = (pagePath = null, pageTitle = null) => {
  */
 export const trackEvent = (eventName, parameters = {}) => {
   if (!analyticsEnabled || !window.gtag) {
-    console.log('📊 Event queued (analytics disabled):', eventName, parameters);
+    if (import.meta.env.DEV) {
+      console.log('📊 Event queued:', eventName);
+    }
     return;
   }
 
@@ -409,6 +413,13 @@ export const manageConsent = {
  * Show cookie consent banner
  */
 const showConsentBanner = () => {
+  // Check if banner already exists
+  const existingBanner = document.getElementById('analytics-consent-banner');
+  if (existingBanner) {
+    console.log('Analytics consent banner already exists');
+    return;
+  }
+  
   // Create consent banner
   const banner = document.createElement('div');
   banner.id = 'analytics-consent-banner';
@@ -462,9 +473,25 @@ const showConsentBanner = () => {
   
   document.body.appendChild(banner);
   
-  // Add event listeners
-  document.getElementById('analytics-accept').addEventListener('click', manageConsent.grant);
-  document.getElementById('analytics-decline').addEventListener('click', manageConsent.deny);
+  // Add event listeners with error handling
+  const acceptBtn = document.getElementById('analytics-accept');
+  const declineBtn = document.getElementById('analytics-decline');
+  
+  if (acceptBtn) {
+    acceptBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      console.log('Analytics accept button clicked');
+      manageConsent.grant();
+    });
+  }
+  
+  if (declineBtn) {
+    declineBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      console.log('Analytics decline button clicked');
+      manageConsent.deny();
+    });
+  }
 };
 
 /**
@@ -473,7 +500,10 @@ const showConsentBanner = () => {
 const hideConsentBanner = () => {
   const banner = document.getElementById('analytics-consent-banner');
   if (banner) {
+    console.log('Hiding analytics consent banner');
     banner.remove();
+  } else {
+    console.warn('Analytics consent banner not found');
   }
 };
 

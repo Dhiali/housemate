@@ -125,7 +125,7 @@ export function SignUpForm({ onCreateHouseMateAccount, houseId, onSignUpSuccess 
               setEmailStatus('warning');
               setEmailMsg('Checking email...');
               try {
-                const res = await fetch('https://housemate-backend-234825552341.africa-south1.run.app/users');
+                const res = await fetch('http://localhost:5000/users');
                 const users = await res.json();
                 if (users.some(u => u.email === emailVal)) {
                   setEmailStatus('error');

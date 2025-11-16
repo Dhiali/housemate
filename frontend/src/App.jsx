@@ -59,7 +59,9 @@ function App() {
       // Register service worker for caching and offline support
       const swRegistered = await registerServiceWorker();
       if (swRegistered) {
-        console.log('🎯 Service Worker active');
+        if (import.meta.env.DEV) {
+          console.log('🎯 Service Worker active');
+        }
         
         // Preload critical resources
         preloadCriticalResources();
@@ -87,7 +89,9 @@ function App() {
     // Mark when app is ready
     const handleLoad = () => {
       markPerformance('app-loaded');
-      console.log('🚀 HouseMate fully loaded and optimized');
+      if (import.meta.env.DEV) {
+        console.log('🚀 HouseMate fully loaded and optimized');
+      }
     };
     
     if (document.readyState === 'complete') {

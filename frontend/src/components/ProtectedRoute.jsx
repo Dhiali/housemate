@@ -19,6 +19,10 @@ const ProtectedRoute = ({ children, requiredRoles = [], requireAuth = true }) =>
 
   // Check if authentication is required
   if (requireAuth && !isAuthenticated) {
+    // Prevent infinite redirects by checking if we're already on auth routes
+    if (location.pathname.startsWith('/auth/')) {
+      return children;
+    }
     // Redirect to login with return path
     return <Navigate to="/auth/signin" state={{ from: location }} replace />;
   }
@@ -46,8 +50,8 @@ const ProtectedRoute = ({ children, requiredRoles = [], requireAuth = true }) =>
     );
   }
 
-  // Check if user belongs to a house
-  if (isAuthenticated && !user?.house_id) {
+  // Check if user belongs to a house (but allow create-house page)
+  if (isAuthenticated && !user?.house_id && !location.pathname.includes('/create-house')) {
     return <Navigate to="/auth/create-house" state={{ from: location }} replace />;
   }
 

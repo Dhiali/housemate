@@ -9,31 +9,22 @@ export function initializeDatabase() {
 
   console.log('🔧 Initializing database connection...');
   
-  // Configuration for Google Cloud SQL
+  // Simple configuration for XAMPP/MariaDB
   let dbConfig;
 
-  if (process.env.DATABASE_URL) {
-    console.log('🔗 Using DATABASE_URL for connection');
-    dbConfig = {
-      uri: process.env.DATABASE_URL,
-      ssl: {
-        rejectUnauthorized: false
-      }
-    };
-  } else {
-    console.log('🔗 Using individual environment variables for connection');
-    
-    dbConfig = {
-      host: process.env.MYSQL_HOST || process.env.DB_HOST || '34.35.107.158',
-      user: process.env.MYSQL_USER || process.env.DB_USER || 'root',
-      password: process.env.MYSQL_PASSWORD || process.env.DB_PASSWORD || '',
-      database: process.env.MYSQL_DATABASE || process.env.DB_NAME || 'housemate_db',
-      port: process.env.MYSQL_PORT || process.env.DB_PORT || 3306,
-      ssl: {
-        rejectUnauthorized: false
-      }
-    };
-  }
+  console.log('🔗 Using individual environment variables for connection');
+  
+  dbConfig = {
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'housemate_db',
+    port: parseInt(process.env.DB_PORT) || 3306,
+    ssl: false, // Disabled for XAMPP
+    connectTimeout: 60000,
+    connectionLimit: 10,
+    queueLimit: 0
+  };
 
   console.log('🔧 Database config:', {
     host: dbConfig.host || 'using DATABASE_URL',

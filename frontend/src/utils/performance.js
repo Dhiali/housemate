@@ -32,7 +32,9 @@ export const initPerformanceMonitoring = () => {
   // Setup performance observers
   setupPerformanceObservers();
 
-  console.log('🚀 Performance monitoring initialized');
+  if (import.meta.env.DEV) {
+    console.log('🚀 Performance monitoring initialized');
+  }
 };
 
 /**
@@ -149,11 +151,10 @@ const setupPerformanceObservers = () => {
       const longTaskObserver = new PerformanceObserver((list) => {
         const longTasks = list.getEntries();
         longTasks.forEach(task => {
-          if (task.duration > 50) { // Tasks longer than 50ms
+          if (task.duration > 100) { // Only warn for tasks longer than 100ms (more significant)
             console.warn('⚠️ Long Task detected:', {
               duration: task.duration,
-              startTime: task.startTime,
-              attribution: task.attribution
+              startTime: task.startTime
             });
           }
         });
@@ -170,10 +171,9 @@ const setupPerformanceObservers = () => {
       const layoutShiftObserver = new PerformanceObserver((list) => {
         const shifts = list.getEntries();
         shifts.forEach(shift => {
-          if (shift.value > 0.1) { // Significant layout shift
+          if (shift.value > 0.25) { // Only warn for more significant layout shifts
             console.warn('⚠️ Layout Shift detected:', {
-              value: shift.value,
-              sources: shift.sources
+              value: shift.value
             });
           }
         });

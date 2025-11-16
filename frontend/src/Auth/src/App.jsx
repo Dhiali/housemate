@@ -13,6 +13,7 @@ import { Helmet } from 'react-helmet-async';
 import { trackAuth, trackHousehold, trackPageView } from '../../utils/analytics.js';
 import { isDashboardAllowed, getDeviceType, onDeviceChange } from '../../utils/deviceDetection.js';
 import MobileWarning from '../../components/MobileWarning.jsx';
+import { useAuth } from '../../UserContext.jsx';
 import './index.css';
 
 // Lazy load the Dashboard application
@@ -21,11 +22,9 @@ const DashboardApp = lazy(() => import('../../dashboard/src/App.jsx'));
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated, user, token, login } = useAuth();
   const [pendingUser, setPendingUser] = useState(null);
-  const [showDashboard, setShowDashboard] = useState(false);
   const [showCreateHouseForm, setShowCreateHouseForm] = useState(false);
-  const [authToken, setAuthToken] = useState(null);
-  const [authUser, setAuthUser] = useState(null);
   const [isDeviceAllowed, setIsDeviceAllowed] = useState(isDashboardAllowed());
   const [deviceType, setDeviceType] = useState(getDeviceType());
 
@@ -47,16 +46,12 @@ export default function App() {
     return cleanup;
   }, []);
 
-  // On app load, check localStorage for token/user
+  // Redirect to dashboard if already authenticated
   useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    const user = localStorage.getItem("authUser");
-    if (token && user) {
-      setAuthToken(token);
-      setAuthUser(JSON.parse(user));
-      setShowDashboard(true);
+    if (isAuthenticated && user) {
+      navigate('/dashboard');
     }
-  }, []);
+  }, [isAuthenticated, user, navigate]);
 
   // Track page views when view changes
   useEffect(() => {
@@ -188,15 +183,15 @@ export default function App() {
   };
 
   // Called by SignInForm on successful sign-in
-  const handleSignInSuccess = (token, user) => {
-    setAuthToken(token);
-    setAuthUser(user);
-    localStorage.setItem("authToken", token);
-    localStorage.setItem("authUser", JSON.stringify(user));
-    setShowDashboard(true);
+  const handleSignInSuccess = (token, userData) => {
+    // Use UserContext login method
+    login(token, userData);
     
     // Track successful sign in
     trackAuth.signIn('email');
+    
+    // Navigate to dashboard
+    navigate('/dashboard');
   };
 
   const getDescription = () => {
@@ -218,21 +213,7 @@ export default function App() {
     return <MobileWarning />;
   }
 
-  // If authenticated, show dashboard
-  if (showDashboard && authToken && authUser) {
-    return (
-      <Suspense fallback={
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 text-lg">Loading Dashboard...</p>
-          </div>
-        </div>
-      }>
-        <DashboardApp user={authUser} token={authToken} />
-      </Suspense>
-    );
-  }
+  // If authenticated, redirect will be handled by useEffect above
 
   return (
     <>

@@ -179,7 +179,7 @@ export function SettingsContent({
                 <div className="flex items-center space-x-4">
                   <div className="w-20 h-20 bg-purple-500 rounded-full flex items-center justify-center overflow-hidden">
                     {avatarPreview ? (
-                      <img src={avatarPreview.startsWith('/uploads/') ? `https://housemate-backend-234825552341.africa-south1.run.app${avatarPreview}` : avatarPreview} alt="Avatar" className="w-full h-full object-cover rounded-full" />
+                      <img src={avatarPreview.startsWith('/uploads/') ? `http://localhost:5000${avatarPreview}` : avatarPreview} alt="Avatar" className="w-full h-full object-cover rounded-full" />
                     ) : (
                       <span className="text-white text-2xl font-medium">YO</span>
                     )}

@@ -56,6 +56,17 @@ export const UserProvider = ({ children }) => {
     canViewHousemateDetails: () => user?.role === 'admin' || user?.role === 'standard' || user?.role === 'read_only',
   };
 
+  // Logout function (defined before useEffect to avoid dependency issues)
+  const logout = () => {
+    setToken(null);
+    setUser(null);
+    setIsAuthenticated(false);
+    
+    // Clear localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  };
+
   // Initialize authentication on app load
   useEffect(() => {
     const initializeAuth = async () => {
@@ -73,7 +84,12 @@ export const UserProvider = ({ children }) => {
           // You can add this later when you have a /verify endpoint
         } catch (error) {
           console.error('Error parsing stored user data:', error);
-          logout();
+          // Clear invalid data without calling logout to avoid re-render loop
+          setToken(null);
+          setUser(null);
+          setIsAuthenticated(false);
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
         }
       }
       
@@ -81,7 +97,7 @@ export const UserProvider = ({ children }) => {
     };
 
     initializeAuth();
-  }, []);
+  }, []); // Empty dependency array is correct here
 
   // Login function
   const login = (tokenData, userData) => {
@@ -92,17 +108,6 @@ export const UserProvider = ({ children }) => {
     // Store in localStorage
     localStorage.setItem('token', tokenData);
     localStorage.setItem('user', JSON.stringify(userData));
-  };
-
-  // Logout function
-  const logout = () => {
-    setToken(null);
-    setUser(null);
-    setIsAuthenticated(false);
-    
-    // Clear localStorage
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
   };
 
   // Update user data (for when role changes, etc.)

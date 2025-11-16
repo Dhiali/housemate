@@ -1,26 +1,22 @@
 import mysql from 'mysql2';
 
-// Configuration for Google Cloud SQL
+// Simple configuration that works with XAMPP/MariaDB
 let dbConfig;
 
-// Always use DB_* environment variables for Google Cloud SQL
-console.log('🔗 Using DB_* environment variables for connection');
+console.log('🔗 Using individual environment variables for connection');
+
+// Simple, working configuration for XAMPP/MariaDB
 dbConfig = {
-  host: process.env.DB_HOST || '34.35.107.158',
+  host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'housemate_db',
-  port: process.env.DB_PORT || 3306,
-  ssl: {
-    rejectUnauthorized: false
-  },
-  // Connection timeout settings for Cloud Run
-  connectTimeout: 60000, // 60 seconds
-  acquireTimeout: 60000, // 60 seconds
-  timeout: 60000, // 60 seconds
-  reconnect: true,
+  port: parseInt(process.env.DB_PORT) || 3306,
+  // Minimal settings that work with XAMPP
+  ssl: false,
+  connectTimeout: 60000,
   // Connection pool settings
-  connectionLimit: 10,
+  connectionLimit: 5,
   queueLimit: 0
 };
 

@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Create a separate API instance for public endpoints (no auth headers)
 const PublicAPI = axios.create({
-  baseURL: "https://housemate-backend-234825552341.africa-south1.run.app",
+  baseURL: "http://localhost:5000",
 });
 
 // Test the public statistics endpoint
