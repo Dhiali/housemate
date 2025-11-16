@@ -46,157 +46,6 @@ The project was successfully deployed on Google Cloud Run (backend) and Azure St
 - **Multer & Sharp** - Image processing
 
 
-## 🎯 What the App Does
-
-Housemate is a complete household management solution that enables roommates to:
-
-- **👥 Manage Household Members** - Create houses, invite housemates, and manage user roles
-- **💰 Track Bills & Expenses** - Split bills automatically, track payments, and manage shared expenses
-- **📋 Coordinate Tasks** - Assign household tasks, track completion, and maintain accountability
-- **📅 Schedule Events** - Plan house meetings, social events, and maintenance activities
-- **📊 Monitor Activity** - View household statistics and track contributions
-- **🔐 Secure Authentication** - Role-based access control with admin and standard user permissions
-
-## 🚀 Live Demo
-
-- **Frontend (Custom Domain)**: [https://www.housemate.website](https://www.housemate.website)
-- **Frontend (Azure Static Web Apps)**: [https://white-water-0fbd05910.3.azurestaticapps.net](https://white-water-0fbd05910.3.azurestaticapps.net)
-- **Backend API (Google Cloud Run)**: [https://housemate-backend-234825552341.africa-south1.run.app](https://housemate-backend-234825552341.africa-south1.run.app)
-- **Demo Video**: [🎥 Walkthrough Video](https://drive.google.com/file/d/1nfEjGqwr8m8vn9OnU4X9X3suUY5qn9lB/view?usp=sharing)
-- **Project Proposal**: [📋 Design Document](https://docs.google.com/presentation/d/1sEDTh27cn-yEqHB2aYB3yHqXs97zfoTednUUVy9m1Ts/edit?usp=sharing)
-- **GitHub Repository**: [https://github.com/Dhiali/Housemate](https://github.com/Dhiali/Housemate)
-
-
-
-## 🗄️ Database Design
-
-### Entity Relationship Diagram (ERD)
-
-```
-┌─────────────┐       ┌─────────────┐       ┌─────────────┐
-│    HOUSES   │       │    USERS    │       │    TASKS    │
-├─────────────┤       ├─────────────┤       ├─────────────┤
-│ id (PK)     │◄──────┤ house_id    │       │ id (PK)     │
-│ name        │       │ id (PK)     │──────►│ assigned_to │
-│ address     │       │ name        │       │ created_by  │
-│ house_rules │       │ surname     │       │ house_id    │
-│ avatar      │       │ email       │       │ title       │
-│ created_by  │       │ password    │       │ description │
-│ created_at  │       │ bio         │       │ status      │
-│ updated_at  │       │ phone       │       │ priority    │
-└─────────────┘       │ avatar      │       │ due_date    │
-                      │ role        │       │ category    │
-                      │ status      │       │ created_at  │
-                      │ created_at  │       │ updated_at  │
-                      └─────────────┘       └─────────────┘
-                              │
-                              │
-                      ┌─────────────┐       ┌─────────────┐
-                      │    BILLS    │       │ BILL_SHARE  │
-                      ├─────────────┤       ├─────────────┤
-                      │ id (PK)     │──────►│ bill_id     │
-                      │ title       │       │ user_id     │
-                      │ description │       │ amount      │
-                      │ amount      │       │ amount_paid │
-                      │ category    │       │ status      │
-                      │ house_id    │       │ paid_by     │
-                      │ created_by  │       │ paid_at     │
-                      │ due_date    │       │ payment_method │
-                      │ status      │       │ created_at  │
-                      │ created_at  │       └─────────────┘
-                      │ updated_at  │
-                      └─────────────┘
-                              │
-                              │
-                      ┌─────────────┐       ┌─────────────┐
-                      │BILL_HISTORY │       │  SCHEDULE   │
-                      ├─────────────┤       ├─────────────┤
-                      │ id (PK)     │       │ id (PK)     │
-                      │ bill_id     │       │ house_id    │
-                      │ user_id     │       │ title       │
-                      │ action      │       │ description │
-                      │ amount      │       │ scheduled_date │
-                      │ notes       │       │ scheduled_time │
-                      │ created_at  │       │ type        │
-                      └─────────────┘       │ attendees   │
-                                            │ recurrence  │
-                                            │ created_by  │
-                                            │ created_at  │
-                                            │ updated_at  │
-                                            └─────────────┘
-```
-
-### Key Relationships
-- **Houses → Users**: One-to-many (One house can have multiple users)
-- **Users → Tasks**: One-to-many (Users can be assigned multiple tasks)
-- **Users → Bills**: One-to-many (Users can create multiple bills)
-- **Bills → Bill_Share**: One-to-many (Each bill can be split among multiple users)
-- **Bills → Bill_History**: One-to-many (Each bill maintains payment history)
-- **Houses → Schedule**: One-to-many (Each house can have multiple scheduled events)
-
-## ✨ Feature List
-
-### 🔐 Authentication & User Management
-- [x] User registration and login
-- [x] JWT-based authentication
-- [x] Role-based access control (Admin, Standard, Read-only)
-- [x] Profile management with avatars
-- [x] House creation and invitation system
-- [ ] Email verification for new accounts
-- [ ] Forgot password functionality
-
-### 🏠 House Management
-- [x] Create and manage houses
-- [x] House avatar upload
-- [x] House rules and address management
-- [x] Invite and manage housemates
-- [x] View housemate profiles and contact information
-
-### 💰 Bill Management
-- [x] Create bills with categories and due dates
-- [x] Automatic bill splitting among housemates
-- [x] Track individual payments and contributions
-- [x] Payment history and status tracking
-- [x] Bill status management (Active, Paid, Overdue)
-- [ ] Custom bill splitting (unequal amounts per person)
-- [ ] Admin approval required for bill creation
-- [ ] Filter bills by logged-in user
-- [ ] Payment status accuracy improvements
-
-### 📋 Task Management
-- [x] Create and assign tasks to housemates
-- [x] Task categories and priority levels
-- [x] Due date tracking and status updates
-- [x] Task completion tracking
-- [ ] Functional filter and dropdown options
-- [ ] Delete permissions for standard users
-
-### 📅 Schedule & Events
-- [x] Create house events and meetings
-- [x] Event scheduling with date and time
-- [x] Event types (Meeting, Social, Maintenance, Recurring)
-- [ ] Event visibility controls and invitations
-- [ ] Click-to-open functionality for upcoming items
-
-### 📊 Dashboard & Analytics
-- [x] Household statistics and activity overview
-- [x] Quick action buttons for common tasks
-- [x] Activity feed showing recent changes
-- [x] Upcoming tasks and bill reminders
-- [ ] Improved styling with sticky headers
-- [ ] 3-day upcoming task filter
-
-### 💬 Communication
-- [x] View housemate contact information
-- [ ] Send message functionality (Email/SMS/WhatsApp)
-- [ ] Email notifications for housemate invitations
-
-### ⚙️ Settings & Configuration
-- [x] Basic settings structure
-- [ ] Functional settings tabs
-- [ ] Theme customization
-- [ ] Notification preferences
-
 ## 🏃‍♂️ How to Run Locally
 
 ### Prerequisites
@@ -371,6 +220,159 @@ gcloud sql instances create housemate-db \
 gcloud sql databases create housemate_db --instance=housemate-db
 gcloud sql users create housemate-user --instance=housemate-db --password=secure_password
 ```
+
+
+## 🎯 What the App Does
+
+Housemate is a complete household management solution that enables roommates to:
+
+- **👥 Manage Household Members** - Create houses, invite housemates, and manage user roles
+- **💰 Track Bills & Expenses** - Split bills automatically, track payments, and manage shared expenses
+- **📋 Coordinate Tasks** - Assign household tasks, track completion, and maintain accountability
+- **📅 Schedule Events** - Plan house meetings, social events, and maintenance activities
+- **📊 Monitor Activity** - View household statistics and track contributions
+- **🔐 Secure Authentication** - Role-based access control with admin and standard user permissions
+
+## 🚀 Live Demo
+
+- **Frontend (Custom Domain)**: [https://www.housemate.website](https://www.housemate.website)
+- **Frontend (Azure Static Web Apps)**: [https://white-water-0fbd05910.3.azurestaticapps.net](https://white-water-0fbd05910.3.azurestaticapps.net)
+- **Backend API (Google Cloud Run)**: [https://housemate-backend-234825552341.africa-south1.run.app](https://housemate-backend-234825552341.africa-south1.run.app)
+- **Demo Video**: [🎥 Walkthrough Video](https://drive.google.com/file/d/1nfEjGqwr8m8vn9OnU4X9X3suUY5qn9lB/view?usp=sharing)
+- **Project Proposal**: [📋 Design Document](https://docs.google.com/presentation/d/1sEDTh27cn-yEqHB2aYB3yHqXs97zfoTednUUVy9m1Ts/edit?usp=sharing)
+- **GitHub Repository**: [https://github.com/Dhiali/Housemate](https://github.com/Dhiali/Housemate)
+
+
+
+## 🗄️ Database Design
+
+### Entity Relationship Diagram (ERD)
+
+```
+┌─────────────┐       ┌─────────────┐       ┌─────────────┐
+│    HOUSES   │       │    USERS    │       │    TASKS    │
+├─────────────┤       ├─────────────┤       ├─────────────┤
+│ id (PK)     │◄──────┤ house_id    │       │ id (PK)     │
+│ name        │       │ id (PK)     │──────►│ assigned_to │
+│ address     │       │ name        │       │ created_by  │
+│ house_rules │       │ surname     │       │ house_id    │
+│ avatar      │       │ email       │       │ title       │
+│ created_by  │       │ password    │       │ description │
+│ created_at  │       │ bio         │       │ status      │
+│ updated_at  │       │ phone       │       │ priority    │
+└─────────────┘       │ avatar      │       │ due_date    │
+                      │ role        │       │ category    │
+                      │ status      │       │ created_at  │
+                      │ created_at  │       │ updated_at  │
+                      └─────────────┘       └─────────────┘
+                              │
+                              │
+                      ┌─────────────┐       ┌─────────────┐
+                      │    BILLS    │       │ BILL_SHARE  │
+                      ├─────────────┤       ├─────────────┤
+                      │ id (PK)     │──────►│ bill_id     │
+                      │ title       │       │ user_id     │
+                      │ description │       │ amount      │
+                      │ amount      │       │ amount_paid │
+                      │ category    │       │ status      │
+                      │ house_id    │       │ paid_by     │
+                      │ created_by  │       │ paid_at     │
+                      │ due_date    │       │ payment_method │
+                      │ status      │       │ created_at  │
+                      │ created_at  │       └─────────────┘
+                      │ updated_at  │
+                      └─────────────┘
+                              │
+                              │
+                      ┌─────────────┐       ┌─────────────┐
+                      │BILL_HISTORY │       │  SCHEDULE   │
+                      ├─────────────┤       ├─────────────┤
+                      │ id (PK)     │       │ id (PK)     │
+                      │ bill_id     │       │ house_id    │
+                      │ user_id     │       │ title       │
+                      │ action      │       │ description │
+                      │ amount      │       │ scheduled_date │
+                      │ notes       │       │ scheduled_time │
+                      │ created_at  │       │ type        │
+                      └─────────────┘       │ attendees   │
+                                            │ recurrence  │
+                                            │ created_by  │
+                                            │ created_at  │
+                                            │ updated_at  │
+                                            └─────────────┘
+```
+
+### Key Relationships
+- **Houses → Users**: One-to-many (One house can have multiple users)
+- **Users → Tasks**: One-to-many (Users can be assigned multiple tasks)
+- **Users → Bills**: One-to-many (Users can create multiple bills)
+- **Bills → Bill_Share**: One-to-many (Each bill can be split among multiple users)
+- **Bills → Bill_History**: One-to-many (Each bill maintains payment history)
+- **Houses → Schedule**: One-to-many (Each house can have multiple scheduled events)
+
+## ✨ Feature List
+
+### 🔐 Authentication & User Management
+- [x] User registration and login
+- [x] JWT-based authentication
+- [x] Role-based access control (Admin, Standard, Read-only)
+- [x] Profile management with avatars
+- [x] House creation and invitation system
+- [ ] Email verification for new accounts
+- [ ] Forgot password functionality
+
+### 🏠 House Management
+- [x] Create and manage houses
+- [x] House avatar upload
+- [x] House rules and address management
+- [x] Invite and manage housemates
+- [x] View housemate profiles and contact information
+
+### 💰 Bill Management
+- [x] Create bills with categories and due dates
+- [x] Automatic bill splitting among housemates
+- [x] Track individual payments and contributions
+- [x] Payment history and status tracking
+- [x] Bill status management (Active, Paid, Overdue)
+- [ ] Custom bill splitting (unequal amounts per person)
+- [ ] Admin approval required for bill creation
+- [ ] Filter bills by logged-in user
+- [ ] Payment status accuracy improvements
+
+### 📋 Task Management
+- [x] Create and assign tasks to housemates
+- [x] Task categories and priority levels
+- [x] Due date tracking and status updates
+- [x] Task completion tracking
+- [ ] Functional filter and dropdown options
+- [ ] Delete permissions for standard users
+
+### 📅 Schedule & Events
+- [x] Create house events and meetings
+- [x] Event scheduling with date and time
+- [x] Event types (Meeting, Social, Maintenance, Recurring)
+- [ ] Event visibility controls and invitations
+- [ ] Click-to-open functionality for upcoming items
+
+### 📊 Dashboard & Analytics
+- [x] Household statistics and activity overview
+- [x] Quick action buttons for common tasks
+- [x] Activity feed showing recent changes
+- [x] Upcoming tasks and bill reminders
+- [ ] Improved styling with sticky headers
+- [ ] 3-day upcoming task filter
+
+### 💬 Communication
+- [x] View housemate contact information
+- [ ] Send message functionality (Email/SMS/WhatsApp)
+- [ ] Email notifications for housemate invitations
+
+### ⚙️ Settings & Configuration
+- [x] Basic settings structure
+- [ ] Functional settings tabs
+- [ ] Theme customization
+- [ ] Notification preferences
+
 
 ## 🎥 Demo Video
 
