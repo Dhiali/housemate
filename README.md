@@ -264,17 +264,63 @@ gcloud sql databases create housemate_db --instance=housemate-db
 gcloud sql users create housemate-user --instance=housemate-db --password=secure_password
 ```
 
+## 🎯 Project Features
 
-## 🎯 What the App Does
+### Main Features & Functionality
 
-Housemate is a complete household management solution that enables roommates to:
+#### 🏠 House Management
+- **House Creation & Setup** - Create and customize household spaces with unique identifiers
+- **Member Invitation System** - Invite roommates via email with secure registration links
+- **Role-Based Access Control** - Admin and standard user roles with appropriate permissions
+- **House Statistics Dashboard** - Real-time overview of household activity and contributions
 
-- **👥 Manage Household Members** - Create houses, invite housemates, and manage user roles
-- **💰 Track Bills & Expenses** - Split bills automatically, track payments, and manage shared expenses
-- **📋 Coordinate Tasks** - Assign household tasks, track completion, and maintain accountability
-- **📅 Schedule Events** - Plan house meetings, social events, and maintenance activities
-- **📊 Monitor Activity** - View household statistics and track contributions
-- **🔐 Secure Authentication** - Role-based access control with admin and standard user permissions
+#### 👥 User Management
+- **Secure Authentication** - JWT-based login system with password hashing
+- **User Profiles** - Customizable profiles with avatar upload and personal information
+- **Member Directory** - View all housemates with contact information and roles
+- **Account Management** - Update personal details, change passwords, and manage preferences
+
+#### 💰 Bill Management
+- **Bill Creation & Tracking** - Add bills with details, amounts, and due dates
+- **Automatic Bill Splitting** - Smart distribution of costs among selected housemates
+- **Payment Tracking** - Mark payments as complete and track outstanding balances
+- **Payment History** - Comprehensive record of all bill payments and transactions
+- **Bill Categories** - Organize expenses by type (utilities, rent, groceries, etc.)
+
+#### 📋 Task Management
+- **Task Assignment** - Create and assign household tasks to specific members
+- **Task Scheduling** - Set due dates and priorities for efficient task management
+- **Progress Tracking** - Monitor task completion status and overdue items
+- **Task History** - Maintain records of completed tasks and member contributions
+- **Recurring Tasks** - Set up repeating tasks for regular household maintenance
+
+#### 📅 Event Scheduling
+- **Event Creation** - Schedule house meetings, social events, and maintenance activities
+- **Calendar Integration** - Visual calendar view of all scheduled events
+- **Attendance Tracking** - Manage event participants and track attendance
+- **Event Types** - Categorize events (meetings, social, maintenance, recurring)
+- **Notification System** - Alert members about upcoming events and changes
+
+#### 📊 Analytics & Reporting
+- **Personal Statistics** - Individual task completion and bill contribution metrics
+- **House Analytics** - Overall household performance and activity insights
+- **Financial Reports** - Expense tracking and payment analysis
+- **Activity Monitoring** - Track member engagement and participation levels
+
+#### 🔐 Security & Performance
+- **Data Protection** - Secure data handling with input validation and sanitization
+- **Rate Limiting** - API protection against abuse and excessive requests
+- **Responsive Design** - Optimized experience across desktop, tablet, and mobile devices
+- **Offline Capabilities** - Progressive Web App features for offline functionality
+- **Performance Monitoring** - Real-time performance tracking and optimization
+
+#### 🎨 User Experience
+- **Intuitive Interface** - Clean, modern design with easy navigation
+- **Dark/Light Mode** - Theme switching for user preference
+- **Interactive Components** - Smooth animations and responsive interactions
+- **Accessibility** - WCAG compliant design for inclusive user experience
+- **Search & Filtering** - Quick access to specific bills, tasks, and events
+
 
 ## 🚀 Live Demo
 
@@ -353,68 +399,6 @@ Housemate is a complete household management solution that enables roommates to:
 - **Bills → Bill_History**: One-to-many (Each bill maintains payment history)
 - **Houses → Schedule**: One-to-many (Each house can have multiple scheduled events)
 
-## ✨ Feature List
-
-### 🔐 Authentication & User Management
-- [x] User registration and login
-- [x] JWT-based authentication
-- [x] Role-based access control (Admin, Standard, Read-only)
-- [x] Profile management with avatars
-- [x] House creation and invitation system
-- [ ] Email verification for new accounts
-- [ ] Forgot password functionality
-
-### 🏠 House Management
-- [x] Create and manage houses
-- [x] House avatar upload
-- [x] House rules and address management
-- [x] Invite and manage housemates
-- [x] View housemate profiles and contact information
-
-### 💰 Bill Management
-- [x] Create bills with categories and due dates
-- [x] Automatic bill splitting among housemates
-- [x] Track individual payments and contributions
-- [x] Payment history and status tracking
-- [x] Bill status management (Active, Paid, Overdue)
-- [ ] Custom bill splitting (unequal amounts per person)
-- [ ] Admin approval required for bill creation
-- [ ] Filter bills by logged-in user
-- [ ] Payment status accuracy improvements
-
-### 📋 Task Management
-- [x] Create and assign tasks to housemates
-- [x] Task categories and priority levels
-- [x] Due date tracking and status updates
-- [x] Task completion tracking
-- [ ] Functional filter and dropdown options
-- [ ] Delete permissions for standard users
-
-### 📅 Schedule & Events
-- [x] Create house events and meetings
-- [x] Event scheduling with date and time
-- [x] Event types (Meeting, Social, Maintenance, Recurring)
-- [ ] Event visibility controls and invitations
-- [ ] Click-to-open functionality for upcoming items
-
-### 📊 Dashboard & Analytics
-- [x] Household statistics and activity overview
-- [x] Quick action buttons for common tasks
-- [x] Activity feed showing recent changes
-- [x] Upcoming tasks and bill reminders
-- [ ] Improved styling with sticky headers
-- [ ] 3-day upcoming task filter
-
-### 💬 Communication
-- [x] View housemate contact information
-- [ ] Send message functionality (Email/SMS/WhatsApp)
-- [ ] Email notifications for housemate invitations
-
-### ⚙️ Settings & Configuration
-- [x] Basic settings structure
-- [ ] Functional settings tabs
-- [ ] Theme customization
-- [ ] Notification preferences
 
 
 ## 🎥 Demo Video
@@ -495,20 +479,3 @@ This project is licensed under the UNLICENSED License - see the package.json fil
 4. Push to the branch: `git push origin feature/amazing-feature`
 5. Open a Pull Request
 
-## 📞 Support
-
-For support and questions:
-- Create an issue in the GitHub repository
-- Contact the development team
-
-## 🏆 Acknowledgments
-
-- React team for the amazing framework
-- Radix UI for accessible component primitives
-- Google Cloud Platform for reliable hosting
-- Azure Static Web Apps for frontend deployment
-- All contributors and testers who helped improve this application
-
----
-
-**Built with ❤️ for better household management**
