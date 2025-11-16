@@ -399,45 +399,7 @@ gcloud sql users create housemate-user --instance=housemate-db --password=secure
 - **Backend API (Google Cloud Run)**: [https://housemate-backend-234825552341.africa-south1.run.app](https://housemate-backend-234825552341.africa-south1.run.app)
 - **Demo Video**: [🎥 Walkthrough Video](https://drive.google.com/file/d/1nfEjGqwr8m8vn9OnU4X9X3suUY5qn9lB/view?usp=sharing)
 
-## 🔮 Future Improvements
 
-### High Priority
-- **Custom Bill Splitting**: Allow custom amounts per person instead of equal division
-- **Forgot Password**: Implement password reset functionality
-- **Bill Creation Authorization**: Require admin approval for bill creation by standard users
-- **Event Visibility Controls**: Filter who sees events and manage invitations
-- **Payment Status Accuracy**: Fix frontend connection to show correct payment amounts owed
-- **Email Verification**: Verify email addresses during house creation and user invitations
-
-### Medium Priority
-- **Improved Navigation**: Make upcoming items clickable to open actual items
-- **Enhanced Styling**: Implement sticky headers and improved visual design
-- **Smart Task Filtering**: Show only next 3 days of upcoming tasks
-- **Functional Filters**: Make all dropdown and filter buttons fully functional
-- **Message Integration**: Enable email/SMS/WhatsApp messaging from contact cards
-- **User Permissions**: Give standard users delete permissions where appropriate
-
-### Low Priority
-- **Profile Picture Integration**: Fix frontend connection to display user avatars consistently
-- **Settings Functionality**: Complete implementation of all settings tabs
-- **Notification System**: Add real-time notifications for important events
-- **Mobile Optimization**: Improve mobile responsiveness and touch interactions
-- **Recurring Task Templates**: Create templates for common recurring household tasks
-- **Expense Analytics**: Add detailed spending analytics and budget tracking
-
-### Technical Improvements
-- **Database Optimization**: Add indexes and optimize queries for better performance
-- **Error Handling**: Improve error messages and user feedback
-- **Testing**: Add comprehensive unit and integration tests
-- **Documentation**: Expand API documentation and user guides
-- **Security**: Implement additional security measures and audit logs
-- **Accessibility**: Improve accessibility compliance and screen reader support
-
-
-
-### 🗄️ **Database Resources**
-- **Database Export**: Available in project repository (`housemate_backup_2025-11-05_13-37.sql`)
-- **ERD Documentation**: Included in this README with complete relationship mapping
 
 ### 🚀 **Live Resources**
 - **Production Frontend**: [www.housemate.website](https://www.housemate.website)
