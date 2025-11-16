@@ -473,7 +473,7 @@ SOFTWARE.
 ## 📞 Contact Information
 
 **Developer:** Dhiali Chetty  
-**Email:** [Your Email Address]  
+**Email:** info@dhialidigitaldesigns.co.za  
 
 ## 🙏 Acknowledgments
 
