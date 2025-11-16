@@ -321,17 +321,10 @@ gcloud sql users create housemate-user --instance=housemate-db --password=secure
 - **Accessibility** - WCAG compliant design for inclusive user experience
 - **Search & Filtering** - Quick access to specific bills, tasks, and events
 
+## � Project Documentation
 
-## 🚀 Live Demo
-
-- **Frontend (Custom Domain)**: [https://www.housemate.website](https://www.housemate.website)
-- **Frontend (Azure Static Web Apps)**: [https://white-water-0fbd05910.3.azurestaticapps.net](https://white-water-0fbd05910.3.azurestaticapps.net)
-- **Backend API (Google Cloud Run)**: [https://housemate-backend-234825552341.africa-south1.run.app](https://housemate-backend-234825552341.africa-south1.run.app)
-- **Demo Video**: [🎥 Walkthrough Video](https://drive.google.com/file/d/1nfEjGqwr8m8vn9OnU4X9X3suUY5qn9lB/view?usp=sharing)
-- **Project Proposal**: [📋 Design Document](https://docs.google.com/presentation/d/1sEDTh27cn-yEqHB2aYB3yHqXs97zfoTednUUVy9m1Ts/edit?usp=sharing)
-- **GitHub Repository**: [https://github.com/Dhiali/Housemate](https://github.com/Dhiali/Housemate)
-
-
+### 📋 **Project Proposal & Design**
+- **[Design Document & Proposal](https://docs.google.com/presentation/d/1sEDTh27cn-yEqHB2aYB3yHqXs97zfoTednUUVy9m1Ts/edit?usp=sharing)** - Complete project planning, user stories, wireframes, and technical specifications
 
 ## 🗄️ Database Design
 
@@ -399,22 +392,12 @@ gcloud sql users create housemate-user --instance=housemate-db --password=secure
 - **Bills → Bill_History**: One-to-many (Each bill maintains payment history)
 - **Houses → Schedule**: One-to-many (Each house can have multiple scheduled events)
 
+## 🚀 Live Demo
 
-
-## 🎥 Demo Video
-
-**🎬 [Watch the Complete Walkthrough Video](https://drive.google.com/file/d/1nfEjGqwr8m8vn9OnU4X9X3suUY5qn9lB/view?usp=sharing)**
-
-The demo video showcases:
-- User registration and house creation
-- Housemate invitation and management
-- Bill creation and payment tracking
-- Task assignment and completion
-- Event scheduling
-- Dashboard overview and navigation
-- Authentication system and role-based access control
-- Complete CRUD operations across all features
-- Live deployment and technical architecture
+- **Frontend (Custom Domain)**: [https://www.housemate.website](https://www.housemate.website)
+- **Frontend (Azure Static Web Apps)**: [https://white-water-0fbd05910.3.azurestaticapps.net](https://white-water-0fbd05910.3.azurestaticapps.net)
+- **Backend API (Google Cloud Run)**: [https://housemate-backend-234825552341.africa-south1.run.app](https://housemate-backend-234825552341.africa-south1.run.app)
+- **Demo Video**: [🎥 Walkthrough Video](https://drive.google.com/file/d/1nfEjGqwr8m8vn9OnU4X9X3suUY5qn9lB/view?usp=sharing)
 
 ## 🔮 Future Improvements
 
@@ -450,13 +433,7 @@ The demo video showcases:
 - **Security**: Implement additional security measures and audit logs
 - **Accessibility**: Improve accessibility compliance and screen reader support
 
-## � Project Documentation
 
-### 📋 **Project Proposal & Design**
-- **[Design Document & Proposal](https://docs.google.com/presentation/d/1sEDTh27cn-yEqHB2aYB3yHqXs97zfoTednUUVy9m1Ts/edit?usp=sharing)** - Complete project planning, user stories, wireframes, and technical specifications
-
-### 🎥 **Demo & Walkthrough**
-- **[Complete Walkthrough Video](https://drive.google.com/file/d/1nfEjGqwr8m8vn9OnU4X9X3suUY5qn9lB/view?usp=sharing)** - Full application demonstration including authentication, CRUD operations, and deployment
 
 ### 🗄️ **Database Resources**
 - **Database Export**: Available in project repository (`housemate_backup_2025-11-05_13-37.sql`)
