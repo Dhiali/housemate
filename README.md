@@ -1,6 +1,10 @@
 # <img src="frontend/public/housemate-logo.png" alt="Housemate Logo" width="40" height="40" style="vertical-align: middle;"> Housemate - Smart Household Management System
 
+**A Full-Stack Web Application | Developed by Dhiali Chetty**
+
 A comprehensive web application designed to streamline household management for shared living spaces. Housemate helps roommates coordinate tasks, manage bills, schedule events, and maintain transparent communication in a user-friendly digital platform.
+
+**Digital Solution Type:** Progressive Web Application (PWA) - Responsive web application optimized for both desktop and tablet devices with offline capabilities.
 
 ## 🎯 What the App Does
 
