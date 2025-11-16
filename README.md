@@ -18,12 +18,7 @@ The project was successfully deployed on Google Cloud Run (backend) and Azure St
 <summary>Click to expand</summary>
 
 - [🛠️ Built With](#️-built-with)
-  - [Frontend](#frontend)
-  - [Backend](#backend)
-  - [Infrastructure & Deployment](#infrastructure--deployment)
-  - [Tools & Libraries](#tools--libraries)
 - [🎯 Project Features](#-project-features)
-  - [Main Features & Functionality](#main-features--functionality)
 - [🏃‍♂️ How to Run Locally](#️-how-to-run-locally)
   - [Prerequisites](#prerequisites)
   - [How to Install](#how-to-install)
