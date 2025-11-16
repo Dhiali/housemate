@@ -12,6 +12,8 @@ The project was successfully deployed on Google Cloud Run (backend) and Azure St
 
 **Digital Solution Type:** Progressive Web Application (PWA) - Responsive web application optimized for both desktop and tablet devices with offline capabilities.
 
+![Housemate Application Mockup](HM%20mockup.png)
+
 ## 🎯 What the App Does
 
 Housemate is a complete household management solution that enables roommates to:
