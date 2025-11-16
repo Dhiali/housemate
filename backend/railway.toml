@@ -1,3 +1,0 @@
-# Railway Configuration - Simple Node.js Setup
-[deploy]
-  startCommand = "npm start"

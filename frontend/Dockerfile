@@ -1,32 +1,33 @@
+# DOCKER CONFIGURATION FOR FRONTEND - COMMENTED OUT FOR LOCAL DEVELOPMENT
 # Use Node.js 18 for building
-FROM node:18-alpine as build
+# FROM node:18-alpine as build
 
 # Set working directory
-WORKDIR /app
+# WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+# COPY package*.json ./
 
 # Install dependencies
-RUN npm ci
+# RUN npm ci
 
 # Copy source code
-COPY . .
+# COPY . .
 
 # Build the application
-RUN npm run build
+# RUN npm run build
 
 # Production stage
-FROM nginx:alpine
+# FROM nginx:alpine
 
 # Copy built files to nginx
-COPY --from=build /app/dist /usr/share/nginx/html
+# COPY --from=build /app/dist /usr/share/nginx/html
 
 # Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expose port 80
-EXPOSE 80
+# EXPOSE 80
 
 # Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# CMD ["nginx", "-g", "daemon off;"]
