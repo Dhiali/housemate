@@ -2,7 +2,13 @@
 
 **A Full-Stack Web Application | Developed by Dhiali Chetty**
 
-A comprehensive web application designed to streamline household management for shared living spaces. Housemate helps roommates coordinate tasks, manage bills, schedule events, and maintain transparent communication in a user-friendly digital platform.
+## Short Project Description:
+
+Housemate is a full-stack web application built to solve coordination challenges in shared living spaces. The project enables roommates to efficiently manage household tasks, split bills automatically, schedule events and maintain transparent communication through role-based access control.
+
+Built using React.js frontend with Node.js/Express backend and MySQL database, the application delivers a complete household management solution with real-time updates and secure authentication. Key features include automated bill splitting, task assignment tracking, event scheduling and comprehensive household statistics.
+
+The project was successfully deployed on Google Cloud Run (backend) and Azure Static Web Apps (frontend) with a custom domain. However, due to financial constraints, the live deployment was discontinued and the application now runs locally for demonstration purposes. This showcases the complete development lifecycle from local development through cloud deployment.
 
 **Digital Solution Type:** Progressive Web Application (PWA) - Responsive web application optimized for both desktop and tablet devices with offline capabilities.
 
