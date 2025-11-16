@@ -46,88 +46,131 @@ The project was successfully deployed on Google Cloud Run (backend) and Azure St
 - **Multer & Sharp** - Image processing
 
 
-## 🏃‍♂️ How to Run Locally
+## How to Run Locally
 
 ### Prerequisites
-- Node.js 18+ installed
-- MySQL database server
-- Git
 
-### 1. Clone the Repository
+Before running this project, ensure you have the following software installed:
+
+#### Required Software
+- **Node.js** (v18.0.0 or higher) - [Download here](https://nodejs.org/)
+- **npm** (v9.0.0 or higher) - Comes with Node.js
+- **MySQL** (v8.0 or higher) - [Download here](https://dev.mysql.com/downloads/mysql/) or use XAMPP
+- **Git** - [Download here](https://git-scm.com/downloads)
+
+#### Alternative Database Options
+- **XAMPP** (recommended for local development) - [Download here](https://www.apachefriends.org/download.html)
+- **MySQL Workbench** (optional, for database management) - [Download here](https://dev.mysql.com/downloads/workbench/)
+
+#### Verify Prerequisites
+Run these commands to verify your installations:
+```bash
+node --version    # Should show v18.0.0 or higher
+npm --version     # Should show v9.0.0 or higher  
+mysql --version   # Should show MySQL v8.0 or higher
+git --version     # Should show Git version
+```
+
+### How to Install
+
+Follow these step-by-step instructions to set up the project locally:
+
+#### 1. Clone the Repository
 ```bash
 git clone https://github.com/Dhiali/Housemate.git
 cd Housemate
 ```
 
-### 2. Backend Setup
-
+#### 2. Backend Setup
 ```bash
 # Navigate to backend directory
 cd backend
 
-# Install dependencies
+# Install all backend dependencies
 npm install
 
-# Create environment file
+# Create environment configuration file
 cp .env.example .env
 ```
 
-Edit the `.env` file with your configuration:
-
+**Configure Backend Environment Variables:**
+Edit the `.env` file with your local configuration:
 ```env
 # Database Configuration
-MYSQL_HOST=localhost
-MYSQL_USER=root
-MYSQL_PASSWORD=your_password
-MYSQL_DATABASE=housemate_db
-MYSQL_PORT=3306
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=your_mysql_password
+DB_NAME=housemate_db
+DB_PORT=3306
 
-# JWT Secret
-JWT_SECRET=your_super_secret_jwt_key_here
+# JWT Authentication
+JWT_SECRET=your_super_secure_jwt_secret_key_here
 
 # Server Configuration
 PORT=5000
 NODE_ENV=development
 
-# Optional: Database URL (alternative to individual MySQL vars)
-DATABASE_URL=mysql://user:password@host:port/database
+# CORS Origins (for frontend)
+CORS_ORIGIN=http://localhost:5173
 ```
 
-### 3. Database Setup
-
-Create a MySQL database:
+#### 3. Database Setup
+**Create MySQL Database:**
 ```sql
+-- Connect to MySQL and create database
 CREATE DATABASE housemate_db;
+USE housemate_db;
+
+-- Tables will be created automatically when backend starts
 ```
 
-The application will automatically create all required tables on startup.
+**For XAMPP Users:**
+1. Start XAMPP Control Panel
+2. Start Apache and MySQL services
+3. Open phpMyAdmin (http://localhost/phpmyadmin)
+4. Create new database named `housemate_db`
 
-### 4. Start Backend Server
-
+#### 4. Start Backend Server
 ```bash
-# Development mode (with auto-restart)
-npm run dev
-
-# Production mode
+# From backend directory
 npm start
 ```
+✅ Backend will be available at: `http://localhost:5000`
 
-Backend will be available at: `http://localhost:5000`
-
-### 5. Frontend Setup
-
+#### 5. Frontend Setup (New Terminal)
 ```bash
-# Navigate to frontend directory (from project root)
+# Navigate to frontend directory from project root
 cd frontend
 
-# Install dependencies
+# Install all frontend dependencies
 npm install
 
-# Start development server
-npm run dev
+# Create frontend environment file (optional)
+echo "VITE_API_BASE_URL=http://localhost:5000" > .env
 ```
 
-Frontend will be available at: `http://localhost:5173`
+#### 6. Start Frontend Development Server
+```bash
+# From frontend directory
+npm run dev
+```
+✅ Frontend will be available at: `http://localhost:5173`
+
+### Quick Start Commands
+```bash
+# Terminal 1 - Backend
+cd backend && npm install && npm start
+
+# Terminal 2 - Frontend  
+cd frontend && npm install && npm run dev
+```
+
+**Important Notes:**
+- The backend repository contains the API server and database logic
+- The frontend repository contains the React.js user interface
+- Both must be running simultaneously for the application to work
+- Database tables are created automatically on first backend startup
+- Default admin user may be created automatically (check console logs)
 
 ### 6. Build for Production
 
