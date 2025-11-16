@@ -300,10 +300,10 @@ gcloud sql users create housemate-user --instance=housemate-db --password=secure
 - **Secure Authentication** - JWT-based login system with password hashing
 - **User Profiles** - Customizable profiles with avatar upload and personal information
 - **Member Directory** - View all housemates with contact information and roles
-- **Account Management** - Update personal details, change passwords, and manage preferences
+- **Account Management** - Update personal details, change passwords and manage preferences
 
 #### 💰 Bill Management
-- **Bill Creation & Tracking** - Add bills with details, amounts, and due dates
+- **Bill Creation & Tracking** - Add bills with details, amounts and due dates
 - **Automatic Bill Splitting** - Smart distribution of costs among selected housemates
 - **Payment Tracking** - Mark payments as complete and track outstanding balances
 - **Payment History** - Comprehensive record of all bill payments and transactions
@@ -317,7 +317,7 @@ gcloud sql users create housemate-user --instance=housemate-db --password=secure
 - **Recurring Tasks** - Set up repeating tasks for regular household maintenance
 
 #### 📅 Event Scheduling
-- **Event Creation** - Schedule house meetings, social events, and maintenance activities
+- **Event Creation** - Schedule house meetings, social events and maintenance activities
 - **Calendar Integration** - Visual calendar view of all scheduled events
 - **Attendance Tracking** - Manage event participants and track attendance
 - **Event Types** - Categorize events (meetings, social, maintenance, recurring)
@@ -332,7 +332,7 @@ gcloud sql users create housemate-user --instance=housemate-db --password=secure
 #### 🔐 Security & Performance
 - **Data Protection** - Secure data handling with input validation and sanitization
 - **Rate Limiting** - API protection against abuse and excessive requests
-- **Responsive Design** - Optimized experience across desktop, tablet, and mobile devices
+- **Responsive Design** - Optimized experience across desktop, tablet and mobile devices
 - **Offline Capabilities** - Progressive Web App features for offline functionality
 - **Performance Monitoring** - Real-time performance tracking and optimization
 
@@ -341,12 +341,12 @@ gcloud sql users create housemate-user --instance=housemate-db --password=secure
 - **Dark/Light Mode** - Theme switching for user preference
 - **Interactive Components** - Smooth animations and responsive interactions
 - **Accessibility** - WCAG compliant design for inclusive user experience
-- **Search & Filtering** - Quick access to specific bills, tasks, and events
+- **Search & Filtering** - Quick access to specific bills, tasks and events
 
 ## � Project Documentation
 
 ### 📋 **Project Proposal & Design**
-- **[Design Document & Proposal](https://docs.google.com/presentation/d/1sEDTh27cn-yEqHB2aYB3yHqXs97zfoTednUUVy9m1Ts/edit?usp=sharing)** - Complete project planning, user stories, wireframes, and technical specifications
+- **[Design Document & Proposal](https://docs.google.com/presentation/d/1sEDTh27cn-yEqHB2aYB3yHqXs97zfoTednUUVy9m1Ts/edit?usp=sharing)** - Complete project planning, user stories, wireframes and technical specifications
 
 ## 🗄️ Database Design
 
@@ -421,8 +421,6 @@ gcloud sql users create housemate-user --instance=housemate-db --password=secure
 - **Backend API (Google Cloud Run)**: [https://housemate-backend-234825552341.africa-south1.run.app](https://housemate-backend-234825552341.africa-south1.run.app)
 - **Demo Video**: [🎥 Walkthrough Video](https://drive.google.com/file/d/1nfEjGqwr8m8vn9OnU4X9X3suUY5qn9lB/view?usp=sharing)
 
-
-
 ### 🚀 **Live Resources**
 - **Production Frontend**: [www.housemate.website](https://www.housemate.website)
 - **API Documentation**: Available through backend health endpoint
@@ -433,18 +431,18 @@ gcloud sql users create housemate-user --instance=housemate-db --password=secure
 The Housemate application successfully delivers a comprehensive household management solution using modern full-stack technologies (React.js, Node.js, MySQL) with cloud deployment experience on Google Cloud and Azure platforms.
 
 ### Key Development Challenges Solved
-- **Complex Database Design** - Implemented normalized schema with proper relationships for users, bills, tasks, and payments
+- **Complex Database Design** - Implemented normalized schema with proper relationships for users, bills, tasks and payments
 - **Advanced Bill Splitting Logic** - Developed algorithms for automatic cost distribution and real-time payment tracking
 - **Secure Authentication System** - Built JWT-based authentication with role-based access control
 - **Cross-Platform Compatibility** - Achieved responsive design with PWA capabilities across all devices
 - **Cloud Deployment & DevOps** - Established CI/CD pipelines with containerized deployment strategies
 
 ### Future Enhancements
-**Short-term**: Mobile applications, push notifications, receipt scanning, payment integration, and advanced analytics
-**Long-term**: Multi-house management, smart home integration, AI-powered features, and microservices architecture
+**Short-term**: Mobile applications, push notifications, receipt scanning, payment integration and advanced analytics
+**Long-term**: Multi-house management, smart home integration, AI-powered features and microservices architecture
 
 ### Learning Outcomes
-This project demonstrates complete software development lifecycle expertise including full-stack development, cloud architecture, database optimization, UX design, and modern DevOps practices - showcasing technical proficiency essential for professional web development.
+This project demonstrates complete software development lifecycle expertise including full-stack development, cloud architecture, database optimization, UX design and modern DevOps practices showcasing technical proficiency essential for professional web development.
 
 ## 📄 License
 
@@ -455,8 +453,8 @@ Copyright (c) 2025 Dhiali Chetty
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
+to use, copy, modify, merge, publish, distribute, sublicense and/or sell
+copies of the Software and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
 
 The above copyright notice and this permission notice shall be included in all
@@ -500,9 +498,9 @@ This project was made possible through the following resources, documentation, a
 - **Lucide React** - [https://lucide.dev/](https://lucide.dev/) - Icon library and implementation
 
 ### Learning Resources & Tutorials
-- **MDN Web Docs** - [https://developer.mozilla.org/](https://developer.mozilla.org/) - JavaScript, HTML, and CSS references
+- **MDN Web Docs** - [https://developer.mozilla.org/](https://developer.mozilla.org/) - JavaScript, HTML and CSS references
 - **Stack Overflow** - [https://stackoverflow.com/](https://stackoverflow.com/) - Community support and problem-solving
-- **YouTube Tutorials** - Various creators for React, Node.js, and deployment tutorials
+- **YouTube Tutorials** - Various creators for React, Node.js and deployment tutorials
 
 ### AI Assistants & Development Support
 - **ChatGPT (OpenAI)** - Documentation writing and debugging support
