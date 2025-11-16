@@ -12,6 +12,33 @@ The project was successfully deployed on Google Cloud Run (backend) and Azure St
 
 ![Housemate Application Mockup](HM%20mockup.png)
 
+## 📑 Table of Contents
+
+<details>
+<summary>Click to expand</summary>
+
+- [🛠️ Built With](#️-built-with)
+  - [Frontend](#frontend)
+  - [Backend](#backend)
+  - [Infrastructure & Deployment](#infrastructure--deployment)
+  - [Tools & Libraries](#tools--libraries)
+- [🎯 Project Features](#-project-features)
+  - [Main Features & Functionality](#main-features--functionality)
+- [🏃‍♂️ How to Run Locally](#️-how-to-run-locally)
+  - [Prerequisites](#prerequisites)
+  - [How to Install](#how-to-install)
+- [🌍 Environment Variables Guide](#-environment-variables-guide)
+- [🚀 Deployment](#-deployment)
+- [📋 Project Documentation](#-project-documentation)
+- [🗄️ Database Design](#️-database-design)
+- [🚀 Live Demo](#-live-demo)
+- [🎯 Conclusion](#-conclusion)
+- [📄 License](#-license)
+- [📞 Contact Information](#-contact-information)
+- [🙏 Acknowledgments](#-acknowledgments)
+- [👥 Contributing](#-contributing)
+
+</details>
 
 ## 🛠️ Built With
 
@@ -426,7 +453,68 @@ This project demonstrates complete software development lifecycle expertise incl
 
 ## 📄 License
 
-This project is licensed under the UNLICENSED License - see the package.json files for details.
+MIT License
+
+Copyright (c) 2025 Dhiali Chetty
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+## 📞 Contact Information
+
+**Developer:** Dhiali Chetty  
+**Email:** [Your Email Address]  
+
+## 🙏 Acknowledgments
+
+This project was made possible through the following resources, documentation, and tools:
+
+### Documentation & Official Resources
+- **React.js Documentation** - [https://react.dev/](https://react.dev/) - Component architecture and hooks implementation
+- **Node.js Documentation** - [https://nodejs.org/docs/](https://nodejs.org/docs/) - Backend server development
+- **Express.js Guide** - [https://expressjs.com/](https://expressjs.com/) - Web framework implementation
+- **MySQL Documentation** - [https://dev.mysql.com/doc/](https://dev.mysql.com/doc/) - Database design and optimization
+- **Tailwind CSS Docs** - [https://tailwindcss.com/docs](https://tailwindcss.com/docs) - Styling and responsive design
+- **Vite Documentation** - [https://vitejs.dev/](https://vitejs.dev/) - Build tool configuration
+
+### Cloud Platform Resources
+- **Google Cloud Documentation** - [https://cloud.google.com/docs](https://cloud.google.com/docs) - Cloud Run deployment and Cloud SQL setup
+- **Microsoft Azure Documentation** - [https://docs.microsoft.com/azure/](https://docs.microsoft.com/azure/) - Static Web Apps deployment
+- **GitHub Actions Documentation** - [https://docs.github.com/actions](https://docs.github.com/actions) - CI/CD pipeline implementation
+
+### Development Tools & Libraries
+- **JWT.io** - [https://jwt.io/](https://jwt.io/) - JSON Web Token implementation guide
+- **bcrypt Documentation** - Password hashing and security best practices
+- **Axios Documentation** - [https://axios-http.com/](https://axios-http.com/) - HTTP client implementation
+- **Radix UI Documentation** - [https://www.radix-ui.com/](https://www.radix-ui.com/) - Accessible component library
+- **Lucide React** - [https://lucide.dev/](https://lucide.dev/) - Icon library and implementation
+
+### Learning Resources & Tutorials
+- **MDN Web Docs** - [https://developer.mozilla.org/](https://developer.mozilla.org/) - JavaScript, HTML, and CSS references
+- **Stack Overflow** - [https://stackoverflow.com/](https://stackoverflow.com/) - Community support and problem-solving
+- **YouTube Tutorials** - Various creators for React, Node.js, and deployment tutorials
+
+### AI Assistants & Development Support
+- **ChatGPT (OpenAI)** - Documentation writing and debugging support
+
+### Design & UI/UX Resources
+- **Figma Community** - UI component inspiration and design patterns
+
 
 ## 👥 Contributing
 
