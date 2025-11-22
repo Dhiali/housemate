@@ -125,7 +125,7 @@ export function SignUpForm({ onCreateHouseMateAccount, houseId, onSignUpSuccess 
               setEmailStatus('warning');
               setEmailMsg('Checking email...');
               try {
-                const res = await fetch('http://localhost:5000/users');
+                const res = await fetch('http://localhost:8000/users');
                 const users = await res.json();
                 if (users.some(u => u.email === emailVal)) {
                   setEmailStatus('error');
@@ -159,14 +159,23 @@ export function SignUpForm({ onCreateHouseMateAccount, houseId, onSignUpSuccess 
             value={password}
             onChange={e => {
               setPassword(e.target.value);
-              // Password strength check
+              // Password strength check (backend requirements)
               const val = e.target.value;
-              if (val.length < 6) {
+              if (val.length < 8) {
                 setPasswordStatus('error');
-                setPasswordMsg('Password too short');
-              } else if (!val.match(/[A-Z]/) || !val.match(/[0-9]/)) {
+                setPasswordMsg('Password must be at least 8 characters');
+              } else if (!val.match(/[A-Z]/)) {
                 setPasswordStatus('warning');
-                setPasswordMsg('Add a capital letter and a number');
+                setPasswordMsg('Add at least one uppercase letter');
+              } else if (!val.match(/[a-z]/)) {
+                setPasswordStatus('warning');
+                setPasswordMsg('Add at least one lowercase letter');
+              } else if (!val.match(/[0-9]/)) {
+                setPasswordStatus('warning');
+                setPasswordMsg('Add at least one number');
+              } else if (!val.match(/[@$!%*?&]/)) {
+                setPasswordStatus('warning');
+                setPasswordMsg('Add at least one special character (@$!%*?&)');
               } else {
                 setPasswordStatus('valid');
                 setPasswordMsg('Strong password');

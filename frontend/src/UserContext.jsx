@@ -65,6 +65,9 @@ export const UserProvider = ({ children }) => {
     // Clear localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    
+    // Redirect to landing page
+    window.location.href = '/';
   };
 
   // Initialize authentication on app load

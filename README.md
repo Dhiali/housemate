@@ -27,6 +27,7 @@ The project was successfully deployed on Google Cloud Run (backend) and Azure St
 - [📋 Project Documentation](#-project-documentation)
 - [🗄️ Database Design](#️-database-design)
 - [🚀 Live Demo](#-live-demo)
+  - [📹 Demo Video](https://drive.google.com/file/d/12yeePyaxJsnyFsA12PoCN5TggeYAXDh2/view?usp=sharing)
 - [🎯 Conclusion](#-conclusion)
 - [📄 License](#-license)
 - [📞 Contact Information](#-contact-information)
@@ -414,12 +415,26 @@ gcloud sql users create housemate-user --instance=housemate-db --password=secure
 - **Bills → Bill_History**: One-to-many (Each bill maintains payment history)
 - **Houses → Schedule**: One-to-many (Each house can have multiple scheduled events)
 
+
 ## 🚀 Live Demo
+
+**Watch the latest demo video:**
+
+[📹 Housemate Demo Video (Google Drive)](https://drive.google.com/file/d/12yeePyaxJsnyFsA12PoCN5TggeYAXDh2/view?usp=sharing)
+
+#### 🎬 What the Demo Video Covers
+
+- Step-by-step creation of a new house and user account
+- Walkthrough of admin user functionality: full dashboard access, task/bill/housemate management and admin-only actions
+- Testing and demonstration of standard user capabilities: completing tasks, viewing bills and limited management features
+- Read-only user experience: restricted access, viewing but not editing or managing household data
+- Live testing of role-based permissions and security for each user type
+
 
 - **Frontend (Custom Domain)**: [https://www.housemate.website](https://www.housemate.website)
 - **Frontend (Azure Static Web Apps)**: [https://white-water-0fbd05910.3.azurestaticapps.net](https://white-water-0fbd05910.3.azurestaticapps.net)
 - **Backend API (Google Cloud Run)**: [https://housemate-backend-234825552341.africa-south1.run.app](https://housemate-backend-234825552341.africa-south1.run.app)
-- **Demo Video**: [🎥 Walkthrough Video](https://drive.google.com/file/d/1nfEjGqwr8m8vn9OnU4X9X3suUY5qn9lB/view?usp=sharing)
+
 
 ### 🚀 **Live Resources**
 - **Production Frontend**: [www.housemate.website](https://www.housemate.website)

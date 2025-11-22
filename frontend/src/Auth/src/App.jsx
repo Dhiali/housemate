@@ -137,44 +137,58 @@ export default function App() {
 
   const handleCreateHouse = async (houseData) => {
     // Use /houses endpoint to create house and link to user
-    if (pendingUser) {
-      try {
-        const { name, avatar, ...houseDataRest } = houseData;
-        const housePayload = {
-          name: houseDataRest.house_name,
-          address: houseDataRest.address,
-          house_rules: houseDataRest.house_rules,
-          created_by: pendingUser.id
-        };
-        if (avatar) {
-          housePayload.avatar = avatar;
-        }
-        console.log('House payload:', housePayload);
-        const res = await addHouse(housePayload);
-        console.log('House creation response:', res.data);
-        
-        // Track house creation
-        trackHousehold.createHouse(housePayload.created_by || 1); // Default to 1 user if unknown
-        trackAuth.signUp('email');
-        
-        // Automatically sign in the user
-        const { email, password } = pendingUser;
-        if (email && password) {
-          try {
-            const loginRes = await import('../../apiHelpers').then(m => m.login({ email, password }));
-            const token = loginRes.data?.token;
-            const user = loginRes.data?.user || loginRes.data?.userData || loginRes.data;
-            handleSignInSuccess(token, user);
-          } catch (loginErr) {
-            console.error('Auto-login failed:', loginErr);
-            alert('Account created, but automatic sign-in failed. Please sign in manually.');
-          }
-        }
-        setShowCreateHouseForm(false);
-        setPendingUser(null);
-      } catch (err) {
-        console.error('Error creating house:', err);
+    if (!pendingUser || !pendingUser.id) {
+      alert('User information missing. Please register again.');
+      console.error('Missing pendingUser or pendingUser.id:', pendingUser);
+      return;
+    }
+    try {
+      const { name, avatar, ...houseDataRest } = houseData;
+      const housePayload = {
+        name: houseDataRest.house_name,
+        address: houseDataRest.address,
+        house_rules: houseDataRest.house_rules,
+        created_by: pendingUser.id
+      };
+      if (avatar) {
+        housePayload.avatar = avatar;
       }
+      console.log('House payload:', housePayload);
+      const res = await addHouse(housePayload);
+      console.log('House creation response:', res.data);
+      if (!res.data || !res.data.id) {
+        alert('House creation failed. Please try again.');
+        return;
+      }
+      // Track house creation
+      trackHousehold.createHouse(housePayload.created_by || 1); // Default to 1 user if unknown
+      trackAuth.signUp('email');
+      // Automatically sign in the user
+      const { email, password } = pendingUser;
+      let autoLoginSuccess = false;
+      if (email && password) {
+        try {
+          const loginRes = await import('../../apiHelpers').then(m => m.login({ email, password }));
+          const token = loginRes.data?.token;
+          const user = loginRes.data?.user || loginRes.data?.userData || loginRes.data;
+          handleSignInSuccess(token, user);
+          autoLoginSuccess = true;
+        } catch (loginErr) {
+          console.error('Auto-login failed:', loginErr);
+          alert('Account created, but automatic sign-in failed. Please sign in manually.');
+        }
+      }
+      setShowCreateHouseForm(false);
+      setPendingUser(null);
+      // Always navigate to dashboard, even if auto-login fails
+      if (!autoLoginSuccess) {
+        navigate('/dashboard');
+      }
+    } catch (err) {
+      console.error('Error creating house:', err);
+      alert('House creation failed. Please try again.');
+      // Still navigate to dashboard if house creation succeeded but something else failed
+      navigate('/dashboard');
     }
   };
 

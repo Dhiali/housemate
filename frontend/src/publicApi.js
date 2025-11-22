@@ -1,8 +1,8 @@
 import axios from "axios";
 
 // Create a separate API instance for public endpoints (no auth headers)
-const PublicAPI = axios.create({
-  baseURL: "http://localhost:5000",
+const publicApi = axios.create({
+  baseURL: "http://localhost:8000",
 });
 
 // Test the public statistics endpoint

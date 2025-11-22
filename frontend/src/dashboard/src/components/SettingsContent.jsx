@@ -27,6 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
 import OptimizedImage from '../../../components/OptimizedImage.jsx';
+import { useAuth } from '../../../UserContext.jsx';
 
 export function SettingsContent({
   settingsTab,
@@ -46,6 +47,7 @@ export function SettingsContent({
   setHouseholdSettings,
   onSaveHouseholdSettings
 }) {
+  const { logout } = useAuth();
   const [avatarPreview, setAvatarPreview] = React.useState(profileSettings.avatar || null);
   const [avatarFile, setAvatarFile] = React.useState(null);
   const [avatarUploading, setAvatarUploading] = React.useState(false);
@@ -179,7 +181,7 @@ export function SettingsContent({
                 <div className="flex items-center space-x-4">
                   <div className="w-20 h-20 bg-purple-500 rounded-full flex items-center justify-center overflow-hidden">
                     {avatarPreview ? (
-                      <img src={avatarPreview.startsWith('/uploads/') ? `http://localhost:5000${avatarPreview}` : avatarPreview} alt="Avatar" className="w-full h-full object-cover rounded-full" />
+                      <img src={avatarPreview.startsWith('/uploads/') ? `http://localhost:8000${avatarPreview}` : avatarPreview} alt="Avatar" className="w-full h-full object-cover rounded-full" />
                     ) : (
                       <span className="text-white text-2xl font-medium">YO</span>
                     )}
@@ -305,11 +307,7 @@ export function SettingsContent({
                     </div>
                   )}
                 </div>
-                <Button variant="outline" className="text-red-600 border-red-300" onClick={() => {
-                  localStorage.removeItem('authToken');
-                  localStorage.removeItem('authUser');
-                  window.location.reload();
-                }}>
+                <Button variant="outline" className="text-red-600 border-red-300" onClick={logout}>
                   Logout
                 </Button>
               </div>
